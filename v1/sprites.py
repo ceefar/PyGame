@@ -32,6 +32,7 @@ class Player(pg.sprite.Sprite):
         # new player gold implementation, could be a class var if ur lazy
         self.player_gold = 0
         # new test, pause interactions
+        self.waiting_print = False
         self.waiting = False
 
     def get_keys(self):
@@ -225,6 +226,10 @@ class Player(pg.sprite.Sprite):
             space_end = pg.time.get_ticks() 
             if space_end - self.waiting >= 2000:
                 self.waiting = False
+        if self.waiting_print:
+            space_end = pg.time.get_ticks() 
+            if space_end - self.waiting_print >= 2000:
+                self.waiting_print = False                
         
 
 class Wall(pg.sprite.Sprite):
@@ -281,7 +286,8 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         self.build_bar += 1 # build bar is just the per frame builder, 
         if self.hp_current < self.hp_max: # so if we arent already a max hp wall 
             if self.build_bar == 30: # then if held for half a second at 60 frames, 1 hp will be added
-                self.hp_current += 1
+                # self.do_once(x())
+                self.hp_current = self.hp_current + 1
                 self.build_bar = 0
         # for infectious buildling, repairing a tile will repairing any that are touching it
         for a_wall in self.wall_ids:
@@ -309,6 +315,12 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
             self.image.fill(BROWNTONE3) # DECENT               
 
     def is_near(self, x, y):
+        # [ todo-asap! ] - the reason it goes up by 2 is if touching 2 
+        # [ todo-asap! ] - means same could happen with 3 too 
+        # [ todo-asap! ] - so either take the amount touching into consideration 
+        # [ todo-asap! ] - or fix a proper way
+        # [ todo-asap! ] - actually tbf i think...
+        # [ todo-asap! ] - that taking how many are touching into account IS the proper way lol <<<<<< THIS 
         # define vars that mean in future we could have like an action dist, even view dist maybe
         very_very_close = 30 # means in tight spaces only one side or the other but changing the map now anyway so this likely never gets used but nice for reference
         very_close = 50 # might not be agnostic of tilesize btw if changed from 64 that i think im using now
@@ -326,8 +338,15 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
 
     def print_once(self,print_me): # temp test for debugging only   
         # abusing the players waiting variable to only do an action 1 once every x seconds (2s currently)
-        if not self.player.waiting:
+        if not self.player.waiting_print:
             print(print_me)
+            self.player.waiting_print = pg.time.get_ticks()
+
+    # unused, does work in theory but not properly tested
+    def do_once(self, func): # temp test for debugging only   
+        # abusing the players waiting variable to only do an action 1 once every x seconds (2s currently)
+        if not self.player.waiting:
+            func
             self.player.waiting = pg.time.get_ticks()
 
     def update(self):
