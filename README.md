@@ -15,7 +15,8 @@ Secondary aim is to explore some of the more intermediate and advanced concepts 
    
 #### 30/09    
 - Implementing dynamic camera  
-- Upgraded sprites to vectors   
+- Upgraded sprites to vectors 
+- Upgraded is_near to use pythagoras for distances  
 - Proper breakable wall collisions  
 - Improved breakable walls with highlighting and building indicators  
 - Removed upgradable walls for now  
