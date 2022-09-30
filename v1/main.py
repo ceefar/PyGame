@@ -22,7 +22,9 @@ class Game:
     def load_data(self):
         # location of where our game is running from, main.py
         game_folder = path.dirname(__file__)
+        img_folder = path.join(game_folder, "img")
         self.map = Map(path.join(game_folder, 'map2.txt'))
+        self.playe_img = pg.image.load()
 
     def new(self):
         # initialize all variables and do all the setup for a new game
