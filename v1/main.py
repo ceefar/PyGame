@@ -25,6 +25,9 @@ class Game:
         img_folder = path.join(game_folder, "img")
         self.map = Map(path.join(game_folder, 'map2.txt'))
         self.player_img = pg.image.load(path.join(img_folder, PLAYER_IMG)).convert_alpha()
+        self.player_blur1_img = pg.image.load(path.join(img_folder, PLAYER_BLUR1_IMG)).convert_alpha()
+        self.player_blur3_img = pg.image.load(path.join(img_folder, PLAYER_BLUR3_IMG)).convert_alpha()
+        self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
 
     def new(self):
         # initialize all variables and do all the setup for a new game

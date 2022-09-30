@@ -81,6 +81,7 @@ class Player(pg.sprite.Sprite):
             self.sprint_meter -= self.sprint_meter / 100
         # DUHHHHHH if we are defo not sprinting things here
         else:
+            self.image = self.game.player_img
             # [ todo ] - own function, is not sprinting / handle walking
             # if the sprint meter is not full, start to refill it
             if self.sprint_meter < 10_000:
@@ -89,8 +90,8 @@ class Player(pg.sprite.Sprite):
                 # CHECK IF WE ARE STANDING STILL FIRST, IF WE ARE RECOVER BY MORE
                 self.sprint_meter += self.sprint_meter / 200
             # remove any small offsets
-            if self.sprint_meter > 10_000:
-                self.sprint_meter = 10_000
+            if self.sprint_meter > 6_000:
+                self.sprint_meter = 6_000
         # if not moving in any direction, even if ur holding sprint, ur not moving
         if self.vel == 0 and self.vel.y == 0:
             self.state_moving = "chilling"
@@ -107,8 +108,7 @@ class Player(pg.sprite.Sprite):
         if self.state_moving == "walking" and self.sprint_meter < 2_000:
              self.vel *= 0.8
         if self.state_moving == "walking" and self.sprint_meter < 3_000:
-             self.vel *= 0.9   
-    
+             self.vel *= 0.9    
 
     def get_sprint_multiplier(self) -> int:
         # should probably refector into get player speed but its fine for now
@@ -116,6 +116,8 @@ class Player(pg.sprite.Sprite):
         # once have ranges, hardcode the values and the increment differences for hella easy updates
         # if over 30% full sprint meter, there is no impact on your sprint speed, ur quick af boii
         if self.sprint_meter > 3_000: 
+            # make me blurry if im sprinting at nax speed
+            self.image = self.game.player_blur3_img
             return(1.5) # fast
         # else if we are basically out of sprint meter, and we're tryna sprint
         if self.sprint_meter < 600:
@@ -133,9 +135,11 @@ class Player(pg.sprite.Sprite):
             # so if you are super low on sprint meter, you should be notably not near sprint speed
             # should defo note this in yanno like pop up screens when explaining game functionality
             # as there is an implicit trade off here, if you are 'fatigued' 
+            self.image = self.game.player_blur1_img
             return(1.15) # hastened
         else:
             # for now, if ur not spent, but not over 30% then still quick but not sprint, its like a jog
+            self.image = self.game.player_blur1_img
             return(1.25) # quick
 
     def collide_with_walls(self, dir):
@@ -193,19 +197,31 @@ class Player(pg.sprite.Sprite):
         # basically were doing 2 collision check, 1 for each axis
         self.rect.y = self.pos.y
         self.collide_with_walls('y')
-
+        # pg.BLENDMODE_NONE
+        print(f"{self.sprint_meter=}")
         # [ todo-asap! ] - new function
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons
         # again forget actual ranges for now but if we are under 30% we are fatigued
-        if self.sprint_meter < 1_000:
-            self.state_state = "fatigued"
-        elif self.sprint_meter < 2_000:
-            # note yeah ranges and stuff still defo off af but the functionality is actually pretty good tbf i like it
-            self.state_state = "struggling"            
-        elif self.sprint_meter < 3_000:
-            self.state_state = "tiring"     
-        elif self.sprint_meter > 3_000:
+        if self.sprint_meter < 3_000 :
+            
+            # you need to know if sprinting or not as should still be blurred if sprinting but dw about stuff like that at all for now
+            # make me red and decoloured if im fatigued
+            self.image = self.game.player_injury_img
+
+            if self.sprint_meter < 1_000:
+                self.state_state = "fatigued"
+            elif self.sprint_meter < 2_000:
+                # note yeah ranges and stuff still defo off af but the functionality is actually pretty good tbf i like it
+                self.state_state = "struggling"            
+            elif self.sprint_meter < 3_000:
+                self.state_state = "tiring"     
+        #elif self.sprint_meter > 3_000:
+        else:
             self.state_state = "fresh"
+
+            # tint img colour            
+
+
         # print(f"{(self.sprint_meter):.1f}% - {self.state_moving = }, {self.state_state = }, {self.vx = }")
         # new test
         if self.waiting:
