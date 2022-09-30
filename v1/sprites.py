@@ -196,7 +196,7 @@ class Player(pg.sprite.Sprite):
         self.collide_with_walls('x')
         # basically were doing 2 collision check, 1 for each axis
         self.rect.y = self.pos.y
-        self.collide_with_walls('y')
+        self.collide_with_walls('y') 
         # pg.BLENDMODE_NONE
         print(f"{self.sprint_meter=}")
         # [ todo-asap! ] - new function
