@@ -31,8 +31,8 @@ class Camera:
         # for update, we want to follow a sprite, which will be the player
         # adjust where the x and y of the camera are needed to shift to
         # we need to move in the oppsite direction of the player to offset the camera
-        x = -target.rect.x + int(WIDTH / 2)
-        y = -target.rect.y + int(HEIGHT / 2)
+        x = -target.rect.centerx + int(WIDTH / 2)
+        y = -target.rect.centery + int(HEIGHT / 2)
         self.camera = pg.Rect(x, y, self.width, self.height)
         
         # limit scrolling to map size

@@ -2,9 +2,8 @@ import pygame as pg
 from settings import *
 # start using vectors instead of individual xypos vars
 vec = pg.math.Vector2
-# test
+# for calculating distance between 2 objects
 from math import hypot
-
 
 
 class Player(pg.sprite.Sprite):
@@ -20,6 +19,8 @@ class Player(pg.sprite.Sprite):
         self.vel = vec(0, 0)
         # new - need position vector now too
         self.pos = vec(x, y) * TILESIZE
+        # new - rotation, starting rot=0 is pointing right so in positive x position/axis
+        self.rot = 0
 
         # new sprint meter test
         self.sprint_meter = 6_000
@@ -36,9 +37,10 @@ class Player(pg.sprite.Sprite):
         self.waiting = False
 
     def get_keys(self):
+        self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
         self.vel = vec(0, 0) # define what our keys are going to do
         keys = pg.key.get_pressed() # see which keys are currently held down
-        # -- player interaction keys --
+        # -------- player interaction keys stuff --------
         if keys[pg.K_e]: # if E
             # check any breakable walls interaction
             for a_wall in self.game.breakablewalls:
@@ -49,39 +51,30 @@ class Player(pg.sprite.Sprite):
             self.is_interacting = True
         else:
             self.is_interacting = False
-        # -- player movement keys --
+        # -------- player main movement keys stuff --------
         # if were pressing left on the keyboard or a            
         if keys[pg.K_LEFT] or keys[pg.K_a]:
-            # we're going to the left, so use negative
-            self.vel.x = -PLAYER_SPEED  
-            # set our state based on what keys we are pressing
-            # when adding 'recovering' functionality, only set these states if not recovering, that takes precedence
+            self.rot_speed = PLAYER_ROT_SPEED  
             self.state_moving = "walking"        
         # use if to allow diagonal movements 
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.vel.x = PLAYER_SPEED
+            self.rot_speed = -PLAYER_ROT_SPEED
             self.state_moving = "walking"
         if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vel.y = -PLAYER_SPEED
+            self.vel = vec(PLAYER_SPEED, 0).rotate(-self.rot) # move at the player speed in the 1 direction and 0 in the y direction, then rotate that vector by whatever our rotation is, negative and us will take us left, counterclockwise so negaitve degrees
             self.state_moving = "walking"
         if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vel.y = PLAYER_SPEED
+            self.vel = vec(-PLAYER_SPEED /2, 0).rotate(-self.rot) # now we are rotating this is moving backwards, hence the minus player speed and the negative 2 so we've notably slower backwards
             self.state_moving = "walking"      
+        # -------- player sprint stuff --------    
         if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
-            # [ todo ] - own function, is sprinting /  handle sprinting
-            # new sprint implementation, only called when holding sprint
-            # so any sprint meter stuff needs to be done outside here duh
+            # [ todo ] - own function, is sprinting / handle sprinting - new sprint implementation, only called when holding sprint so any sprint meter stuff needs to be done outside here duh
             self.vel *= self.get_sprint_multiplier() 
             self.state_moving = "sprinting"
-            # [ todo ] - new function - handle sprint meter
-            # decrease our sprint meter, make this a function too pls, pass a parameter as maybe we wanna reuse this for other reasons to decrease meter 
-            # and legit have it recover less if you are in tiring zones
-            # and defo do recover more if standing still btw duh!
-            # maybe have sprint go down a bit faster btw
             self.sprint_meter -= self.sprint_meter / 100
-        # DUHHHHHH if we are defo not sprinting things here
+        # [ duh! ] - if we are defo not sprinting things here
         else:
-            self.image = self.game.player_img
+            #self.image = self.game.player_img
             # [ todo ] - own function, is not sprinting / handle walking
             # if the sprint meter is not full, start to refill it
             if self.sprint_meter < 10_000:
@@ -92,14 +85,11 @@ class Player(pg.sprite.Sprite):
             # remove any small offsets
             if self.sprint_meter > 6_000:
                 self.sprint_meter = 6_000
+        # -------- player not moving stuff --------                
         # if not moving in any direction, even if ur holding sprint, ur not moving
         if self.vel == 0 and self.vel.y == 0:
             self.state_moving = "chilling"
-        # if two directions at the same time we dont want to do double speed     
-        # dont need to reset state here dw       
-        if self.vel.x != 0 and self.vel.y != 0:
-            # because its multiplying by 2, get the square root of 2 to slow us back to down to where we should be (by multiplying under 1)
-            self.vel *= 0.7071
+        # -------- player if walking and fatigued speed stuff -------- 
         # if you are not sprinting but are also fatigued because ur sprint meter is exhausted
         # then reduce ur speed also, with rudimentary af ramping 
         # obvs very very unsure of the numbers and ranges yet but this implementation is fine for this mvp testing stage
@@ -117,7 +107,7 @@ class Player(pg.sprite.Sprite):
         # if over 30% full sprint meter, there is no impact on your sprint speed, ur quick af boii
         if self.sprint_meter > 3_000: 
             # make me blurry if im sprinting at nax speed
-            self.image = self.game.player_blur3_img
+            #self.image = self.game.player_blur3_img
             return(1.5) # fast
         # else if we are basically out of sprint meter, and we're tryna sprint
         if self.sprint_meter < 600:
@@ -135,11 +125,11 @@ class Player(pg.sprite.Sprite):
             # so if you are super low on sprint meter, you should be notably not near sprint speed
             # should defo note this in yanno like pop up screens when explaining game functionality
             # as there is an implicit trade off here, if you are 'fatigued' 
-            self.image = self.game.player_blur1_img
+            #self.image = self.game.player_blur1_img
             return(1.15) # hastened
         else:
             # for now, if ur not spent, but not over 30% then still quick but not sprint, its like a jog
-            self.image = self.game.player_blur1_img
+            #self.image = self.game.player_blur1_img
             return(1.25) # quick
 
     def collide_with_walls(self, dir):
@@ -152,14 +142,32 @@ class Player(pg.sprite.Sprite):
                 # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
                 if self.vel.x > 0:
                     # our x should be what ever it was that we hit(s) minus however wide we are
-                    self.pos.x = hits[0].rect.left - self.rect.width
+                    self.pos.x = hits[0].rect.left - self.rect.width / 2
                 # if the speed is the opposite direction then we were moving to the left so
                 if self.vel.x < 0:
                     # put ourselves to the right of the thing we hit(s)[0]
-                    self.pos.x = hits[0].rect.right
+                    self.pos.x = hits[0].rect.right + self.rect.width / 2
                 # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
                 self.vel.x = 0
-                self.rect.x = self.pos.x
+                self.rect.centerx = self.pos.x
+            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False)
+            if bhits:
+                # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
+                # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
+                if bhits[0].get_hp() <= 0:
+                    # bhits[0].try_repair_wall()
+                    pass # through freely                
+                else:
+                    if self.vel.x > 0:
+                        # our x should be what ever it was that we hit(s) minus however wide we are
+                        self.pos.x = bhits[0].rect.left - self.rect.width / 2
+                    # if the speed is the opposite direction then we were moving to the left so
+                    if self.vel.x < 0:
+                        # put ourselves to the right of the thing we hit(s)[0]
+                        self.pos.x = bhits[0].rect.right + self.rect.width / 2
+                    # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
+                    self.vel.x = 0
+                    self.rect.centerx = self.pos.x    
         
         if dir == "y":
             bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False)
@@ -171,43 +179,48 @@ class Player(pg.sprite.Sprite):
                     pass # through freely
                 else:
                     if self.vel.y > 0:
-                        self.pos.y = bhits[0].rect.top - self.rect.height
+                        self.pos.y = bhits[0].rect.top - self.rect.height / 2
                     if self.vel.y < 0:
-                        self.pos.y = bhits[0].rect.bottom
+                        self.pos.y = bhits[0].rect.bottom + self.rect.height / 2
                     self.vel.y = 0
-                    self.rect.y = self.pos.y             
+                    self.rect.centery = self.pos.y             
                     
             # normal wall    
             hits = pg.sprite.spritecollide(self, self.game.walls, False)
             if hits:
                 if self.vel.y > 0:
-                    self.pos.y = hits[0].rect.top - self.rect.height
+                    self.pos.y = hits[0].rect.top - self.rect.height / 2
                 if self.vel.y < 0:
-                    self.pos.y = hits[0].rect.bottom
+                    self.pos.y = hits[0].rect.bottom + self.rect.height / 2
                 self.vel.y = 0
-                self.rect.y = self.pos.y             
+                self.rect.centery = self.pos.y             
 
     def update(self):
         self.get_keys()
+        # update the rotation based on where we are facing
+        # [note!] - if you want to update the player img u need to do it here as the rotation is done here and thats important mkay
+        self.rot = (self.rot + self.rot_speed * self.game.dt) % 360 # modulo 360 so if we hit 361 we just go back to 1
+        # transform our image based on our current rotation
+        self.image = pg.transform.rotate(self.game.player_img, self.rot)
+        # calculate what our new rectangle is as we rotate it as it holds our image
+        self.rect = self.image.get_rect()
+        # take that rectangle at set it to where our previous rectangle was at
+        self.rect.center = self.pos
+        # set our rectangles x & y to the speed/post to check for collisions 
+        self.rect.centerx = self.pos.x
         # update the position of the player based on keys pressed using velocity vector
         self.pos += self.vel * self.game.dt
-        # set our rectangles x & y to the speed/post to check for collisions 
-        self.rect.x = self.pos.x
         self.collide_with_walls('x')
         # basically were doing 2 collision check, 1 for each axis
-        self.rect.y = self.pos.y
+        self.rect.centery = self.pos.y
         self.collide_with_walls('y') 
-        # pg.BLENDMODE_NONE
-        print(f"{self.sprint_meter=}")
+
         # [ todo-asap! ] - new function
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons
         # again forget actual ranges for now but if we are under 30% we are fatigued
         if self.sprint_meter < 3_000 :
-            
             # you need to know if sprinting or not as should still be blurred if sprinting but dw about stuff like that at all for now
-            # make me red and decoloured if im fatigued
-            self.image = self.game.player_injury_img
-
+            # make me red and decoloured if im fatigued, img
             if self.sprint_meter < 1_000:
                 self.state_state = "fatigued"
             elif self.sprint_meter < 2_000:
@@ -218,10 +231,6 @@ class Player(pg.sprite.Sprite):
         #elif self.sprint_meter > 3_000:
         else:
             self.state_state = "fresh"
-
-            # tint img colour            
-
-
         # print(f"{(self.sprint_meter):.1f}% - {self.state_moving = }, {self.state_state = }, {self.vx = }")
         # new test
         if self.waiting:

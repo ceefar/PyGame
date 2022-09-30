@@ -42,8 +42,9 @@ TILESIZE = 32 # default 32, increase the tilesize to zoom in further (i.e. 64 fo
 GRIDWIDTH = WIDTH / TILESIZE
 GRIDHEIGHT = HEIGHT / TILESIZE
 
-# Player settings
+# Player settings, remember the speeds here are milliseconds, so 1000 per sec (because we're using delta time on the frames)
 PLAYER_SPEED = 320
+PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
