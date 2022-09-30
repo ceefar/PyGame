@@ -13,8 +13,8 @@ class Player(pg.sprite.Sprite):
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image.fill(YELLOW)
+        self.image = game.player_img # pg.Surface((TILESIZE, TILESIZE))
+        # self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         # new - velocity vector, for speeding up and slowing down the player
         self.vel = vec(0, 0)
@@ -183,18 +183,6 @@ class Player(pg.sprite.Sprite):
                 self.vel.y = 0
                 self.rect.y = self.pos.y             
 
-    # [ todo ]
-    def colour_sprite(self):
-        # new function handle state, set our colour to red if were fatigued
-        if self.state_state == "fatigued":
-            self.image.fill(RED)
-        elif self.state_state == "struggling":
-            self.image.fill(ORANGE)
-        elif self.state_state == "tiring":
-            self.image.fill(YELLOW)    
-        else:
-            self.image.fill(WHITE)           
-
     def update(self):
         self.get_keys()
         # update the position of the player based on keys pressed using velocity vector
@@ -218,9 +206,7 @@ class Player(pg.sprite.Sprite):
             self.state_state = "tiring"     
         elif self.sprint_meter > 3_000:
             self.state_state = "fresh"
-        # log our state and sprint meter
         # print(f"{(self.sprint_meter):.1f}% - {self.state_moving = }, {self.state_state = }, {self.vx = }")
-        self.colour_sprite()
         # new test
         if self.waiting:
             space_end = pg.time.get_ticks() 
