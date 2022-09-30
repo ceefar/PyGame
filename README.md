@@ -1,7 +1,7 @@
 # PyGame - Zombie Game  
   
 ### Why This Project?  
-Taking a break from quite a gruelling period on my NHS Waiting Times Web App to work on something a bit more exciting for a week.  
+Taking a break from quite a gruelling period on my NHS Waiting Times Web App to work on something a bit more exciting for a week, and then in my spare time once I return to Data Engineering projects shortly.  
   
 ### Learning Objectives  
 Primary aim is to really deep dive into OOP and class based structure, and arguably the best enviornment for OOP is a game environment (lots of reapeated objects, lots of complex relationships between classes).   
