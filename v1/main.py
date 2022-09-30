@@ -47,11 +47,7 @@ class Game:
                             Wall(self, col, row)
                         if tile == "B":
                             # place a breakablewall test
-                            BreakableWall(self, col, row, self.player)
-                        if tile == "U":
-                            UnlockWall(self, col, row, self.player)
-                        if tile == "u":
-                            UnlockWall(self, col, row, self.player, is_wide=False)                            
+                            BreakableWall(self, col, row, self.player)                       
                     else:
                         # if the tile is a P, this is the player
                         if tile == "P":
