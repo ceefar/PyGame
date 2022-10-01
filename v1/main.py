@@ -127,7 +127,7 @@ class Game:
 
     def draw(self):
         # temp, set the caption of the window to be any core debug things, framerate etc
-        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
+        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, Bullets: {Bullet.bullet_count}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
         # actual draw stuff
         self.screen.fill(BGCOLOR)
         want_grid = False

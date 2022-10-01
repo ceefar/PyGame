@@ -57,13 +57,19 @@ BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
 BULLET_RATE = 900 # how fast we can shoot
 
-# New Custom Weapon Settings
+# NEW Custom Weapon Settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
-PISTOL_SIGHT = 150 # the distance from which you will begin to fire on a zombie with this weapon
+PISTOL_SIGHT = 300 # the distance from which you will begin to fire on a zombie with this weapon
+PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert to ranges, with the ranges becoming shorter based on the time in game ooo (or even bullets fired n shit lol)
+PISTOL_CRIT_RATE = 20
+
+# NEW Custom Player Settings
+# viewing angle to be default 60 degrees each side
+VIEWING_ANGLE = 120
 
 # Mob (Zombie) settings
 MOB_IMG = "zoimbie1_hold.png"
-MOB_SPEED = 100
+MOB_SPEED = 80
 MOB_HIT_RECT = pg.Rect(0,0,25,25)
 
 # More Image settings

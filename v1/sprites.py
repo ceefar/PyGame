@@ -105,7 +105,7 @@ class Player(pg.sprite.Sprite):
         self.waiting_print = False
         self.waiting = False
         # new auto-shooting toggle test
-        self.autoshoot = False
+        self.autoshoot = True
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
@@ -222,8 +222,8 @@ class Player(pg.sprite.Sprite):
     def is_near(self, x, y, how_near=400): # 400 is random af default, is for 64 tile size too btw
         # abstract this properly pls 
         pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
-        if pythag_dist < how_near:
-            print(f"Dist = {pythag_dist}")
+        # if pythag_dist < how_near:
+        #     print(f"Dist = {pythag_dist}")
         return True if pythag_dist < how_near else False
                 
     def update(self):
@@ -281,20 +281,34 @@ class Player(pg.sprite.Sprite):
         # but only if a zombie is close
         now = pg.time.get_ticks() # track the last time we shot 
         if self.autoshoot: # if autoshoot is on, currently the b key
-            if now - self.last_shot > BULLET_RATE:
-                for mob in self.game.mobs:
+            for mob in self.game.mobs:
+                if now - self.last_shot > BULLET_RATE: # fixes double bullets by being inside
                     if self.is_near(mob.pos.x, mob.pos.y, PISTOL_SIGHT): # shortly this will become current weapon sight
-                        print(f"I'm near a mob, lets shoot [{mob.pos.x = },{mob.pos.y = }]")
-                        self.last_shot = now 
-                        dir = vec(1,0).rotate(-self.rot)
-                        temp_pos = vec(self.pos).copy()
-                        temp_rot = (mob.pos - temp_pos).angle_to(vec(1,0))
-                        final_temp_rot = vec(1,0).rotate(-temp_rot)
-                        print(f"SUCCESS? {final_temp_rot=}, {temp_rot=}, {dir=}")
-                        # so imagine u had to rotate the player to look at the nearest zombie first!
-                        Bullet(self.game, self.pos, final_temp_rot)
+                        # now we need not only if the player is in range, but if the player is facing the right direction, no backwards shooting
+                        # should also be before / only the mob in mobs that are facing are valid, yeah so here is fine tbf whatever man just go 
+                        # if the zombies rotation and our rotation are within 150 degrees? but way less to test first
+                        rot_diff = -mob.rot + self.rot # you want this to be perpendicular, 180 degrees, or as close to it as possible for locked line of sight
+                        # so we say if you're within the acceptable range and perpendicular to a close zombies line of sight then take the shot else dont
+                        # viewing angle now a setting
+                        # successfully sets the auto shoot to only occur when in front of the player
+                        # and pretty much (tho needs fixing 100%) shoots the closest target
+                        if rot_diff > (180 - VIEWING_ANGLE / 2) and rot_diff < (180 + VIEWING_ANGLE / 2):
+                            # we're taking a shot now for sure so update our last shot time to now, only do this when 100% sure we're shooting
+                            self.last_shot = now 
+                            dir = vec(1,0).rotate(-self.rot) # used for normal shooting
+                            player_pos = vec(self.pos).copy() # dont update the players actual position 
+                            rot_to_mob = (mob.pos - player_pos).angle_to(vec(1,0)) # the angle
+                            dir_to_mob = vec(1,0).rotate(-rot_to_mob) # the final direction vector
+                            print(f"PEW!, AUTOSHOT AT {mob.myid}")
+                            # sent the direction to the closest mob instead of the players position
+                            Bullet(self.game, self.pos, dir_to_mob)
+                    
+                    # still big issue with shooting order, need to be checking whos closest? idk need to confirm tbf
+                    # just do collisions quickly ffs
+
+                    # use faker to give the zombies fake names, 
+                    # have their names be part of their class so can use it obvs 
                        
-        
         
 class Mob(pg.sprite.Sprite):
     Zombie_Boys = {}
@@ -440,6 +454,27 @@ class Mob(pg.sprite.Sprite):
         for bwall in self.bwalls:
             # if zombie is near a bwall 
             if self.is_near(bwall.pos.x, bwall.pos.y):
+                # print(f"ZOMBIE SPEED => {self.myid = }, {self.acc = }, {self.vel = }")
+                if self.vel.x < 0.5 and self.vel.y < 0.5:
+                    # this is the test for speed if you, the zombie have stalled, want this to pop but testing with pos for now
+                    # if the walls x position is less than urs its to the left, else its to the right (?)
+                    if bwall.pos.x < self.pos.x:
+                        print(f"BOOP - {self.myid=}")                
+                    if bwall.pos.x > self.pos.x:
+                        print(f"BOOPY - {self.myid=}")
+                        # print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
+                    if bwall.pos.y < self.pos.y: # above you so add (?)
+                        print(f"DOOP - {self.myid=}")
+                        #print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
+                    if bwall.pos.y > self.pos.y:
+                        print(f"DOOPY - {self.myid=}")
+                        # print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
+                        # self.pos.y -= 80                                                   
+                        # self.acc.x -= (self.acc.x / 100) * 80
+                        # self.vel.x = 15
+
+                    # if wall if above move plus y, if wall is below move negative y, etc
+                    pass
                 # test break it
                 self.break_barracade(bwall)
         # end by updating waiting
@@ -451,6 +486,8 @@ class Mob(pg.sprite.Sprite):
 
 
 class Bullet(pg.sprite.Sprite):
+    bullet_count = 0 # count all bullets shot for stats
+
     def __init__(self, game, pos, dir):
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -461,6 +498,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = pos # put our rectangle there at the center
         self.vel = dir * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
         self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
+        Bullet.bullet_count += 1
 
     def update(self):
         self.pos += self.vel * self.game.dt # update our position vs our velocity
