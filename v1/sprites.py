@@ -242,11 +242,12 @@ class Player(pg.sprite.Sprite):
         # new test
         if self.waiting:
             space_end = pg.time.get_ticks() 
-            if space_end - self.waiting >= 2000:
+            if space_end - self.waiting >= 1000:
+                print(f"interactions enabled")
                 self.waiting = False
         if self.waiting_print:
             space_end = pg.time.get_ticks() 
-            if space_end - self.waiting_print >= 2000:
+            if space_end - self.waiting_print >= 1000:
                 self.waiting_print = False                
         
 
@@ -255,8 +256,7 @@ class Wall(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.walls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image.fill(GREEN)
+        self.image = game.wall_img
         self.rect = self.image.get_rect()
         self.x = x
         self.y = y
@@ -273,17 +273,17 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         self.groups = game.all_sprites, game.breakablewalls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.image = pg.Surface((TILESIZE, TILESIZE))
-        self.image.fill(GREEN)
+        self.hp_current = hp
+        # sets the image, tho mayb should set to a default first incase sumnt weird happens and need a fallback idk
+        self.update_image()
         self.rect = self.image.get_rect()
         # new - need position vector now too
         self.pos = vec(x, y) * TILESIZE
-
-        self.hp_current = hp
+        
         self.hp_max = 4
         self.build_bar = 0
         self.player = player
-        self.update_colour()
+        
         # if the class variable wall_ids is not an empty list 
         if BreakableWall.wall_ids:
             # then add the most recent id + 1 
@@ -299,14 +299,10 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     def get_hp(self):
         return(self.hp_current)
 
-    # [ todo ] - we have timed interactions now with is_interacting so implement that duh
     def try_repair_wall(self):
-        self.build_bar += 1 # build bar is just the per frame builder, 
-        if self.hp_current < self.hp_max: # so if we arent already a max hp wall 
-            if self.build_bar == 30: # then if held for half a second at 60 frames, 1 hp will be added
-                # self.do_once(x())
-                self.hp_current = self.hp_current + 1
-                self.build_bar = 0
+        # we're using delta time now for 1 second, see historical_backups v1_6 for the percent meter version (which is kinda better tbf but added complexity at this stage has diminishing returns)
+        self.do_one_repair()
+        
         # for infectious buildling, repairing a tile will repairing any that are touching it
         for a_wall in self.wall_ids:
             # check if we this wall is near any other walls
@@ -315,22 +311,45 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
                 if a_wall.hp_current != self.hp_current:
                     self.print_once(f"Shared Our HP Commrade -> {a_wall.hp_current}, {self.hp_current}")
                     a_wall.hp_current = self.hp_current
-        print(f"reparing wall [ {self.myid} - {self.hp_current}hp ] -> {self.build_bar = }")
-        self.update_colour()
+        # print(f"repairing wall [ {self.myid} - {self.hp_current}hp ] -> {self.build_bar = }")
+        self.update_image()
 
-    def update_colour(self):
+    def update_image(self, is_near=False):
         """ every time something interacts with me, run this (?) """
-        # DARKGREY, GREY, LIGHTGREY, PRINT, RUST, HIGHLIGHTER, PALEGREY, TAN, COFFEE, MOONGLOW
+        # if box has 0 hp
         if self.hp_current == 0:
-            self.image.fill(BLACK)
+            # [ testing! ]
+            # then in here you want the hp x is interacting check from update
+            #if self.hp_current < self.hp_max: # if this wall is full hp
+            if is_near:
+                self.image = self.game.break_wall_hl_0_img
+            else:
+                self.image = self.game.break_wall_0_img
+            #self.image.fill(BLACK)
+        # if box has 1 hp
         elif self.hp_current == 1:
-            self.image.fill(GREY) # TOO MUCH LIKE BACKGROUND BUT MAYBE
+            if is_near:
+                self.image = self.game.break_wall_hl_1_img # if near use the highlighted version
+            else:
+                self.image = self.game.break_wall_1_img
+        # if box has 2 hp
         elif self.hp_current == 2:
-            self.image.fill(BROWNTONE1) # DECENT
+            if is_near:
+                self.image = self.game.break_wall_hl_2_img # if near use the highlighted version
+            else:
+                self.image = self.game.break_wall_2_img
+        # if box has 3 hp
         elif self.hp_current == 3:
-            self.image.fill(BROWNTONE2) # DECENT    
+            if is_near:
+                self.image = self.game.break_wall_hl_3_img # if near use the highlighted version
+            else:
+                self.image = self.game.break_wall_3_img
+        # if box has 1 hp
         elif self.hp_current == 4:
-            self.image.fill(BROWNTONE3) # DECENT               
+            if is_near:
+                self.image = self.game.break_wall_hl_4_img # if near use the highlighted version
+            else:
+                self.image = self.game.break_wall_4_img           
 
     def is_near(self, x, y):
         # [ todo-asap! ] - the reason it goes up by 2 is if touching 2 
@@ -360,11 +379,11 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
             print(print_me)
             self.player.waiting_print = pg.time.get_ticks()
 
-    # unused, does work in theory but not properly tested
-    def do_once(self, func): # temp test for debugging only   
-        # abusing the players waiting variable to only do an action 1 once every x seconds (2s currently)
+    def do_one_repair(self): # temp test for now
+        # use waiting var to only do 1 interaction per x, tho should use is_interacting thing instead < do this asap as stateness duh
         if not self.player.waiting:
-            func
+            self.hp_current = self.hp_current + 1
+            print(f"DONE REPAIR {self.myid=} {self.hp_current=} - interactions disabled")
             self.player.waiting = pg.time.get_ticks()
 
     def update(self):
@@ -374,18 +393,18 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         if self.is_near(None, None):  
             # if the wall can be rebuilt more still
             if self.hp_current < self.hp_max:
-                # and the player isn't interacting with anything
-                # currently only the 'e' aka 'build' key but will be others for sure, sprint too surely duhhh!
-                if self.player.is_interacting == False:
-                    self.image.fill(HIGHLIGHTER)
+                # if self.player.is_interacting == False: and the player isn't interacting with anything, currently only the 'e' aka 'build' key but will be others for sure, sprint too surely duhhh!
+                self.update_image(True)
             else:
-                self.image.fill(BROWNTONE4)
+                # can just use a dull highlight on full hp box img as thats always what this will be, is handy tbf
+                self.image = self.game.break_wall_hl_4_img
         else:
-            self.update_colour()
+            self.update_image()
 
     # [ todo-asap! ] - wall max hp broken again
     # [ todo-asap! ] - then continue tuts pls!
 
+    # DARKGREY, GREY, LIGHTGREY, PRINT, RUST, HIGHLIGHTER, PALEGREY, TAN, COFFEE, MOONGLOW
 
     # unused implementation of is interacting 
     """

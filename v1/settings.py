@@ -48,9 +48,22 @@ GRIDHEIGHT = HEIGHT / TILESIZE
 PLAYER_SPEED = 320
 PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
-PLAYER_HIT_RECT = pg.Rect(0,0,35,35)
+PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
 
-WALL_IMG = "tileGreen_39.png"
+# More Image settings
+WALL_IMG = "tileGreen_39.png" # 108 x 108 (not right size btw)
+
+# better new test stuff
+BREAK_WALL_0_IMG = "wallTest_0.png"
+BREAK_WALL_1_IMG = "wallTest_1.png"
+BREAK_WALL_2_IMG = "wallTest_2.png"
+BREAK_WALL_3_IMG = "wallTest_3.png"
+BREAK_WALL_4_IMG = "wallTest_4.png"
+BREAK_WALL_HL_0_IMG = "wallTestHL_0.png"
+BREAK_WALL_HL_1_IMG = "wallTestHL_1.png"
+BREAK_WALL_HL_2_IMG = "wallTestHL_2.png"
+BREAK_WALL_HL_3_IMG = "wallTestHL_3.png"
+BREAK_WALL_HL_4_IMG = "wallTestHL_4.png"
 
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
