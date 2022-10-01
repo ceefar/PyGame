@@ -40,7 +40,7 @@ FPS = 60
 TITLE = "Tilemap Demo"
 BGCOLOR = DARKGREY
 
-TILESIZE = 32 # default 32, increase the tilesize to zoom in further (i.e. 64 for twice as close), or decrease (by multiples of 2) to zoom out
+TILESIZE = 64 # default 32, increase the tilesize to zoom in further (i.e. 64 for twice as close), or decrease (by multiples of 2) to zoom out
 GRIDWIDTH = WIDTH / TILESIZE
 GRIDHEIGHT = HEIGHT / TILESIZE
 
@@ -51,7 +51,7 @@ PLAYER_IMG = "manBlue_gun.png"
 PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
 
 # More Image settings
-WALL_IMG = "tileGreen_39.png" # 108 x 108 (not right size btw)
+WALL_IMG = "tileBrick_01.png" # tileGreen_39.png note is also 108 x 108 (not right size btw)
 
 # better new test stuff
 BREAK_WALL_0_IMG = "wallTest_0.png"

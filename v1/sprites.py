@@ -361,7 +361,8 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         # define vars that mean in future we could have like an action dist, even view dist maybe
         very_very_close = 30 # means in tight spaces only one side or the other but changing the map now anyway so this likely never gets used but nice for reference
         very_close = 50 # might not be agnostic of tilesize btw if changed from 64 that i think im using now
-        close = 80
+        # close = 80 #, 50, 30 < for 32x32 pixel tilessize 
+        close = 180 # for 64 tilesize
         if not x:
             x = self.player.pos.x
         if not y:
@@ -369,6 +370,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         # use hypotenus of the xy vectors to find out how close we are to the player
         pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
         if pythag_dist < close:
+            # print(f"{self.myid=},{pythag_dist=}\n{x=},{y=},{self.pos.y=},{self.pos.x=}")
             self.print_once(f"{pythag_dist=}, {self.myid}, {self.pos.x=}, {self.pos.y=}\n{x=}, {y=}")
         # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
         return True if pythag_dist < close else False
