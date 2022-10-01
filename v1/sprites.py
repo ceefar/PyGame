@@ -261,9 +261,11 @@ class Mob(pg.sprite.Sprite):
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
         self.rot = 0
+        self.vel = vec(0,0)
+        self.acc = vec(0,0)
+        # use accelerate so that the zombie doesnt whip around when we move past it
         
         self.bwalls = bwalls
-
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -276,22 +278,35 @@ class Mob(pg.sprite.Sprite):
         self.rect.center = self.pos
 
     def update(self):
-        
         list_of_bwall_dists = []
         closest_bwall = ""
         for bwall in self.bwalls:
             pythag_dist = hypot(self.pos.x-bwall.pos.x, self.pos.y-bwall.pos.y)
-            print(f"id:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
+            # temp implementation of a warning for when zombie is close (would be like a screen arrow oooo)
+            if pythag_dist < 500: # if zombie is close to door
+                pass
+                # some kinda warning arrow or maybe even state change idk
+                # print(f"ZOMBIE CLOSING IN TO DOOR WARNING!\nid:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
             list_of_bwall_dists.append(pythag_dist)
             if pythag_dist == min(list_of_bwall_dists):
                 closest_bwall = bwall
-        print(f"{list_of_bwall_dists = }")
+        # end loop all breakable walls
+        # incase we want to check the closest few which we will eventually but is there 
+        # a better way to do this? yes lol, also remember need to check hp too anyway
         closest_bwall_dist = min(list_of_bwall_dists)
-        print(f"{closest_bwall_dist = }")
-        print(f"{closest_bwall.myid = }")
+        # print(f"{closest_bwall_dist = } - {list_of_bwall_dists = }")
+        # look at the closest breakablewall, NEED TO DO 0 HP BUT CHILL FOR AGES TBF 
         self.look_at(closest_bwall.pos)
-
+        # look at the player
         # self.look_at(self.game.player.pos)
+        # ---- actual code ----
+        # our acceleration is going to be mob speed constant, run in the forward direction rotated by whatever this zombies rotation is
+        self.acc = vec(MOB_SPEED, 0).rotate(-self.rot)
+        self.vel += self.acc * self.game.dt
+        # eq of motion, velocity times time times half the acceleration, times the time squared
+        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+        # now we know where the sprite should be set its rect center
+        self.rect.center = self.pos
         
 
 class Wall(pg.sprite.Sprite):

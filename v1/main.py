@@ -70,8 +70,8 @@ class Game:
             # why? = because we need to pass the player object to instances of other interactive things on the map like walls
             # otherwise we have to place the player above any interactive elements, now we can place the player anywhere
             # enumerate over the map data as each line is a row on the map from top to bottom
-            for i in range(3):
-                run = i
+            for i in range(0, 3):
+                run = i+1
                 for row, tiles in enumerate(self.map.data):
                     # for each tile, which is the actual string for each row `1....1`
                     # enumerate as tiles here becomes the actual character in that position in the string,
