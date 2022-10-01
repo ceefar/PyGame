@@ -65,7 +65,7 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.unlockwalls = pg.sprite.Group()
-        def spawn_stuff_on_map(first_run=True):
+        def spawn_stuff_on_map(first_run=True, last_run=False):
             # first run = run only player first 
             # why? = because we need to pass the player object to instances of other interactive things on the map like walls
             # otherwise we have to place the player above any interactive elements, now we can place the player anywhere
@@ -83,16 +83,18 @@ class Game:
                         if tile == "B":
                             # place a breakablewall test
                             BreakableWall(self, col, row, self.player)   
+                    if not last_run:    
                         if tile == "Z":
                             # place a breakablewall test
-                            Mob(self, col, row, self.player)                       
-                    else:
+                            Mob(self, col, row, self.breakablewalls)                       
+                    if first_run:
                         # if the tile is a P, this is the player
                         if tile == "P":
                             # spawn them at the col, row position on the map 
                             self.player = Player(self, col, row)
-        spawn_stuff_on_map()
-        spawn_stuff_on_map(False)                            
+        spawn_stuff_on_map(True, False)
+        spawn_stuff_on_map(False, False)  
+        spawn_stuff_on_map(False, True)                            
         self.camera = Camera(self.map.width, self.map.height)
 
     def run(self):

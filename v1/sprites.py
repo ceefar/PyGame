@@ -252,7 +252,7 @@ class Player(pg.sprite.Sprite):
         
         
 class Mob(pg.sprite.Sprite):
-    def __init__(self, game, x, y, hp=0):
+    def __init__(self, game, x, y, bwalls): #  hp=0
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -261,17 +261,38 @@ class Mob(pg.sprite.Sprite):
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
         self.rot = 0
+        
+        self.bwalls = bwalls
 
-    def update(self):
+
+    def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
         # to get the angle, stick the given vector into to angle with the axis vector e.g. (1, 0) or forward in x, 0 in y i.e to the right, which is positive in the x axis
-        # 
-        self.rot = (self.game.player.pos - self.pos).angle_to(vec(1,0))
+        self.rot = (look_at_me - self.pos).angle_to(vec(1,0))
         # then rotate our zombies img by the rotation vector
         self.image = pg.transform.rotate(self.game.mob_img, self.rot)
         # then update our zombies new rectangle centre too
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
+
+    def update(self):
+        
+        list_of_bwall_dists = []
+        closest_bwall = ""
+        for bwall in self.bwalls:
+            pythag_dist = hypot(self.pos.x-bwall.pos.x, self.pos.y-bwall.pos.y)
+            print(f"id:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
+            list_of_bwall_dists.append(pythag_dist)
+            if pythag_dist == min(list_of_bwall_dists):
+                closest_bwall = bwall
+        print(f"{list_of_bwall_dists = }")
+        closest_bwall_dist = min(list_of_bwall_dists)
+        print(f"{closest_bwall_dist = }")
+        print(f"{closest_bwall.myid = }")
+        self.look_at(closest_bwall.pos)
+
+        # self.look_at(self.game.player.pos)
+        
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -335,6 +356,20 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         # print(f"repairing wall [ {self.myid} - {self.hp_current}hp ] -> {self.build_bar = }")
         self.update_image()
 
+    # can delete but backup first for sure!
+    def get_nearest_bwall(self, object):
+        """ return the nearest bwall to the given object """
+        # for every wall in the list class var storing all instaces of bwall
+        list_of_dists_to_object = []
+        for a_wall in self.wall_ids: # bwall
+            pythag_dist = hypot(self.pos.x-a_wall.x, self.pos.y-a_wall.y)
+            list_of_dists_to_object.append(pythag_dist)
+        closest = min(list_of_dists_to_object)
+        closest_instance_index = list_of_dists_to_object.index(closest)
+        closest_instance = list_of_dists_to_object(closest_instance_index)
+        self.print_once(f"{closest_instance = }")
+        return(closest_instance)
+        
     def update_image(self, is_near=False):
         """ every time something interacts with me, run this (?) """
         # if box has 0 hp
