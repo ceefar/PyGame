@@ -119,8 +119,8 @@ class Player(pg.sprite.Sprite):
         # -- actual shooting --
         if keys[pg.K_SPACE]:
             if not self.autoshoot:
-                # temp af for now but should increase the shooting speed by a factor of 3 if not in auto shoot
-                BULLET_RATE = 300
+                # temp af for now but should increase the shooting speed by a factor of 2 if not in auto shoot
+                BULLET_RATE = 150
                 now = pg.time.get_ticks() # track the last time we shot 
                 if now - self.last_shot > BULLET_RATE:
                     self.last_shot = now 
@@ -311,7 +311,7 @@ class Player(pg.sprite.Sprite):
                        
         
 class Mob(pg.sprite.Sprite):
-    Zombie_Boys = {}
+    Zombie_Boys = {} # maybe un-needed, cant remember exactly what is used for rn
 
     def __init__(self, game, x, y, bwalls): #  hp=0
         self.groups = game.all_sprites, game.mobs
@@ -375,25 +375,27 @@ class Mob(pg.sprite.Sprite):
         if not self.waiting:
             # if the wall has hp and we can attack it then do it, basically dont interact with 0 hp walls at all
             if bwall.hp_current > 0:
-
                 # check here, have i, the zombie, been standing next to a wall with hp
                 # and been unable to break it? (im not waiting or sumnt)
                 # well then bounce back (will do for now)
-
-                print(f"{self.myid}. 'I'M GUNA FUCK WALL #{bwall.myid}!, it has {bwall.hp_current}hp - interactions disabled")
-                # take down its hp
+                print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
+                # take down its hp, the action has now been confirmed so anything like animations and updates must happen now
                 bwall.hp_current -= 1
                 # bounce to the opposite of where u are in relation to the wall
                 # when you make contact for this second 
-                if not self.vel.x > 10 or not self.vel.y > 10: # be sure we have some speed, otherwise the bounce wont be noticeable 
-                    self.vel.x = 15
-                self.vel.x = -self.vel.x 
-                if not self.vel.x > 10 or not self.vel.y > 10: 
-                    self.vel.y = 15            
+                print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+                if self.vel.x < 10:  # be sure we have some speed, otherwise the bounce wont be noticeable 
+                    self.vel.x = -150
+                elif self.vel.x > -10 and self.vel.x < 0:
+                    self.vel.x = 150
+                if self.vel.y < 10:
+                    self.vel.y = -150
+                elif self.vel.y > -10 and self.vel.y < 0:
+                    self.vely = 150   
                 self.vel.y = -self.vel.y
                 self.acc.x -= (self.acc.x / 100) * 80
                 self.acc.y -= (self.acc.y / 100) * 80
-                # print(f"{self.pos}, {self.vel}, {self.acc}, {self.rot}")
+                print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
                 # then infect any touching walls
                 bwall.infect_walls()
                 # then pause any other interactions for this instance of mob for 1 second
@@ -525,7 +527,7 @@ class Wall(pg.sprite.Sprite):
 class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     wall_ids = []
     
-    def __init__(self, game, x, y, player, hp=1):
+    def __init__(self, game, x, y, player, hp=4):
         self.groups = game.all_sprites, game.breakablewalls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game

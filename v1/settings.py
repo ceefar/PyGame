@@ -55,7 +55,7 @@ PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
 BULLET_IMG = "bullet.png"
 BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
-BULLET_RATE = 900 # how fast we can shoot
+BULLET_RATE = 300 # how fast we can shoot, slower is faster 
 
 # NEW Custom Weapon Settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
