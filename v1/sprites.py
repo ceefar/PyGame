@@ -6,6 +6,70 @@ vec = pg.math.Vector2
 # for calculating distance between 2 objects
 from math import hypot
 
+# make wall collisions func global as is useful for more stuff now
+# should also do the same with get dinstance tbf lol
+# need to refactor this so it actually works just with group lol
+def collide_with_walls(sprite, group, dir):
+    # if checking an x collision, note were using a custom hitbox hit_rect now
+    if dir == "x":
+        # then check if we the player have collied with a wall
+        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
+        if hits:
+            # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
+            # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
+            if sprite.vel.x > 0:
+                # our x should be what ever it was that we hit(s) minus however wide we are
+                sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
+            # if the speed is the opposite direction then we were moving to the left so
+            if sprite.vel.x < 0:
+                # put ourselves to the right of the thing we hit(s)[0]
+                sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
+            # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
+            sprite.vel.x = 0
+            sprite.hit_rect.centerx = sprite.pos.x        
+        bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
+        if bhits:
+            # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
+            # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
+            if bhits[0].get_hp() <= 0:
+                # bhits[0].try_repair_wall()
+                pass # through freely                
+            else:
+                if sprite.vel.x > 0:
+                    # our x should be what ever it was that we hit(s) minus however wide we are
+                    sprite.pos.x = bhits[0].rect.left - sprite.hit_rect.width / 2
+                # if the speed is the opposite direction then we were moving to the left so
+                if sprite.vel.x < 0:
+                    # put ourselves to the right of the thing we hit(s)[0]
+                    sprite.pos.x = bhits[0].rect.right + sprite.hit_rect.width / 2
+                # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
+                sprite.vel.x = 0
+                sprite.hit_rect.centerx = sprite.pos.x    
+    if dir == "y":
+        bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
+        # breakable wall
+        if bhits:
+            # print(f"Collided Wall Hp : {bhits[0].get_hp()}")
+            if bhits[0].get_hp() <= 0:
+                # bhits[0].try_repair_wall()
+                pass # through freely
+            else:
+                if sprite.vel.y > 0:
+                    sprite.pos.y = bhits[0].rect.top - sprite.hit_rect.height / 2
+                if sprite.vel.y < 0:
+                    sprite.pos.y = bhits[0].rect.bottom + sprite.hit_rect.height / 2
+                sprite.vel.y = 0
+                sprite.hit_rect.centery = sprite.pos.y             
+        # normal wall    
+        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
+        if hits:
+            if sprite.vel.y > 0:
+                sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
+            if sprite.vel.y < 0:
+                sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2
+            sprite.vel.y = 0
+            sprite.hit_rect.centery = sprite.pos.y  
+
 
 class Player(pg.sprite.Sprite):
 
@@ -133,70 +197,7 @@ class Player(pg.sprite.Sprite):
         else:
             # for now, if ur not spent, but not over 30% then still quick but not sprint, its like a jog
             #self.image = self.game.player_blur1_img
-            return(1.25) # quick
-
-    def collide_with_walls(self, dir):
-        # if checking an x collision, note were using a custom hitbox hit_rect now
-        if dir == "x":
-            # then check if we the player have collied with a wall
-            hits = pg.sprite.spritecollide(self, self.game.walls, False, collide_hit_rect)
-            if hits:
-                # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
-                # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
-                if self.vel.x > 0:
-                    # our x should be what ever it was that we hit(s) minus however wide we are
-                    self.pos.x = hits[0].rect.left - self.hit_rect.width / 2
-                # if the speed is the opposite direction then we were moving to the left so
-                if self.vel.x < 0:
-                    # put ourselves to the right of the thing we hit(s)[0]
-                    self.pos.x = hits[0].rect.right + self.hit_rect.width / 2
-                # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
-                self.vel.x = 0
-                self.hit_rect.centerx = self.pos.x
-            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
-            if bhits:
-                # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
-                # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
-                if bhits[0].get_hp() <= 0:
-                    # bhits[0].try_repair_wall()
-                    pass # through freely                
-                else:
-                    if self.vel.x > 0:
-                        # our x should be what ever it was that we hit(s) minus however wide we are
-                        self.pos.x = bhits[0].rect.left - self.hit_rect.width / 2
-                    # if the speed is the opposite direction then we were moving to the left so
-                    if self.vel.x < 0:
-                        # put ourselves to the right of the thing we hit(s)[0]
-                        self.pos.x = bhits[0].rect.right + self.hit_rect.width / 2
-                    # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
-                    self.vel.x = 0
-                    self.hit_rect.centerx = self.pos.x    
-        
-        if dir == "y":
-            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
-            # breakable wall
-            if bhits:
-                # print(f"Collided Wall Hp : {bhits[0].get_hp()}")
-                if bhits[0].get_hp() <= 0:
-                    # bhits[0].try_repair_wall()
-                    pass # through freely
-                else:
-                    if self.vel.y > 0:
-                        self.pos.y = bhits[0].rect.top - self.hit_rect.height / 2
-                    if self.vel.y < 0:
-                        self.pos.y = bhits[0].rect.bottom + self.hit_rect.height / 2
-                    self.vel.y = 0
-                    self.hit_rect.centery = self.pos.y             
-                    
-            # normal wall    
-            hits = pg.sprite.spritecollide(self, self.game.walls, False, collide_hit_rect)
-            if hits:
-                if self.vel.y > 0:
-                    self.pos.y = hits[0].rect.top - self.hit_rect.height / 2
-                if self.vel.y < 0:
-                    self.pos.y = hits[0].rect.bottom + self.hit_rect.height / 2
-                self.vel.y = 0
-                self.hit_rect.centery = self.pos.y             
+            return(1.25) # quick           
 
     def update(self):
         self.get_keys()
@@ -213,10 +214,10 @@ class Player(pg.sprite.Sprite):
         self.hit_rect.centerx = self.pos.x
         # update the position of the player based on keys pressed using velocity vector
         self.pos += self.vel * self.game.dt
-        self.collide_with_walls('x')
+        collide_with_walls(self, self.game.walls, 'x')
         # basically were doing 2 collision check, 1 for each axis
         self.hit_rect.centery = self.pos.y
-        self.collide_with_walls('y') 
+        collide_with_walls(self, self.game.walls, 'y') 
         # after collision make sure our regular rect is set to the position of our hit rect, 
         # since we're now updating the hict rects position (not rotation, or velocity, just pos) 
         # if it collides (by moving in the opposite of where we tried to move), so we need to reapply this transformation to the player and not just the hitbox
@@ -252,20 +253,36 @@ class Player(pg.sprite.Sprite):
         
         
 class Mob(pg.sprite.Sprite):
+    Zombie_Boys = {}
+
     def __init__(self, game, x, y, bwalls): #  hp=0
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = game.mob_img
         self.rect = self.image.get_rect()
+        self.hit_rect = MOB_HIT_RECT.copy() # they all need their own unique hit rect so copy is needed
+        self.hit_rect.center = self.rect.center
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
         self.rot = 0
         self.vel = vec(0,0)
-        self.acc = vec(0,0)
-        # use accelerate so that the zombie doesnt whip around when we move past it
-        
+        self.acc = vec(0,0) # use accelerate now so that the zombie doesnt whip around when we move past it
+
+        # my own test stuff
+        # this is literally the entire class object, not a class instance
         self.bwalls = bwalls
+        # if has collided with a bwall, do climb in stuff, then hunt the player 
+        self.climbed_in = False
+        # add zombie to the class variable list and assign it an id too
+        # could do stuff here too for different value zombies, difficulty, etc, all off random
+        try: # make the zombies id the last id plus 1
+            self.myid = list(Mob.Zombie_Boys.keys())[-1] + 1
+        except IndexError: # except if the list is empty, then make the id 1
+            self.myid = 1
+        Mob.Zombie_Boys[self.myid] = self # add myself, the zombie instance, to the class dict
+        self.waiting = False # give them their own waiting too, for breaking stuff and hiting the player
+        self.waiting_speed = 1000 # seconds so this is 1 second, can say thats quick/avg for now
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -275,39 +292,120 @@ class Mob(pg.sprite.Sprite):
         self.image = pg.transform.rotate(self.game.mob_img, self.rot)
         # then update our zombies new rectangle centre too
         self.rect = self.image.get_rect()
-        self.rect.center = self.pos
 
+    def can_climb_in(self):
+        bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
+        if bhits:
+            if not self.climbed_in:
+                # so here is ur warning stuff nice
+                print(f"Zombie @ {self.pos.x}, {self.pos.y} Broken In [Collided With B Wall id:{self.myid}]")
+            self.climbed_in = True
+
+    def is_near(self, x, y):
+            # abstract this properly pls 
+            next_to = 15 # for 64 tilesize
+            literally_next_to = 14
+            # use hypotenus of the xy vectors to find out how close we are to the given vector pos
+            pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
+            # if pythag_dist < next_to:
+                # print(f"{self.myid=},{pythag_dist=}\n{x=},{y=},{self.pos.y=},{self.pos.x=}")
+                # print(f"{pythag_dist=}, {self.myid}, {self.pos.x=}, {self.pos.y=}\n{x=}, {y=}")
+            # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
+            return True if pythag_dist < next_to else False
+
+    def break_barracade(self, bwall):
+        if not self.waiting:
+            # if the wall has hp and we can attack it then do it, basically dont interact with 0 hp walls at all
+            if bwall.hp_current > 0:
+
+                # check here, have i, the zombie, been standing next to a wall with hp
+                # and been unable to break it? (im not waiting or sumnt)
+                # well then bounce back (will do for now)
+
+                print(f"{self.myid}. 'I'M GUNA FUCK WALL #{bwall.myid}!, it has {bwall.hp_current}hp - interactions disabled")
+                # take down its hp
+                bwall.hp_current -= 1
+                # bounce to the opposite of where u are in relation to the wall
+                # when you make contact for this second 
+                if not self.vel.x > 10 or not self.vel.y > 10: # be sure we have some speed, otherwise the bounce wont be noticeable 
+                    self.vel.x = 15
+                self.vel.x = -self.vel.x 
+                if not self.vel.x > 10 or not self.vel.y > 10: 
+                    self.vel.y = 15            
+                self.vel.y = -self.vel.y
+                self.acc.x -= (self.acc.x / 100) * 80
+                self.acc.y -= (self.acc.y / 100) * 80
+                # print(f"{self.pos}, {self.vel}, {self.acc}, {self.rot}")
+                # then infect any touching walls
+                bwall.infect_walls()
+                # then pause any other interactions for this instance of mob for 1 second
+                self.waiting = pg.time.get_ticks()
+            # else go attack
+            else:
+                # really want some validation ur not stuck or sumnt here btw
+                pass
+
+    # i mean look we got some bouncing issues and many other issues but i 
+        
     def update(self):
         list_of_bwall_dists = []
-        closest_bwall = ""
-        for bwall in self.bwalls:
-            pythag_dist = hypot(self.pos.x-bwall.pos.x, self.pos.y-bwall.pos.y)
-            # temp implementation of a warning for when zombie is close (would be like a screen arrow oooo)
-            if pythag_dist < 500: # if zombie is close to door
-                pass
-                # some kinda warning arrow or maybe even state change idk
-                # print(f"ZOMBIE CLOSING IN TO DOOR WARNING!\nid:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
-            list_of_bwall_dists.append(pythag_dist)
-            if pythag_dist == min(list_of_bwall_dists):
-                closest_bwall = bwall
-        # end loop all breakable walls
-        # incase we want to check the closest few which we will eventually but is there 
-        # a better way to do this? yes lol, also remember need to check hp too anyway
-        closest_bwall_dist = min(list_of_bwall_dists)
-        # print(f"{closest_bwall_dist = } - {list_of_bwall_dists = }")
-        # look at the closest breakablewall, NEED TO DO 0 HP BUT CHILL FOR AGES TBF 
-        self.look_at(closest_bwall.pos)
-        # look at the player
-        # self.look_at(self.game.player.pos)
+        closest_bwall = "" # not actually a string, becomes the object instance
+        # new test stuff
+        # if we have collided with a bwall, we have now climbed in, else this will still be false
+        self.can_climb_in()
+        # if we have climbed in we hunt the player, else we keep trying to climb in
+        if self.climbed_in:
+            # look at the player, and anything else associated with this toggle state
+            self.look_at(self.game.player.pos)
+        else:
+            # else if we have not climbed in yet, loop the walls to find the closest wall etc, important as we can subvert calculating the distance for all walls for this zombie once it has entered (which actually means that this could easily gate us if complexity becomes large, amount of zombies outside walls + lots of bwalls at later levels so calc how many u can handle outside if its insane then dw)
+            for bwall in self.bwalls:
+                pythag_dist = hypot(self.pos.x-bwall.pos.x, self.pos.y-bwall.pos.y)
+                # temp implementation of a warning for when zombie is close (would be like a screen arrow oooo)
+                if pythag_dist < 500: # if zombie is close to door
+                    pass
+                    # some kinda warning arrow or maybe even state change idk
+                    # print(f"ZOMBIE CLOSING IN TO DOOR WARNING!\nid:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
+                list_of_bwall_dists.append(pythag_dist)
+                if pythag_dist == min(list_of_bwall_dists):
+                    closest_bwall = bwall
+            # end loop all breakable walls
+            # closest_bwall_dist = min(list_of_bwall_dists) incase we want to check the closest few which we will eventually but is there print(f"{closest_bwall_dist = } - {list_of_bwall_dists = }")
+            # ****** need to do for 0 hp stuff here eventually ******
+            # look at bwalls
+            self.look_at(closest_bwall.pos)
+        # ---- end , deciding who to look at)
         # ---- actual code ----
         # our acceleration is going to be mob speed constant, run in the forward direction rotated by whatever this zombies rotation is
         self.acc = vec(MOB_SPEED, 0).rotate(-self.rot)
+        # once we got the direction, quickly reduce the amount he accelerates by
+        self.acc += self.vel * -1
         self.vel += self.acc * self.game.dt
         # eq of motion, velocity times time times half the acceleration, times the time squared
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
         # now we know where the sprite should be set its rect center
-        self.rect.center = self.pos
+        self.hit_rect.centerx = self.pos.x
+        collide_with_walls(self, self.game.walls,'x')
+        self.hit_rect.centery = self.pos.y
+        collide_with_walls(self, self.game.walls,'y')
+        # then set our regular rect to our hit rect, remember we primarily use the hit rect then set it to the regular rect at the end (the visual doesnt match the pixel precision)
+        self.rect.center = self.hit_rect.center
         
+        # more testing (for breaking it down stuff)
+        # check every breakable wall to see if a zombie is near
+        for bwall in self.bwalls:
+            # if zombie is near a bwall 
+            if self.is_near(bwall.pos.x, bwall.pos.y):
+                # test break it
+                self.break_barracade(bwall)
+        # end by updating waiting
+        if self.waiting:
+            space_end = pg.time.get_ticks() 
+            if space_end - self.waiting >= self.waiting_speed: # 1 second waiter rn
+                print(f"interactions enabled")
+                self.waiting = False
+
+
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -327,7 +425,7 @@ class Wall(pg.sprite.Sprite):
 class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     wall_ids = []
     
-    def __init__(self, game, x, y, player, hp=0):
+    def __init__(self, game, x, y, player, hp=1):
         self.groups = game.all_sprites, game.breakablewalls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -370,21 +468,17 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
                     a_wall.hp_current = self.hp_current
         # print(f"repairing wall [ {self.myid} - {self.hp_current}hp ] -> {self.build_bar = }")
         self.update_image()
-
-    # can delete but backup first for sure!
-    def get_nearest_bwall(self, object):
-        """ return the nearest bwall to the given object """
-        # for every wall in the list class var storing all instaces of bwall
-        list_of_dists_to_object = []
-        for a_wall in self.wall_ids: # bwall
-            pythag_dist = hypot(self.pos.x-a_wall.x, self.pos.y-a_wall.y)
-            list_of_dists_to_object.append(pythag_dist)
-        closest = min(list_of_dists_to_object)
-        closest_instance_index = list_of_dists_to_object.index(closest)
-        closest_instance = list_of_dists_to_object(closest_instance_index)
-        self.print_once(f"{closest_instance = }")
-        return(closest_instance)
         
+    def infect_walls(self):
+        # for infectious buildling, repairing a tile will repairing any that are touching it
+        for a_wall in self.wall_ids:
+            # check if we this wall is near any other walls
+            if a_wall.is_near(self.pos.x, self.pos.y):
+                # if we both tiles dont have the same hp, update them so they are
+                if a_wall.hp_current != self.hp_current:
+                    self.print_once(f"Shared Our HP Commrade -> {a_wall.hp_current}, {self.hp_current}")
+                    a_wall.hp_current = self.hp_current
+
     def update_image(self, is_near=False):
         """ every time something interacts with me, run this (?) """
         # if box has 0 hp

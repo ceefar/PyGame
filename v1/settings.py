@@ -54,6 +54,7 @@ PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
 # Mob (Zombie) settings
 MOB_IMG = "zoimbie1_hold.png"
 MOB_SPEED = 100
+MOB_HIT_RECT = pg.Rect(0,0,25,25)
 
 # More Image settings
 WALL_IMG = "tileBrick_01.png" # tileGreen_39.png note is also 108 x 108 (not right size btw)

@@ -165,6 +165,7 @@ while True:
     g.show_go_screen()
 
 
+# zombie logic for getting stuck, if touching wall, go to nearest sumnt ?
 
 
 # rn do the vids and continue as rapidly as possible
