@@ -450,7 +450,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         self.myid = len(self.wall_ids)
         self.print_once(f"Where Player? -> {self.player.pos.x=}, {self.player.pos.y=}")
         print(f"Breakable Wall '{self.myid = }", f"{x=}",f"{y=}",f"{self.pos.x = }", f"{self.pos.y = }", f"{self.hp_current = }")
-
+ 
     # is broken, i.e. is 0 hp is what i want now
     def get_hp(self):
         return(self.hp_current)
@@ -599,5 +599,8 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
 
 
 
-
+# DO SHOOTING TUT 1ST
+# THEN TEST 4 HP WALLS
+# THEN THE HP TUT
+# THEN DO GOLD AND KILLSTREAKS!
 
