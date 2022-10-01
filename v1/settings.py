@@ -1,3 +1,5 @@
+import pygame as pg
+
 # define some colors (R, G, B)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -46,6 +48,8 @@ GRIDHEIGHT = HEIGHT / TILESIZE
 PLAYER_SPEED = 320
 PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
+PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
+
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
 PLAYER_BLUR3_IMG = "manBlue_gun_blur3.png"

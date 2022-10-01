@@ -1,5 +1,6 @@
 import pygame as pg
 from settings import *
+from tilemap import collide_hit_rect
 # start using vectors instead of individual xypos vars
 vec = pg.math.Vector2
 # for calculating distance between 2 objects
@@ -15,6 +16,8 @@ class Player(pg.sprite.Sprite):
         self.image = game.player_img # pg.Surface((TILESIZE, TILESIZE))
         # self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
+        self.hit_rect = PLAYER_HIT_RECT # define new hitbox separate to our dynamic due to rotation self.rect
+        self.hit_rect.center = self.rect.center # make sure the center of our hitbox rect is the same as our actual center
         # new - velocity vector, for speeding up and slowing down the player
         self.vel = vec(0, 0)
         # new - need position vector now too
@@ -133,24 +136,24 @@ class Player(pg.sprite.Sprite):
             return(1.25) # quick
 
     def collide_with_walls(self, dir):
-        # if checking an x collision
+        # if checking an x collision, note were using a custom hitbox hit_rect now
         if dir == "x":
             # then check if we the player have collied with a wall
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
+            hits = pg.sprite.spritecollide(self, self.game.walls, False, collide_hit_rect)
             if hits:
                 # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
                 # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
                 if self.vel.x > 0:
                     # our x should be what ever it was that we hit(s) minus however wide we are
-                    self.pos.x = hits[0].rect.left - self.rect.width / 2
+                    self.pos.x = hits[0].rect.left - self.hit_rect.width / 2
                 # if the speed is the opposite direction then we were moving to the left so
                 if self.vel.x < 0:
                     # put ourselves to the right of the thing we hit(s)[0]
-                    self.pos.x = hits[0].rect.right + self.rect.width / 2
+                    self.pos.x = hits[0].rect.right + self.hit_rect.width / 2
                 # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
                 self.vel.x = 0
-                self.rect.centerx = self.pos.x
-            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False)
+                self.hit_rect.centerx = self.pos.x
+            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
             if bhits:
                 # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
                 # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
@@ -160,17 +163,17 @@ class Player(pg.sprite.Sprite):
                 else:
                     if self.vel.x > 0:
                         # our x should be what ever it was that we hit(s) minus however wide we are
-                        self.pos.x = bhits[0].rect.left - self.rect.width / 2
+                        self.pos.x = bhits[0].rect.left - self.hit_rect.width / 2
                     # if the speed is the opposite direction then we were moving to the left so
                     if self.vel.x < 0:
                         # put ourselves to the right of the thing we hit(s)[0]
-                        self.pos.x = bhits[0].rect.right + self.rect.width / 2
+                        self.pos.x = bhits[0].rect.right + self.hit_rect.width / 2
                     # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
                     self.vel.x = 0
-                    self.rect.centerx = self.pos.x    
+                    self.hit_rect.centerx = self.pos.x    
         
         if dir == "y":
-            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False)
+            bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
             # breakable wall
             if bhits:
                 # print(f"Collided Wall Hp : {bhits[0].get_hp()}")
@@ -179,21 +182,21 @@ class Player(pg.sprite.Sprite):
                     pass # through freely
                 else:
                     if self.vel.y > 0:
-                        self.pos.y = bhits[0].rect.top - self.rect.height / 2
+                        self.pos.y = bhits[0].rect.top - self.hit_rect.height / 2
                     if self.vel.y < 0:
-                        self.pos.y = bhits[0].rect.bottom + self.rect.height / 2
+                        self.pos.y = bhits[0].rect.bottom + self.hit_rect.height / 2
                     self.vel.y = 0
-                    self.rect.centery = self.pos.y             
+                    self.hit_rect.centery = self.pos.y             
                     
             # normal wall    
-            hits = pg.sprite.spritecollide(self, self.game.walls, False)
+            hits = pg.sprite.spritecollide(self, self.game.walls, False, collide_hit_rect)
             if hits:
                 if self.vel.y > 0:
-                    self.pos.y = hits[0].rect.top - self.rect.height / 2
+                    self.pos.y = hits[0].rect.top - self.hit_rect.height / 2
                 if self.vel.y < 0:
-                    self.pos.y = hits[0].rect.bottom + self.rect.height / 2
+                    self.pos.y = hits[0].rect.bottom + self.hit_rect.height / 2
                 self.vel.y = 0
-                self.rect.centery = self.pos.y             
+                self.hit_rect.centery = self.pos.y             
 
     def update(self):
         self.get_keys()
@@ -206,14 +209,18 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         # take that rectangle at set it to where our previous rectangle was at
         self.rect.center = self.pos
-        # set our rectangles x & y to the speed/post to check for collisions 
-        self.rect.centerx = self.pos.x
+        # use our rectangles x & y to the speed/pos to check for collisions 
+        self.hit_rect.centerx = self.pos.x
         # update the position of the player based on keys pressed using velocity vector
         self.pos += self.vel * self.game.dt
         self.collide_with_walls('x')
         # basically were doing 2 collision check, 1 for each axis
-        self.rect.centery = self.pos.y
+        self.hit_rect.centery = self.pos.y
         self.collide_with_walls('y') 
+        # after collision make sure our regular rect is set to the position of our hit rect, 
+        # since we're now updating the hict rects position (not rotation, or velocity, just pos) 
+        # if it collides (by moving in the opposite of where we tried to move), so we need to reapply this transformation to the player and not just the hitbox
+        self.rect.center = self.hit_rect.center
 
         # [ todo-asap! ] - new function
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons

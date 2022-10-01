@@ -1,6 +1,19 @@
 import pygame as pg
 from settings import *
 
+# temp location
+# takes two sprites 1 player, 2 wall, returns the collide rectangle 
+# every time it tries the collision using sprite collider
+# it *has* to use the characters rect, not our custom hitbox rect
+# so we're going to use this to subvert that
+# and actually compare the players hit rect instead, vs the wall rect
+# used as the is_collided parameter sprite_collide in collide_with_walls
+# callback function that takes two sprites and returns bool of collision
+# if is_collided is not passed in sprite_collide
+# then both sprites must have rects as these are what are used
+def collide_hit_rect(one, two):
+    return one.hit_rect.colliderect(two.rect)
+
 class Map:
     def __init__(self, filename):
         self.data = []

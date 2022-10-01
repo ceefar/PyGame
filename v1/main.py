@@ -93,6 +93,12 @@ class Game:
         for sprite in self.all_sprites:
             # take the camera and apply it to that sprite
             self.screen.blit(sprite.image, self.camera.apply(sprite))
+        # for debugging -> draw the players rectangle, and hitbox
+        draw_rect = False
+        if draw_rect:
+            pg.draw.rect(self.screen, WHITE, self.camera.apply(self.player), 2)
+            # wont draw hit rect which is weird af
+            pg.draw.rect(self.screen, WHITE, self.player.hit_rect, 5) 
         pg.display.flip()
 
     def events(self):
