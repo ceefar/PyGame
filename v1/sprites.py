@@ -104,6 +104,8 @@ class Player(pg.sprite.Sprite):
         # new test, pause interactions
         self.waiting_print = False
         self.waiting = False
+        # new auto-shooting toggle test
+        self.autoshoot = False
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
@@ -111,12 +113,20 @@ class Player(pg.sprite.Sprite):
         keys = pg.key.get_pressed() # see which keys are currently held down
         # -------- player interaction keys stuff --------
         # -- shooting --
+        # -- toggle auto shooting --
+        if keys[pg.K_b]:
+            self.autoshoot = False if self.autoshoot else True # flip it
+        # -- actual shooting --
         if keys[pg.K_SPACE]:
-            now = pg.time.get_ticks() # track the last time we shot 
-            if now - self.last_shot > BULLET_RATE:
-                self.last_shot = now 
-                dir = vec(1,0).rotate(-self.rot)
-                Bullet(self.game, self.pos, dir) # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
+            if not self.autoshoot:
+                # temp af for now but should increase the shooting speed by a factor of 3 if not in auto shoot
+                BULLET_RATE = 300
+                now = pg.time.get_ticks() # track the last time we shot 
+                if now - self.last_shot > BULLET_RATE:
+                    self.last_shot = now 
+                    dir = vec(1,0).rotate(-self.rot)
+                    Bullet(self.game, self.pos, dir)
+    # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
             # check any breakable walls interaction
@@ -209,6 +219,13 @@ class Player(pg.sprite.Sprite):
             #self.image = self.game.player_blur1_img
             return(1.25) # quick           
 
+    def is_near(self, x, y, how_near=400): # 400 is random af default, is for 64 tile size too btw
+        # abstract this properly pls 
+        pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
+        if pythag_dist < how_near:
+            print(f"Dist = {pythag_dist}")
+        return True if pythag_dist < how_near else False
+                
     def update(self):
         self.get_keys()
         # update the rotation based on where we are facing
@@ -259,7 +276,24 @@ class Player(pg.sprite.Sprite):
         if self.waiting_print:
             space_end = pg.time.get_ticks() 
             if space_end - self.waiting_print >= 1000:
-                self.waiting_print = False                
+                self.waiting_print = False 
+        # then finish by shooting a bullet
+        # but only if a zombie is close
+        now = pg.time.get_ticks() # track the last time we shot 
+        if self.autoshoot: # if autoshoot is on, currently the b key
+            if now - self.last_shot > BULLET_RATE:
+                for mob in self.game.mobs:
+                    if self.is_near(mob.pos.x, mob.pos.y, PISTOL_SIGHT): # shortly this will become current weapon sight
+                        print(f"I'm near a mob, lets shoot [{mob.pos.x = },{mob.pos.y = }]")
+                        self.last_shot = now 
+                        dir = vec(1,0).rotate(-self.rot)
+                        temp_pos = vec(self.pos).copy()
+                        temp_rot = (mob.pos - temp_pos).angle_to(vec(1,0))
+                        final_temp_rot = vec(1,0).rotate(-temp_rot)
+                        print(f"SUCCESS? {final_temp_rot=}, {temp_rot=}, {dir=}")
+                        # so imagine u had to rotate the player to look at the nearest zombie first!
+                        Bullet(self.game, self.pos, final_temp_rot)
+                       
         
         
 class Mob(pg.sprite.Sprite):

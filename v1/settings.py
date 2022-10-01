@@ -57,6 +57,10 @@ BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
 BULLET_RATE = 900 # how fast we can shoot
 
+# New Custom Weapon Settings
+# like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
+PISTOL_SIGHT = 150 # the distance from which you will begin to fire on a zombie with this weapon
+
 # Mob (Zombie) settings
 MOB_IMG = "zoimbie1_hold.png"
 MOB_SPEED = 100
