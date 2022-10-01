@@ -30,6 +30,8 @@ class Game:
         self.wall_img = pg.transform.scale(self.wall_img, (TILESIZE, TILESIZE))
         # new zombie img
         self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
+        # new bullet img
+        self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
         
         # test img stuff
         self.break_wall_0_img = pg.image.load(path.join(img_folder, BREAK_WALL_0_IMG)).convert_alpha()
@@ -59,10 +61,11 @@ class Game:
         # self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
 
     def new(self):
-        # initialize all variables and do all the setup for a new game
+        # initialize groups for stuff in game and do all the rest of the setup for a new game
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.unlockwalls = pg.sprite.Group()
         def spawn_stuff_on_map():

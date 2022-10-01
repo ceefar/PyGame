@@ -1,3 +1,4 @@
+import pstats
 import pygame as pg
 from settings import *
 from tilemap import collide_hit_rect
@@ -88,6 +89,7 @@ class Player(pg.sprite.Sprite):
         self.pos = vec(x, y) * TILESIZE
         # new - rotation, starting rot=0 is pointing right so in positive x position/axis
         self.rot = 0
+        self.last_shot = 0
 
         # new sprint meter test
         self.sprint_meter = 6_000
@@ -108,6 +110,14 @@ class Player(pg.sprite.Sprite):
         self.vel = vec(0, 0) # define what our keys are going to do
         keys = pg.key.get_pressed() # see which keys are currently held down
         # -------- player interaction keys stuff --------
+        # -- shooting --
+        if keys[pg.K_SPACE]:
+            now = pg.time.get_ticks() # track the last time we shot 
+            if now - self.last_shot > BULLET_RATE:
+                self.last_shot = now 
+                dir = vec(1,0).rotate(-self.rot)
+                Bullet(self.game, self.pos, dir) # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
+        # -- action key --    
         if keys[pg.K_e]: # if E
             # check any breakable walls interaction
             for a_wall in self.game.breakablewalls:
@@ -405,6 +415,24 @@ class Mob(pg.sprite.Sprite):
                 print(f"interactions enabled")
                 self.waiting = False
 
+
+class Bullet(pg.sprite.Sprite):
+    def __init__(self, game, pos, dir):
+        self.groups = game.all_sprites
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.bullet_img
+        self.rect = self.image.get_rect()
+        self.pos = vec(pos).copy() # position is the one we pass in, pass a copy so we dont update the players position with the bullet... which is fucking hilarious btw
+        self.rect.center = pos # put our rectangle there at the center
+        self.vel = dir * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
+        self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
+
+    def update(self):
+        self.pos += self.vel * self.game.dt # update our position vs our velocity
+        self.rect.center = self.pos # update the rectangle to that new position too
+        if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME: # do a meeseeks
+            self.kill() # delete the bullet
 
 
 class Wall(pg.sprite.Sprite):

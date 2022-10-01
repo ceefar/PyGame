@@ -51,6 +51,12 @@ PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all th
 PLAYER_IMG = "manBlue_gun.png"
 PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
 
+# Gun settings
+BULLET_IMG = "bullet.png"
+BULLET_SPEED = 500
+BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
+BULLET_RATE = 900 # how fast we can shoot
+
 # Mob (Zombie) settings
 MOB_IMG = "zoimbie1_hold.png"
 MOB_SPEED = 100
