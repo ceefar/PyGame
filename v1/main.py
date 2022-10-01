@@ -65,36 +65,36 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.unlockwalls = pg.sprite.Group()
-        def spawn_stuff_on_map(first_run=True, last_run=False):
+        def spawn_stuff_on_map():
             # first run = run only player first 
             # why? = because we need to pass the player object to instances of other interactive things on the map like walls
             # otherwise we have to place the player above any interactive elements, now we can place the player anywhere
             # enumerate over the map data as each line is a row on the map from top to bottom
-            for row, tiles in enumerate(self.map.data):
-                # for each tile, which is the actual string for each row `1....1`
-                # enumerate as tiles here becomes the actual character in that position in the string,
-                # and the col becomes the index/x_position of that character in the string/on the map
-                for col, tile in enumerate(tiles):
-                    if not first_run:
-                        # if the tile is a 1, this is a wall tile
-                        if tile == "1":
-                            # place a wall at this column and row on the actual map, from the col and row on the tilemap
-                            Wall(self, col, row)
-                        if tile == "B":
-                            # place a breakablewall test
-                            BreakableWall(self, col, row, self.player)   
-                    if not last_run:    
-                        if tile == "Z":
-                            # place a breakablewall test
-                            Mob(self, col, row, self.breakablewalls)                       
-                    if first_run:
-                        # if the tile is a P, this is the player
-                        if tile == "P":
-                            # spawn them at the col, row position on the map 
-                            self.player = Player(self, col, row)
-        spawn_stuff_on_map(True, False)
-        spawn_stuff_on_map(False, False)  
-        spawn_stuff_on_map(False, True)                            
+            for i in range(3):
+                run = i
+                for row, tiles in enumerate(self.map.data):
+                    # for each tile, which is the actual string for each row `1....1`
+                    # enumerate as tiles here becomes the actual character in that position in the string,
+                    # and the col becomes the index/x_position of that character in the string/on the map
+                    for col, tile in enumerate(tiles):
+                        if run == 2:
+                            # if the tile is a 1, this is a wall tile
+                            if tile == "1":
+                                # place a wall at this column and row on the actual map, from the col and row on the tilemap
+                                Wall(self, col, row)
+                            if tile == "B":
+                                # place a breakablewall test
+                                BreakableWall(self, col, row, self.player)   
+                        if run == 3:    
+                            if tile == "Z":
+                                # place a breakablewall test
+                                Mob(self, col, row, self.breakablewalls)                       
+                        if run == 1:
+                            # if the tile is a P, this is the player
+                            if tile == "P":
+                                # spawn them at the col, row position on the map 
+                                self.player = Player(self, col, row)
+        spawn_stuff_on_map()                          
         self.camera = Camera(self.map.width, self.map.height)
 
     def run(self):
