@@ -31,14 +31,15 @@ MOONGLOW = (235,245,255)        # KINDA CRISPY BRIGHT GREY WITH HINT OF BLUE, QU
 BROWNTONE1 = (123, 111, 100)    # (119, 99, 80)
 BROWNTONE2 = (114, 88, 61)      # FOR BUILDING BARRACADES
 BROWNTONE3 = (101, 66, 22)      # FOR BUILDING BARRACADES
-BROWNTONE4 = (66, 40, 2)      # HOVERING FULLY BUILT BARRACADE, SHOWS SLIGHTLY DARKER TO INDICATE NULL INTERACTION BETTER THAN NOTHING 
+BROWNTONE4 = (66, 40, 2)        # HOVERING FULLY BUILT BARRACADE, SHOWS SLIGHTLY DARKER TO INDICATE NULL INTERACTION BETTER THAN NOTHING 
+BROWNPALE =  (215, 195, 163)
 
 # game settings
 WIDTH = 1024   # 16 * 64 or 32 * 32 or 64 * 16
 HEIGHT = 768  # 16 * 48 or 32 * 24 or 64 * 12
 FPS = 60
 TITLE = "Tilemap Demo"
-BGCOLOR = DARKGREY
+BGCOLOR = BROWNPALE
 
 TILESIZE = 64 # default 32, increase the tilesize to zoom in further (i.e. 64 for twice as close), or decrease (by multiples of 2) to zoom out
 GRIDWIDTH = WIDTH / TILESIZE
@@ -49,6 +50,9 @@ PLAYER_SPEED = 320
 PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
 PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
+
+# Mob (Zombie) settings
+MOB_IMG = "zoimbie1_hold.png"
 
 # More Image settings
 WALL_IMG = "tileBrick_01.png" # tileGreen_39.png note is also 108 x 108 (not right size btw)
@@ -64,6 +68,7 @@ BREAK_WALL_HL_1_IMG = "wallTestHL_1.png"
 BREAK_WALL_HL_2_IMG = "wallTestHL_2.png"
 BREAK_WALL_HL_3_IMG = "wallTestHL_3.png"
 BREAK_WALL_HL_4_IMG = "wallTestHL_4.png"
+BREAK_WALL_HL_4B_IMG = "wallTestHL_4b.png"
 
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"

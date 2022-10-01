@@ -250,6 +250,16 @@ class Player(pg.sprite.Sprite):
             if space_end - self.waiting_print >= 1000:
                 self.waiting_print = False                
         
+        
+class Mob(pg.sprite.Sprite):
+    def __init__(self, game, x, y, player, hp=0):
+        self.groups = game.all_sprites, game.mobs
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.image = game.mob_img
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y) * TILESIZE
+        self.rect.center = self.pos
+
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -302,7 +312,6 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     def try_repair_wall(self):
         # we're using delta time now for 1 second, see historical_backups v1_6 for the percent meter version (which is kinda better tbf but added complexity at this stage has diminishing returns)
         self.do_one_repair()
-        
         # for infectious buildling, repairing a tile will repairing any that are touching it
         for a_wall in self.wall_ids:
             # check if we this wall is near any other walls
@@ -347,7 +356,12 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         # if box has 1 hp
         elif self.hp_current == 4:
             if is_near:
-                self.image = self.game.break_wall_hl_4_img # if near use the highlighted version
+                if self.player.is_interacting:
+                    # render slightly reddened version
+                    self.image = self.game.break_wall_hl_4b_img
+                else:
+                    # else normal yellow highlight
+                    self.image = self.game.break_wall_hl_4_img # if near use the highlighted version
             else:
                 self.image = self.game.break_wall_4_img           
 
@@ -384,8 +398,10 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     def do_one_repair(self): # temp test for now
         # use waiting var to only do 1 interaction per x, tho should use is_interacting thing instead < do this asap as stateness duh
         if not self.player.waiting:
-            self.hp_current = self.hp_current + 1
-            print(f"DONE REPAIR {self.myid=} {self.hp_current=} - interactions disabled")
+            if self.hp_current < self.hp_max:
+                self.hp_current = self.hp_current + 1
+                print(f"DONE REPAIR {self.myid=} {self.hp_current=} - interactions disabled")
+            # pressing when you cant buy will still take an action ??
             self.player.waiting = pg.time.get_ticks()
 
     def update(self):
@@ -393,13 +409,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
         if self.is_near(None, None):  
-            # if the wall can be rebuilt more still
-            if self.hp_current < self.hp_max:
-                # if self.player.is_interacting == False: and the player isn't interacting with anything, currently only the 'e' aka 'build' key but will be others for sure, sprint too surely duhhh!
-                self.update_image(True)
-            else:
-                # can just use a dull highlight on full hp box img as thats always what this will be, is handy tbf
-                self.image = self.game.break_wall_hl_4_img
+            self.update_image(True)
         else:
             self.update_image()
 

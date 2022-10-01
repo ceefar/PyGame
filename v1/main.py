@@ -28,6 +28,8 @@ class Game:
         # scale up our new loaded wall image to the tilesize, if need to reuse functionality then make this a function or a class
         self.wall_img = pg.image.load(path.join(img_folder, WALL_IMG)).convert_alpha()
         self.wall_img = pg.transform.scale(self.wall_img, (TILESIZE, TILESIZE))
+        # new zombie img
+        self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
         
         # test img stuff
         self.break_wall_0_img = pg.image.load(path.join(img_folder, BREAK_WALL_0_IMG)).convert_alpha()
@@ -50,7 +52,9 @@ class Game:
         self.break_wall_hl_3_img = pg.transform.scale(self.break_wall_hl_3_img, (TILESIZE, TILESIZE))     
         self.break_wall_hl_4_img = pg.image.load(path.join(img_folder, BREAK_WALL_HL_4_IMG)).convert_alpha()  
         self.break_wall_hl_4_img = pg.transform.scale(self.break_wall_hl_4_img, (TILESIZE, TILESIZE))         
-                 
+        self.break_wall_hl_4b_img = pg.image.load(path.join(img_folder, BREAK_WALL_HL_4B_IMG)).convert_alpha()  
+        self.break_wall_hl_4b_img = pg.transform.scale(self.break_wall_hl_4b_img, (TILESIZE, TILESIZE))  
+
         # self.player_blur3_img = pg.image.load(path.join(img_folder, PLAYER_BLUR3_IMG)).convert_alpha()
         # self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
 
@@ -58,6 +62,7 @@ class Game:
         # initialize all variables and do all the setup for a new game
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.unlockwalls = pg.sprite.Group()
         def spawn_stuff_on_map(first_run=True):
@@ -77,7 +82,10 @@ class Game:
                             Wall(self, col, row)
                         if tile == "B":
                             # place a breakablewall test
-                            BreakableWall(self, col, row, self.player)                       
+                            BreakableWall(self, col, row, self.player)   
+                        if tile == "Z":
+                            # place a breakablewall test
+                            Mob(self, col, row, self.player)                       
                     else:
                         # if the tile is a P, this is the player
                         if tile == "P":
@@ -114,10 +122,12 @@ class Game:
 
     def draw(self):
         # temp, set the caption of the window to be any core debug things, framerate etc
-        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, Energy: {self.player.sprint_meter}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
+        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
         # actual draw stuff
         self.screen.fill(BGCOLOR)
-        self.draw_grid()
+        want_grid = False
+        if want_grid:
+            self.draw_grid()
         for sprite in self.all_sprites:
             # take the camera and apply it to that sprite
             self.screen.blit(sprite.image, self.camera.apply(sprite))
