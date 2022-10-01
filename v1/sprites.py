@@ -6,6 +6,8 @@ from tilemap import collide_hit_rect
 vec = pg.math.Vector2
 # for calculating distance between 2 objects
 from math import hypot
+# for random numbers
+from random import randint
 
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
@@ -106,6 +108,7 @@ class Player(pg.sprite.Sprite):
         self.waiting = False
         # new auto-shooting toggle test
         self.autoshoot = True
+        self.toggle_wait = False
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
@@ -115,7 +118,11 @@ class Player(pg.sprite.Sprite):
         # -- shooting --
         # -- toggle auto shooting --
         if keys[pg.K_b]:
-            self.autoshoot = False if self.autoshoot else True # flip it
+            if not self.toggle_wait:
+                # dont let us toggle 1 jillion times per second
+                self.autoshoot = False if self.autoshoot else True # flip it
+                self.toggle_wait = pg.time.get_ticks() 
+
         # -- actual shooting --
         if keys[pg.K_SPACE]:
             if not self.autoshoot:
@@ -125,7 +132,8 @@ class Player(pg.sprite.Sprite):
                 if now - self.last_shot > BULLET_RATE:
                     self.last_shot = now 
                     dir = vec(1,0).rotate(-self.rot)
-                    Bullet(self.game, self.pos, dir)
+                    pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
+                    Bullet(self.game, pos, dir)
     # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
@@ -277,6 +285,10 @@ class Player(pg.sprite.Sprite):
             space_end = pg.time.get_ticks() 
             if space_end - self.waiting_print >= 1000:
                 self.waiting_print = False 
+        if self.toggle_wait:
+            space_end = pg.time.get_ticks() 
+            if space_end - self.toggle_wait >= 100:
+                self.toggle_wait = False 
         # then finish by shooting a bullet
         # but only if a zombie is close
         now = pg.time.get_ticks() # track the last time we shot 
@@ -299,9 +311,20 @@ class Player(pg.sprite.Sprite):
                             player_pos = vec(self.pos).copy() # dont update the players actual position 
                             rot_to_mob = (mob.pos - player_pos).angle_to(vec(1,0)) # the angle
                             dir_to_mob = vec(1,0).rotate(-rot_to_mob) # the final direction vector
-                            print(f"PEW!, AUTOSHOT AT {mob.myid}")
+                            pos = self.pos + BARREL_OFFSET.rotate(-self.rot)
+                            #print(f"PEW!, AUTOSHOT AT {mob.myid}")
+                            # should try here... 
+                            # if the vector between me, the player 
+                            # and my exact facing rot, the unused dir here
+                            # if the firs thing on the path of that vector
+                            # if a wall
+                            # dont shoot 
+                            # else
+                            # shoot
+                            #
                             # sent the direction to the closest mob instead of the players position
-                            Bullet(self.game, self.pos, dir_to_mob)
+                            Bullet(self.game, pos, dir_to_mob)
+                            self.vel = vec(-GUN_KICKBACK,0).rotate(-self.rot) # rotated to kickback in the direction ur facing
                     
                     # still big issue with shooting order, need to be checking whos closest? idk need to confirm tbf
                     # just do collisions quickly ffs
@@ -340,7 +363,9 @@ class Mob(pg.sprite.Sprite):
             self.myid = 1
         Mob.Zombie_Boys[self.myid] = self # add myself, the zombie instance, to the class dict
         self.waiting = False # give them their own waiting too, for breaking stuff and hiting the player
-        self.waiting_speed = 1000 # seconds so this is 1 second, can say thats quick/avg for now
+        self.waiting_speed = 500 # seconds so this is half a second, can say thats quick/avg for now
+        # new stalled fixer test
+        self.stalled = False
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -358,6 +383,7 @@ class Mob(pg.sprite.Sprite):
                 # so here is ur warning stuff nice
                 print(f"Zombie @ {self.pos.x}, {self.pos.y} Broken In [Collided With B Wall id:{self.myid}]")
             self.climbed_in = True
+            self.stalled = False # cant be stalled outside, for now anyway
 
     def is_near(self, x, y):
             # abstract this properly pls 
@@ -381,18 +407,17 @@ class Mob(pg.sprite.Sprite):
                 print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
                 # take down its hp, the action has now been confirmed so anything like animations and updates must happen now
                 bwall.hp_current -= 1
+                self.stalled = False #if you've done a hit you've stopped stalling, likewise if ur inside uve stopped stalling
                 # bounce to the opposite of where u are in relation to the wall
                 # when you make contact for this second 
                 print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
-                if self.vel.x < 10:  # be sure we have some speed, otherwise the bounce wont be noticeable 
-                    self.vel.x = -150
-                elif self.vel.x > -10 and self.vel.x < 0:
-                    self.vel.x = 150
-                if self.vel.y < 10:
-                    self.vel.y = -150
-                elif self.vel.y > -10 and self.vel.y < 0:
-                    self.vely = 150   
-                self.vel.y = -self.vel.y
+                # be sure we have some speed, otherwise the bounce wont be noticeable 
+                if self.vel.x < 10 and self.vel.y < 10:  
+                    self.vel = vec(-200,0).rotate(-self.rot) # NEW TEST AF
+                elif self.vel.x > -10 and self.vel.x < 0 and self.vel.y > -10 and self.vel.y < 0:
+                    self.vel = vec(-200,0).rotate(-self.rot)
+
+                #self.vel.y = -self.vel.y
                 self.acc.x -= (self.acc.x / 100) * 80
                 self.acc.y -= (self.acc.y / 100) * 80
                 print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
@@ -405,6 +430,24 @@ class Mob(pg.sprite.Sprite):
                 # really want some validation ur not stuck or sumnt here btw
                 pass
 
+    def am_i_stalled(self):
+        for bwall in self.bwalls:
+            # if i, this zombie, am near a bwall 
+            if self.is_near(bwall.pos.x, bwall.pos.y):
+                if not self.stalled:
+                    # if stalled is false, start a timer with it
+                    self.stalled = pg.time.get_ticks()
+                else:
+                    # if i am stalled
+                    time_end = pg.time.get_ticks() 
+                    if time_end - self.stalled >= 6000:
+                        # if i have been touching this wall and not reset yet
+                        print(f"[{self.myid}] I'm Stalled, Change My Velocity -> {self.vel}") 
+                        random_rot_angle_adjust = randint(-30,30)
+                        self.vel = vec(-200, 0).rotate(-self.rot + random_rot_angle_adjust)
+                        self.look_at(bwall.rect.center)
+                        self.stalled = False
+
     # i mean look we got some bouncing issues and many other issues but i 
         
     def update(self):
@@ -416,7 +459,7 @@ class Mob(pg.sprite.Sprite):
         # if we have climbed in we hunt the player, else we keep trying to climb in
         if self.climbed_in:
             # look at the player, and anything else associated with this toggle state
-            self.look_at(self.game.player.pos)
+            self.look_at(self.game.player.rect.center)
         else:
             # else if we have not climbed in yet, loop the walls to find the closest wall etc, important as we can subvert calculating the distance for all walls for this zombie once it has entered (which actually means that this could easily gate us if complexity becomes large, amount of zombies outside walls + lots of bwalls at later levels so calc how many u can handle outside if its insane then dw)
             for bwall in self.bwalls:
@@ -460,22 +503,7 @@ class Mob(pg.sprite.Sprite):
                 if self.vel.x < 0.5 and self.vel.y < 0.5:
                     # this is the test for speed if you, the zombie have stalled, want this to pop but testing with pos for now
                     # if the walls x position is less than urs its to the left, else its to the right (?)
-                    if bwall.pos.x < self.pos.x:
-                        print(f"BOOP - {self.myid=}")                
-                    if bwall.pos.x > self.pos.x:
-                        print(f"BOOPY - {self.myid=}")
-                        # print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
-                    if bwall.pos.y < self.pos.y: # above you so add (?)
-                        print(f"DOOP - {self.myid=}")
-                        #print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
-                    if bwall.pos.y > self.pos.y:
-                        print(f"DOOPY - {self.myid=}")
-                        # print(f"{bwall.pos=}, {self.pos=}, {self.vel=}, {self.acc=}")
-                        # self.pos.y -= 80                                                   
-                        # self.acc.x -= (self.acc.x / 100) * 80
-                        # self.vel.x = 15
-
-                    # if wall if above move plus y, if wall is below move negative y, etc
+                    #if bwall.pos.x < self.pos.x:
                     pass
                 # test break it
                 self.break_barracade(bwall)
@@ -485,6 +513,8 @@ class Mob(pg.sprite.Sprite):
             if space_end - self.waiting >= self.waiting_speed: # 1 second waiter rn
                 print(f"interactions enabled")
                 self.waiting = False
+        # more new testing, this time for zombies stalled by entrances  
+        self.am_i_stalled()
 
 
 class Bullet(pg.sprite.Sprite):
@@ -505,6 +535,8 @@ class Bullet(pg.sprite.Sprite):
     def update(self):
         self.pos += self.vel * self.game.dt # update our position vs our velocity
         self.rect.center = self.pos # update the rectangle to that new position too
+        if pg.sprite.spritecollideany(self, self.game.walls):
+            self.kill()
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME: # do a meeseeks
             self.kill() # delete the bullet
 
@@ -643,7 +675,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
         if pythag_dist < close:
             # print(f"{self.myid=},{pythag_dist=}\n{x=},{y=},{self.pos.y=},{self.pos.x=}")
-            self.print_once(f"{pythag_dist=}, {self.myid}, {self.pos.x=}, {self.pos.y=}\n{x=}, {y=}")
+            self.print_once(f"[{self.myid}] I'm close... {pythag_dist}cm,  x:{self.pos.x}, y:{self.pos.y}, x:{x}, y:{y}")
         # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
         return True if pythag_dist < close else False
 

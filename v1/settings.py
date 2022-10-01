@@ -1,4 +1,5 @@
 import pygame as pg
+vec = pg.math.Vector2
 
 # define some colors (R, G, B)
 WHITE = (255, 255, 255)
@@ -50,18 +51,21 @@ PLAYER_SPEED = 320
 PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
 PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
+BARREL_OFFSET = vec(30,10)
 
 # Gun settings
 BULLET_IMG = "bullet.png"
 BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
-BULLET_RATE = 300 # how fast we can shoot, slower is faster 
+BULLET_RATE = 300 # how fast we can shoot, slower is faster
+GUN_KICKBACK = 200
 
 # NEW Custom Weapon Settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
 PISTOL_SIGHT = 300 # the distance from which you will begin to fire on a zombie with this weapon
 PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert to ranges, with the ranges becoming shorter based on the time in game ooo (or even bullets fired n shit lol)
 PISTOL_CRIT_RATE = 20
+
 
 # NEW Custom Player Settings
 # viewing angle to be default 60 degrees each side
