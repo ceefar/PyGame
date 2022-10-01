@@ -252,14 +252,26 @@ class Player(pg.sprite.Sprite):
         
         
 class Mob(pg.sprite.Sprite):
-    def __init__(self, game, x, y, player, hp=0):
+    def __init__(self, game, x, y, hp=0):
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
         self.image = game.mob_img
         self.rect = self.image.get_rect()
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
+        self.rot = 0
 
+    def update(self):
+        # minus the players pos from this zombies pos to get the vector zombie -> to -> player
+        # to get the angle, stick the given vector into to angle with the axis vector e.g. (1, 0) or forward in x, 0 in y i.e to the right, which is positive in the x axis
+        # 
+        self.rot = (self.game.player.pos - self.pos).angle_to(vec(1,0))
+        # then rotate our zombies img by the rotation vector
+        self.image = pg.transform.rotate(self.game.mob_img, self.rot)
+        # then update our zombies new rectangle centre too
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y):
