@@ -100,7 +100,7 @@ class Game:
         spawn_stuff_on_map()                          
         self.camera = Camera(self.map.width, self.map.height)
 
-    def run(self):
+    def run(self): 
         # game loop - set self.playing = False to end the game
         self.playing = True
         while self.playing:
