@@ -118,6 +118,11 @@ class Game:
         self.all_sprites.update()
         # update the camera based on the position of the player
         self.camera.update(self.player) # any sprite you put in here the camera will follow, dope af!
+        # bullets hit mobs <= this type of implementation here is likely a good starting point for handling ui stuff like killstreaks i reckon
+        hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True) # zombie stay, bullets go
+        for hit in hits:
+            print(f"{hit.myid} KILLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
+            hit.kill()
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -126,8 +131,13 @@ class Game:
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
     def draw(self):
+        # temp
+        if Bullet.bullet_hit:
+            accuracy = (Bullet.bullet_hit / Bullet.bullet_count) * 100
+        else:
+            accuracy = 0
         # temp, set the caption of the window to be any core debug things, framerate etc
-        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, Bullets: {Bullet.bullet_count}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
+        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, ShotsHit: {Bullet.bullet_hit}, ShotsFired: {Bullet.bullet_count}, ShotAccuracy: {accuracy:.0f}%, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
         # actual draw stuff
         self.screen.fill(BGCOLOR)
         want_grid = False
@@ -167,6 +177,13 @@ while True:
     g.run()
     g.show_go_screen()
 
+
+
+# DO FAKER NAMES AND FINISH TUT PLS!
+
+# check out some new art work pls, especially main character
+
+# look into ui and animations and vfx pls 
 
 # zombie logic for getting stuck, if touching wall, go to nearest sumnt ?
 

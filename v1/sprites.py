@@ -6,8 +6,8 @@ from tilemap import collide_hit_rect
 vec = pg.math.Vector2
 # for calculating distance between 2 objects
 from math import hypot
-# for random numbers
-from random import randint
+# for random numbers, uniform is real numbers between given range
+from random import randint, uniform
 
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
@@ -103,38 +103,45 @@ class Player(pg.sprite.Sprite):
         self.is_interacting = False
         # new player gold implementation, could be a class var if ur lazy
         self.player_gold = 0
+        self.player_prizemoney = 0 # some kinda idea of banking gold after a set amount of levels, maybe the amount banked also provides bonuses like bonus exp, extra unlocks (for hoarding and not spending etc)
+        # note defo have more things that make u get paid for hampering urself
+        # maybe even presenting as option at level start
         # new test, pause interactions
         self.waiting_print = False
         self.waiting = False
         # new auto-shooting toggle test
-        self.autoshoot = True
+        self.autoshoot = False
         self.toggle_wait = False
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
         self.vel = vec(0, 0) # define what our keys are going to do
         keys = pg.key.get_pressed() # see which keys are currently held down
+        # -------- dev keys stuff - might integrate tho --------
+        if keys[pg.K_p]:
+            if not self.toggle_wait: # its lazy but its the autoshoot toggle so its not guna get used enough to matter rn chill
+                print(f"Episode Earnings = {self.player_gold} gold, Take Home PrizeMoney = {self.player_gold} gold")
+                self.toggle_wait = pg.time.get_ticks()
         # -------- player interaction keys stuff --------
         # -- shooting --
         # -- toggle auto shooting --
-        if keys[pg.K_b]:
+        if keys[pg.K_b]: # for bullets... or beginner but easily could be harder tho so nah
             if not self.toggle_wait:
                 # dont let us toggle 1 jillion times per second
                 self.autoshoot = False if self.autoshoot else True # flip it
                 self.toggle_wait = pg.time.get_ticks() 
-
         # -- actual shooting --
         if keys[pg.K_SPACE]:
             if not self.autoshoot:
                 # temp af for now but should increase the shooting speed by a factor of 2 if not in auto shoot
-                BULLET_RATE = 150
                 now = pg.time.get_ticks() # track the last time we shot 
                 if now - self.last_shot > BULLET_RATE:
                     self.last_shot = now 
                     dir = vec(1,0).rotate(-self.rot)
                     pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
                     Bullet(self.game, pos, dir)
-    # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
+                    self.vel = vec(-GUN_KICKBACK,0).rotate(-self.rot)
+        # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
             # check any breakable walls interaction
@@ -293,6 +300,7 @@ class Player(pg.sprite.Sprite):
         # but only if a zombie is close
         now = pg.time.get_ticks() # track the last time we shot 
         if self.autoshoot: # if autoshoot is on, currently the b key
+            BULLET_RATE = 300 # temp
             for mob in self.game.mobs:
                 if now - self.last_shot > BULLET_RATE: # fixes double bullets by being inside
                     if self.is_near(mob.pos.x, mob.pos.y, PISTOL_SIGHT): # shortly this will become current weapon sight
@@ -313,18 +321,11 @@ class Player(pg.sprite.Sprite):
                             dir_to_mob = vec(1,0).rotate(-rot_to_mob) # the final direction vector
                             pos = self.pos + BARREL_OFFSET.rotate(-self.rot)
                             #print(f"PEW!, AUTOSHOT AT {mob.myid}")
-                            # should try here... 
-                            # if the vector between me, the player 
-                            # and my exact facing rot, the unused dir here
-                            # if the firs thing on the path of that vector
-                            # if a wall
-                            # dont shoot 
-                            # else
-                            # shoot
-                            #
-                            # sent the direction to the closest mob instead of the players position
+                            # should try here -> if the vector between me, the player and my exact facing rot, the unused dir here if the firs thing on the path of that vector, if a wall, dont shoot, else shoot
+                            # use the pos for the bullet start, and the direction is now to the closest mob instead of where the player is facing
                             Bullet(self.game, pos, dir_to_mob)
-                            self.vel = vec(-GUN_KICKBACK,0).rotate(-self.rot) # rotated to kickback in the direction ur facing
+                            # fake way to do kickback in autoshoot for now, but needs to be fixed obvs
+                            self.pos.y += 5 # kickback the player slightly in the opposite direction after every shot, rotated to push in the opposite of the direction ur facing
                     
                     # still big issue with shooting order, need to be checking whos closest? idk need to confirm tbf
                     # just do collisions quickly ffs
@@ -404,13 +405,13 @@ class Mob(pg.sprite.Sprite):
                 # check here, have i, the zombie, been standing next to a wall with hp
                 # and been unable to break it? (im not waiting or sumnt)
                 # well then bounce back (will do for now)
-                print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
+                #print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
                 # take down its hp, the action has now been confirmed so anything like animations and updates must happen now
                 bwall.hp_current -= 1
                 self.stalled = False #if you've done a hit you've stopped stalling, likewise if ur inside uve stopped stalling
                 # bounce to the opposite of where u are in relation to the wall
                 # when you make contact for this second 
-                print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+                #print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
                 # be sure we have some speed, otherwise the bounce wont be noticeable 
                 if self.vel.x < 10 and self.vel.y < 10:  
                     self.vel = vec(-200,0).rotate(-self.rot) # NEW TEST AF
@@ -420,7 +421,7 @@ class Mob(pg.sprite.Sprite):
                 #self.vel.y = -self.vel.y
                 self.acc.x -= (self.acc.x / 100) * 80
                 self.acc.y -= (self.acc.y / 100) * 80
-                print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+                #print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
                 # then infect any touching walls
                 bwall.infect_walls()
                 # then pause any other interactions for this instance of mob for 1 second
@@ -519,26 +520,62 @@ class Mob(pg.sprite.Sprite):
 
 class Bullet(pg.sprite.Sprite):
     bullet_count = 0 # count all bullets shot for stats
+    bullet_hit = 0 # track every hit
 
     def __init__(self, game, pos, dir):
-        self.groups = game.all_sprites
+        self.groups = game.all_sprites, game.bullets
         pg.sprite.Sprite.__init__(self, self.groups)
+        self.count_hits = [] # list of ids of zombies ive passed through, and therefore counted as gold/damage/stats, for not counting gold or hits for every split second a bullet has collided
+        # here, in above, could really be starting implementation of extra gold, e.g. if multi hit x2 gold, x3 = x3 etc!
         self.game = game
         self.image = game.bullet_img
         self.rect = self.image.get_rect()
         self.pos = vec(pos).copy() # position is the one we pass in, pass a copy so we dont update the players position with the bullet... which is fucking hilarious btw
         self.rect.center = pos # put our rectangle there at the center
-        self.vel = dir * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
+        if game.player.autoshoot:
+            spread = uniform(-GUN_SPREAD*2, GUN_SPREAD*2) # autoshoot is more inaccurate so its not giga free, easily changed and is temp anyway tbf
+        else:
+            spread = uniform(-GUN_SPREAD, GUN_SPREAD) # bullet will come out at a random angle based on the spread, this should really update or be different for autoshoot but is fine for now
+        self.vel = dir.rotate(spread) * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
         self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
         Bullet.bullet_count += 1
+        self.myid = self.bullet_count
 
     def update(self):
+        # could calc bullet gold for debugging btw, how much gold this bullet racked up before it died
+        base_gold = 10 # make this a constant once you figure out how it works to basic af mvp level
         self.pos += self.vel * self.game.dt # update our position vs our velocity
         self.rect.center = self.pos # update the rectangle to that new position too
+        hit_zombie = pg.sprite.spritecollideany(self, self.game.mobs)
+        if hit_zombie:
+            if hit_zombie.myid not in self.count_hits:
+                # print(f"Bullet {self.myid}, Zombie {hit_zombie.myid}, {self.count_hits = }")
+                # if the zombies id is not already been stored for this bullet, then append the id to the bullet quickly so it knows
+                self.count_hits.append(hit_zombie.myid)
+                base_gold = base_gold
+                # if i passed through 1 person, basic gold
+                if len(self.count_hits) == 1: 
+                    base_gold *= 1 # temporary buff, difficulty, etc, here btw
+                    #print(f"[ +{base_gold} ] -> NICE SHOT")
+                    # if was crit etc
+                if len(self.count_hits) == 2: 
+                    base_gold *= 2
+                    # or (as in on random for sure) # DOUBLE PENETRATION, TRIPLE PENETRATION!
+                    # tf character voiceline... "ooo kinky... i like kinky"
+                    x = randint(1,10)
+                    #print(f"[ +{base_gold} ] [ x2 ] BONUS! -> TWO ZEDS, ONE GUT") if x > 5 else print(f"[ x2 ] BONUS! -> DOUBLE PENETRATION")
+                if len(self.count_hits) == 3: 
+                    base_gold *= 3   
+                    #print(f"[ +{base_gold} ] [ x3 ] BONUS! -> ZOMBIE CENTIPEDE!")                 
+                self.game.player.player_gold += base_gold
+                Bullet.bullet_hit += 1
+                #print(f"[ +{self.game.player.player_gold} ] Gold -> Make It Rain!")
+                #print(f"Bullet {self.myid} -> zombie entrants {self.count_hits}")
         if pg.sprite.spritecollideany(self, self.game.walls):
             self.kill()
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME: # do a meeseeks
             self.kill() # delete the bullet
+        
 
 
 class Wall(pg.sprite.Sprite):
@@ -729,7 +766,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
                 self.waiting = False
     """
 
-
+# DO FAKER NAMES AND FINISH TUT PLS!
 
 
 

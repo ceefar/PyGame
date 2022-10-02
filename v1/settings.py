@@ -57,8 +57,9 @@ BARREL_OFFSET = vec(30,10)
 BULLET_IMG = "bullet.png"
 BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
-BULLET_RATE = 300 # how fast we can shoot, slower is faster
-GUN_KICKBACK = 200
+BULLET_RATE = 150 # how fast we can shoot, slower is faster
+GUN_KICKBACK = 200 # -velocity back after each shot
+GUN_SPREAD = 5 # the range of how many degrees left or right of straight the bullet can travel
 
 # NEW Custom Weapon Settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
