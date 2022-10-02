@@ -8,6 +8,8 @@ vec = pg.math.Vector2
 from math import hypot
 # for random numbers, uniform is real numbers between given range
 from random import randint, uniform
+# for fake names
+from faker import Faker
 
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
@@ -112,6 +114,13 @@ class Player(pg.sprite.Sprite):
         # new auto-shooting toggle test
         self.autoshoot = False
         self.toggle_wait = False
+
+        # new player rating test stuff - clout rating boom
+        self.clout_rating = 10 # work in integers for now, but want this to represent the float 1, so its 1.0, 11 would be 1.1, so double clout_rating from base is 20
+        # obvs need to handle and update clout, and zombies will be affected by ur clout too 
+
+        # new player damage stuff, actually altering og code quite substantially for this but will be fine
+        self.player_damage = BULLET_DAMAGE
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
@@ -325,7 +334,7 @@ class Player(pg.sprite.Sprite):
                             # use the pos for the bullet start, and the direction is now to the closest mob instead of where the player is facing
                             Bullet(self.game, pos, dir_to_mob)
                             # fake way to do kickback in autoshoot for now, but needs to be fixed obvs
-                            self.pos.y += 5 # kickback the player slightly in the opposite direction after every shot, rotated to push in the opposite of the direction ur facing
+                            self.vel = vec(-200,0) # kickback the player slightly in the opposite direction after every shot, rotated to push in the opposite of the direction ur facing
                     
                     # still big issue with shooting order, need to be checking whos closest? idk need to confirm tbf
                     # just do collisions quickly ffs
@@ -335,9 +344,10 @@ class Player(pg.sprite.Sprite):
                        
         
 class Mob(pg.sprite.Sprite):
+    showmaker = Faker()
     Zombie_Boys = {} # maybe un-needed, cant remember exactly what is used for rn
 
-    def __init__(self, game, x, y, bwalls): #  hp=0
+    def __init__(self, game, x, y, bwalls): #  hp = 0
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -349,9 +359,15 @@ class Mob(pg.sprite.Sprite):
         self.rect.center = self.pos
         self.rot = 0
         self.vel = vec(0,0)
-        self.acc = vec(0,0) # use accelerate now so that the zombie doesnt whip around when we move past it
+        self.acc = vec(0,0) # use accelerate now so that the zombie doesnt whip around at the same speed when we move past it
+        # my own test stuff still but this is placed here as currently setting the hp again here so shouldnt be moving it away from self.health declaration
+        # new damage based stuff
+        # get a random number for our initial max health, else its 100
+        self.max_health = self.set_init_hp()
+        # then set the starting health to that max health
+        self.health = self.max_health 
 
-        # my own test stuff
+        # my own super test af stuff
         # this is literally the entire class object, not a class instance
         self.bwalls = bwalls
         # if has collided with a bwall, do climb in stuff, then hunt the player 
@@ -367,6 +383,40 @@ class Mob(pg.sprite.Sprite):
         self.waiting_speed = 500 # seconds so this is half a second, can say thats quick/avg for now
         # new stalled fixer test
         self.stalled = False
+        # new name
+        self.myname = self.showmaker.name()
+        print(f"{self.myname} {'is roaming' if self.health <= 100 else 'is looking for blood'}... [ {self.health}hp ]")
+
+    def set_init_hp(self):
+        # for now keep this super simple and have the hp just be influenced by a random roll
+        # in future pass the zombies class n shit and have that affect the base hp -> other things too like game diff, and character things like items, abilities, traits, etc
+        roll_chance = randint(1, 10)
+        #print(f"wantCrit? => {crit_chance = }, {actual_chance = }, {actual_chance >= crit_chance = }")
+        # if our number range / numbers (our crit chance) is greater than or equal to our random chance 1 to 100 roll 
+        if roll_chance <= 5:        
+            maxhp = (randint(1, 10) * 10) + 200 # if the zombie won a 50/50 head or tails, then give it up to 100 more hp based on its second roll 1 - 10 
+        else:
+            maxhp = 200
+        # should also include potential punishments this way too
+        # also should make this more dynamic by giving each zombie traits like luck too
+        return(maxhp)
+
+    def draw_health(self):
+        # simple hp bar
+        if self.health >= (self.max_health / 10) * 6: # 60%
+            col = GREEN
+        elif self.health >= (self.max_health / 10) * 3: # greater than 30%
+            col = YELLOW
+        else: # else is 30% or less
+            col = RED
+        # width of bar is just the width of this zombies rect time the percent of hp remaining
+        width = int(self.rect.width * self.health / self.max_health)
+        # the location on the sprite image not on the screen
+        self.health_bar = pg.Rect(0, 0, width, 7) # 7 is thickness
+        # only draw the bar if the zombie is not full hp
+        if self.health < self.max_health: 
+            # draw that self.health_bar on top of our zombies rectangle in the given colour
+            pg.draw.rect(self.image, col, self.health_bar) 
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -382,7 +432,7 @@ class Mob(pg.sprite.Sprite):
         if bhits:
             if not self.climbed_in:
                 # so here is ur warning stuff nice
-                print(f"Zombie @ {self.pos.x}, {self.pos.y} Broken In [Collided With B Wall id:{self.myid}]")
+                print(f"{self.myname} Broke In @ {self.pos.x}, {self.pos.y} [Collided With B Wall]")
             self.climbed_in = True
             self.stalled = False # cant be stalled outside, for now anyway
 
@@ -443,9 +493,9 @@ class Mob(pg.sprite.Sprite):
                     time_end = pg.time.get_ticks() 
                     if time_end - self.stalled >= 6000:
                         # if i have been touching this wall and not reset yet
-                        print(f"[{self.myid}] I'm Stalled, Change My Velocity -> {self.vel}") 
-                        random_rot_angle_adjust = randint(-30,30)
-                        self.vel = vec(-200, 0).rotate(-self.rot + random_rot_angle_adjust)
+                        print(f"[{self.myname}] I'm Stalled, Change My Velocity -> {self.vel}") 
+                        random_rot_angle_adjust = randint(-40,40)
+                        self.vel = vec(-100, 0).rotate(-self.rot + random_rot_angle_adjust)
                         self.look_at(bwall.rect.center)
                         self.stalled = False
 
@@ -494,6 +544,10 @@ class Mob(pg.sprite.Sprite):
         collide_with_walls(self, self.game.walls,'y')
         # then set our regular rect to our hit rect, remember we primarily use the hit rect then set it to the regular rect at the end (the visual doesnt match the pixel precision)
         self.rect.center = self.hit_rect.center
+        # if the zombie health ever less than zero, kill it, idk why this isnt first in update tho? <= test it defo 
+        # note-tho! => tbf for things like waiting i get that but surely not last last atleast mid is best but idk (nah waiting doesnt matter as its self.waiting not player but confirm tbf)
+        if self.health <= 0:
+            self.kill()
         
         # more testing (for breaking it down stuff)
         # check every breakable wall to see if a zombie is near
@@ -540,6 +594,26 @@ class Bullet(pg.sprite.Sprite):
         self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
         Bullet.bullet_count += 1
         self.myid = self.bullet_count
+        self.is_crit = self.check_crit()
+        # more new custom test stuff
+        # self.hp = 30 # say going thru each zombie costs 10
+
+    # new custom functionality testing
+    def check_crit(self):
+        # first check the players clout, if ur mad clouted then ur crit change increases (just keep it giga simple for now) 
+        crit_chance = ((self.game.player.clout_rating / 10) * 5) + PISTOL_CRIT_RATE # div 10 so base would become 1, or double clout would become 2, then * 5, so 1 = 5 and 2 = 25, 95% chance normally, to 75% chance at double crit, its fine its just supposed to be sumnt for now lol
+        # then you add the pistol crit rate to that floor value, i.e. 5, 10, 20, and you've got a floor value maybe thats like 30, so 30 - 100 = 70% chance
+        # the default will be 10 / 10 = 1, * 5 = 5, + 10 = 15, 15% crit chance by default 
+        actual_chance = randint(1, 100)
+        #print(f"wantCrit? => {crit_chance = }, {actual_chance = }, {actual_chance >= crit_chance = }")
+        # if our number range / numbers (our crit chance) is greater than or equal to our random chance 1 to 100 roll 
+        if actual_chance <= crit_chance:
+            # print(f"[ACTION] => Bullet [ {self.myid} ] Gained Critical Hit")
+            return True
+        else:
+            #print(f"Bullet [ {self.myid} ] - nocrit")
+            return False
+        # remember with this mechanic we also wanna reset timers or speed ups n shit
 
     def update(self):
         # could calc bullet gold for debugging btw, how much gold this bullet racked up before it died
@@ -548,11 +622,17 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = self.pos # update the rectangle to that new position too
         hit_zombie = pg.sprite.spritecollideany(self, self.game.mobs)
         if hit_zombie:
+            # print(f"[ACTION] => Bullet [ {self.myid} ] hit zombie {hit_zombie.myid}") #myname
+            # new crit test, not ideal as the way were doing collision rn i cant check the bullet just the zombie but its fine for now just playing around anyways, will do proper collisions soon 
+            if self.is_crit: # if this is a crit bullet, and you've hit a zombie, set the player damage to 100
+                # print("PLAYER DAMAGE = 100")
+                self.game.player.player_damage = 100
+                # but remember this is a temporary af hacky way so this will stay like that forever unless we put it back, we do that after the hit has been logged, if a 100 hit is logged, player_damage = 10, plus also if this bullet times out player damage = 10 # this will break af btw, e.g. bullets could get set to 200 or 300 etc is easy to fix but just saying dont forget lol
             if hit_zombie.myid not in self.count_hits:
                 # print(f"Bullet {self.myid}, Zombie {hit_zombie.myid}, {self.count_hits = }")
                 # if the zombies id is not already been stored for this bullet, then append the id to the bullet quickly so it knows
                 self.count_hits.append(hit_zombie.myid)
-                base_gold = base_gold
+                base_gold = base_gold + (base_gold * 0.2) # before doing anything we set the gold, the gold is worth 20% more if its a crit, should be hardcoding btw but was by items n shit so chill 4 now
                 # if i passed through 1 person, basic gold
                 if len(self.count_hits) == 1: 
                     base_gold *= 1 # temporary buff, difficulty, etc, here btw
@@ -562,8 +642,8 @@ class Bullet(pg.sprite.Sprite):
                     base_gold *= 2
                     # or (as in on random for sure) # DOUBLE PENETRATION, TRIPLE PENETRATION!
                     # tf character voiceline... "ooo kinky... i like kinky"
-                    x = randint(1,10)
-                    #print(f"[ +{base_gold} ] [ x2 ] BONUS! -> TWO ZEDS, ONE GUT") if x > 5 else print(f"[ x2 ] BONUS! -> DOUBLE PENETRATION")
+                    # x = randint(1,10)
+                    # print(f"[ +{base_gold} ] [ x2 ] BONUS! -> TWO ZEDS, ONE GUT") if x > 5 else print(f"[ x2 ] BONUS! -> DOUBLE PENETRATION")
                 if len(self.count_hits) == 3: 
                     base_gold *= 3   
                     #print(f"[ +{base_gold} ] [ x3 ] BONUS! -> ZOMBIE CENTIPEDE!")                 
@@ -711,8 +791,9 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         # use hypotenus of the xy vectors to find out how close we are to the player
         pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
         if pythag_dist < close:
-            # print(f"{self.myid=},{pythag_dist=}\n{x=},{y=},{self.pos.y=},{self.pos.x=}")
-            self.print_once(f"[{self.myid}] I'm close... {pythag_dist}cm,  x:{self.pos.x}, y:{self.pos.y}, x:{x}, y:{y}")
+            # print if we're close to a bwall
+            pass
+            # self.print_once(f"Player is {pythag_dist}ft away from {self.myid}") #  x:{self.pos.x}, y:{self.pos.y}, x:{x}, y:{y}
         # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
         return True if pythag_dist < close else False
 

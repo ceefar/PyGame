@@ -59,13 +59,16 @@ BULLET_SPEED = 500
 BULLET_LIFETIME = 1000 # is in ms, basically range but range is really distance which is speed over time, defo calculate this too  
 BULLET_RATE = 150 # how fast we can shoot, slower is faster
 GUN_KICKBACK = 200 # -velocity back after each shot
-GUN_SPREAD = 5 # the range of how many degrees left or right of straight the bullet can travel
+GUN_SPREAD = 4 # the range of how many degrees left or right of straight the bullet can travel
+
+# Damage settings
+BULLET_DAMAGE = 10
 
 # NEW Custom Weapon Settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
 PISTOL_SIGHT = 300 # the distance from which you will begin to fire on a zombie with this weapon
 PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert to ranges, with the ranges becoming shorter based on the time in game ooo (or even bullets fired n shit lol)
-PISTOL_CRIT_RATE = 20
+PISTOL_CRIT_RATE = 10 # the crit number is just an improvement thats added to the 1 - 100 random int check, so adding 10 crit chance literally remove 10 of 100 numbers from the range to check against
 
 
 # NEW Custom Player Settings

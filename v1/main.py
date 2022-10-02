@@ -118,11 +118,35 @@ class Game:
         self.all_sprites.update()
         # update the camera based on the position of the player
         self.camera.update(self.player) # any sprite you put in here the camera will follow, dope af!
+
+        # k so big note, already know how to add bullets going thru say 5 zombies then dying functionality
+        # for bulletstreaks n shit, but problem is it counts every time again, would be an easy enough solution but diminishing returns rn so leaving for now
+
         # bullets hit mobs <= this type of implementation here is likely a good starting point for handling ui stuff like killstreaks i reckon
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True) # zombie stay, bullets go
         for hit in hits:
-            print(f"{hit.myid} KILLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
-            hit.kill()
+            # was previously constant global from settings as player_damage, now we need to set it for crits hence this, temp for now anywayas
+            hit.health -= self.player.player_damage
+            
+            # tho do need to do collisions properly seems so far that the way ive set it up, it is still only crit for the bullet that is crit, not for any others flying around
+            # i think so anyway but unsure, either way need to do collisions properly anyway so dw for now
+            if self.player.player_damage >= 100: 
+                print("CRIT BAYBAYYYYY!")
+                self.player.player_damage = 10
+                # print("PLAYER DAMAGE = 10")
+                # make this bullet temporarily push the zombie back if its a crit
+                hit.vel = vec(-150,0)
+            else:
+                hit.vel = vec(0,0)
+                # make this bullet temporarily slow the zombie a normal amount
+                hit.vel = vec(0,0)                
+            print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }")                
+            if hit.health <= 0:
+                print(f"{hit.myname} has Died [ hp: {hit.health} ]")
+            else:
+                print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
+        #    
+        # yeah for really all stats stuff to be done here duh!
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -130,7 +154,7 @@ class Game:
         for y in range(0, HEIGHT, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
-    def draw(self):
+    def draw(self): # go through all the sprites and draw them on the screen
         # temp
         if Bullet.bullet_hit:
             accuracy = (Bullet.bullet_hit / Bullet.bullet_count) * 100
@@ -144,6 +168,9 @@ class Game:
         if want_grid:
             self.draw_grid()
         for sprite in self.all_sprites:
+            # only do this draw for instances of the zombie mob
+            if isinstance(sprite, Mob):
+                sprite.draw_health()
             # take the camera and apply it to that sprite
             self.screen.blit(sprite.image, self.camera.apply(sprite))
         # for debugging -> draw the players rectangle, and hitbox
@@ -178,6 +205,8 @@ while True:
     g.show_go_screen()
 
 
+
+# TUT AND CLOUT RATING! + GOLD SCORE & UNLOCK
 
 # DO FAKER NAMES AND FINISH TUT PLS!
 
