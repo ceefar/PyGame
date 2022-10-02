@@ -22,7 +22,7 @@ def collide_with_walls(sprite, group, dir):
         if hits:
             # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
             # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
-            if sprite.vel.x > 0:
+            if hits[0].rect.centerx > sprite.hit_rect.centerx: # check if the walls center is greater than the players center
                 # our x should be what ever it was that we hit(s) minus however wide we are
                 sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
             # if the speed is the opposite direction then we were moving to the left so
@@ -94,6 +94,8 @@ class Player(pg.sprite.Sprite):
         # new - rotation, starting rot=0 is pointing right so in positive x position/axis
         self.rot = 0
         self.last_shot = 0
+        # new - player health
+        self.health = PLAYER_HEALTH
 
         # new sprint meter test
         self.sprint_meter = 6_000
@@ -380,7 +382,7 @@ class Mob(pg.sprite.Sprite):
             self.myid = 1
         Mob.Zombie_Boys[self.myid] = self # add myself, the zombie instance, to the class dict
         self.waiting = False # give them their own waiting too, for breaking stuff and hiting the player
-        self.waiting_speed = 500 # seconds so this is half a second, can say thats quick/avg for now
+        self.waiting_speed = 1000 # seconds so this is half a second, can say thats quick/avg for now
         # new stalled fixer test
         self.stalled = False
         # new name
@@ -394,9 +396,9 @@ class Mob(pg.sprite.Sprite):
         #print(f"wantCrit? => {crit_chance = }, {actual_chance = }, {actual_chance >= crit_chance = }")
         # if our number range / numbers (our crit chance) is greater than or equal to our random chance 1 to 100 roll 
         if roll_chance <= 5:        
-            maxhp = (randint(1, 10) * 10) + 200 # if the zombie won a 50/50 head or tails, then give it up to 100 more hp based on its second roll 1 - 10 
+            maxhp = (randint(1, 10) * 10) + MOB_BASE_HEALTH # if the zombie won a 50/50 head or tails, then give it up to 100 more hp based on its second roll 1 - 10 
         else:
-            maxhp = 200
+            maxhp = MOB_BASE_HEALTH
         # should also include potential punishments this way too
         # also should make this more dynamic by giving each zombie traits like luck too
         return(maxhp)
@@ -435,6 +437,7 @@ class Mob(pg.sprite.Sprite):
                 print(f"{self.myname} Broke In @ {self.pos.x}, {self.pos.y} [Collided With B Wall]")
             self.climbed_in = True
             self.stalled = False # cant be stalled outside, for now anyway
+        self.climbed_in = True
 
     def is_near(self, x, y):
             # abstract this properly pls 
@@ -448,20 +451,19 @@ class Mob(pg.sprite.Sprite):
             # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
             return True if pythag_dist < next_to else False
 
+    # needs to be fixed proto
     def break_barracade(self, bwall):
+        # print(f"Break Barracade? => {self.myid}: {self.myname} = {self.waiting}")
         if not self.waiting:
             # if the wall has hp and we can attack it then do it, basically dont interact with 0 hp walls at all
             if bwall.hp_current > 0:
-                # check here, have i, the zombie, been standing next to a wall with hp
-                # and been unable to break it? (im not waiting or sumnt)
-                # well then bounce back (will do for now)
                 #print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
                 # take down its hp, the action has now been confirmed so anything like animations and updates must happen now
                 bwall.hp_current -= 1
-                self.stalled = False #if you've done a hit you've stopped stalling, likewise if ur inside uve stopped stalling
-                # bounce to the opposite of where u are in relation to the wall
-                # when you make contact for this second 
-                #print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+                self.stalled = False # if you've done a hit you've stopped stalling, likewise if ur inside uve stopped stalling
+                # bounce to the opposite of where u are in relation to the wall when you make contact for an attack
+                # print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+                
                 # be sure we have some speed, otherwise the bounce wont be noticeable 
                 if self.vel.x < 10 and self.vel.y < 10:  
                     self.vel = vec(-200,0).rotate(-self.rot) # NEW TEST AF
@@ -471,7 +473,7 @@ class Mob(pg.sprite.Sprite):
                 #self.vel.y = -self.vel.y
                 self.acc.x -= (self.acc.x / 100) * 80
                 self.acc.y -= (self.acc.y / 100) * 80
-                #print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
+            
                 # then infect any touching walls
                 bwall.infect_walls()
                 # then pause any other interactions for this instance of mob for 1 second
@@ -527,7 +529,7 @@ class Mob(pg.sprite.Sprite):
             # closest_bwall_dist = min(list_of_bwall_dists) incase we want to check the closest few which we will eventually but is there print(f"{closest_bwall_dist = } - {list_of_bwall_dists = }")
             # ****** need to do for 0 hp stuff here eventually ******
             # look at bwalls
-            self.look_at(closest_bwall.pos)
+            self.look_at(closest_bwall.pos) # rect.center
         # ---- end , deciding who to look at)
         # ---- actual code ----
         # our acceleration is going to be mob speed constant, run in the forward direction rotated by whatever this zombies rotation is
@@ -566,7 +568,7 @@ class Mob(pg.sprite.Sprite):
         if self.waiting:
             space_end = pg.time.get_ticks() 
             if space_end - self.waiting >= self.waiting_speed: # 1 second waiter rn
-                print(f"interactions enabled")
+                print(f"{self.myname} - interactions enabled")
                 self.waiting = False
         # more new testing, this time for zombies stalled by entrances  
         self.am_i_stalled()

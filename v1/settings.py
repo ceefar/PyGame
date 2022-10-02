@@ -48,6 +48,7 @@ GRIDHEIGHT = HEIGHT / TILESIZE
 
 # Player settings, remember the speeds here are milliseconds, so 1000 per sec (because we're using delta time on the frames)
 PLAYER_SPEED = 320
+PLAYER_HEALTH = 100
 PLAYER_ROT_SPEED = 250 # degrees per second, so just under 1 second to go all the way around (1 rotation)
 PLAYER_IMG = "manBlue_gun.png"
 PLAYER_HIT_RECT = pg.Rect(0,0,20,20)
@@ -79,6 +80,9 @@ VIEWING_ANGLE = 120
 MOB_IMG = "zoimbie1_hold.png"
 MOB_SPEED = 80
 MOB_HIT_RECT = pg.Rect(0,0,25,25)
+MOB_BASE_HEALTH = 150 # literally like the very (not actually tho but practically) lowest hp a zombie can have
+MOB_DAMAGE = 10
+MOB_KNOCKBACK = 20
 
 # More Image settings
 WALL_IMG = "tileBrick_01.png" # tileGreen_39.png note is also 108 x 108 (not right size btw)

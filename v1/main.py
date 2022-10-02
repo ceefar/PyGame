@@ -119,6 +119,18 @@ class Game:
         # update the camera based on the position of the player
         self.camera.update(self.player) # any sprite you put in here the camera will follow, dope af!
 
+        # mobs hit player
+        hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
+        for hit in hits:
+            self.player.health -= MOB_DAMAGE # we can have base damage and subclasses of mobs to get around this, plus then also stuff like armor so chill lol
+            # have the mob stop again
+            if self.player.health <= 0:
+                # game over man, game over
+                self.playing = False 
+        if hits:
+            print(f"[ {self.player.health}hp ] Player got Bitchslapped by {hits[0].myname}")
+            self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
+
         # k so big note, already know how to add bullets going thru say 5 zombies then dying functionality
         # for bulletstreaks n shit, but problem is it counts every time again, would be an easy enough solution but diminishing returns rn so leaving for now
 
