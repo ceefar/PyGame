@@ -20,13 +20,14 @@ def collide_with_walls(sprite, group, dir):
         # then check if we the player have collied with a wall
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
-            # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
-            # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
-            if hits[0].rect.centerx > sprite.hit_rect.centerx: # check if the walls center is greater than the players center
+            # check if the walls center is greater than the players center
+            # if the players center is greater than the walls center 
+            # im on the right hand side of the wall
+            if hits[0].rect.centerx > sprite.hit_rect.centerx: 
                 # our x should be what ever it was that we hit(s) minus however wide we are
                 sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
-            # if the speed is the opposite direction then we were moving to the left so
-            if sprite.vel.x < 0:
+            # else if its less than its to the left
+            if hits[0].rect.centerx < sprite.hit_rect.centerx:
                 # put ourselves to the right of the thing we hit(s)[0]
                 sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
             # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
@@ -40,11 +41,11 @@ def collide_with_walls(sprite, group, dir):
                 # bhits[0].try_repair_wall()
                 pass # through freely                
             else:
-                if sprite.vel.x > 0:
+                if bhits[0].rect.centerx > sprite.hit_rect.centerx:
                     # our x should be what ever it was that we hit(s) minus however wide we are
                     sprite.pos.x = bhits[0].rect.left - sprite.hit_rect.width / 2
                 # if the speed is the opposite direction then we were moving to the left so
-                if sprite.vel.x < 0:
+                if bhits[0].rect.centerx < sprite.hit_rect.centerx:
                     # put ourselves to the right of the thing we hit(s)[0]
                     sprite.pos.x = bhits[0].rect.right + sprite.hit_rect.width / 2
                 # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
@@ -59,18 +60,18 @@ def collide_with_walls(sprite, group, dir):
                 # bhits[0].try_repair_wall()
                 pass # through freely
             else:
-                if sprite.vel.y > 0:
+                if bhits[0].rect.centery > sprite.hit_rect.centery:
                     sprite.pos.y = bhits[0].rect.top - sprite.hit_rect.height / 2
-                if sprite.vel.y < 0:
+                if bhits[0].rect.centery < sprite.hit_rect.centery:
                     sprite.pos.y = bhits[0].rect.bottom + sprite.hit_rect.height / 2
                 sprite.vel.y = 0
                 sprite.hit_rect.centery = sprite.pos.y             
         # normal wall    
         hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
         if hits:
-            if sprite.vel.y > 0:
+            if hits[0].rect.centery > sprite.hit_rect.centery:
                 sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
-            if sprite.vel.y < 0:
+            if hits[0].rect.centery < sprite.hit_rect.centery:
                 sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2
             sprite.vel.y = 0
             sprite.hit_rect.centery = sprite.pos.y  
