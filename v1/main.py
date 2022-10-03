@@ -221,7 +221,7 @@ class Game:
             self.draw_grid()
             
         for sprite in self.all_sprites:
-
+ 
             # only do this draw for instances of the zombie mob
             if isinstance(sprite, Mob):
                 # personal custom zombie name display, note this isn't a sprite or part of the sprint (cause img size = bounds) but drawn ontop during the render so has layering considerations which is why the name is drawn on first, then the hp bar (?)
