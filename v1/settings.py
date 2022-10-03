@@ -34,6 +34,7 @@ BROWNTONE2 = (114, 88, 61)      # FOR BUILDING BARRACADES
 BROWNTONE3 = (101, 66, 22)      # FOR BUILDING BARRACADES
 BROWNTONE4 = (66, 40, 2)        # HOVERING FULLY BUILT BARRACADE, SHOWS SLIGHTLY DARKER TO INDICATE NULL INTERACTION BETTER THAN NOTHING 
 BROWNPALE =  (215, 195, 163)
+BLUEMIDNIGHT = (0, 51, 102)
 
 # game settings
 WIDTH = 1024   # 16 * 64 or 32 * 32 or 64 * 16
@@ -65,14 +66,33 @@ GUN_SPREAD = 4 # the range of how many degrees left or right of straight the bul
 # Damage settings
 BULLET_DAMAGE = 10
 
-# NEW Custom Weapon Settings
+# NEW Custom Weapon settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
 PISTOL_SIGHT = 300 # the distance from which you will begin to fire on a zombie with this weapon
 PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert to ranges, with the ranges becoming shorter based on the time in game ooo (or even bullets fired n shit lol)
 PISTOL_CRIT_RATE = 10 # the crit number is just an improvement thats added to the 1 - 100 random int check, so adding 10 crit chance literally remove 10 of 100 numbers from the range to check against
+PISTOL_KICKBACK = 200
+PISTOL_SPREAD = 20
+PISTOL_DAMAGE = 11
+PISTOL_BULLET_SPEED = 500
+PISTOL_BULLET_RATE = 150
+PISTOL_BULLET_LIFETIME = 100
 
+# NEW Custom Multi-Weapon settings 
+UZI_SIGHT = 220
+UZI_ACCURACY = 70
+UZI_CRIT_RATE = 3
+UZI_KICKBACK = 250
+UZI_SPREAD = 15
+UZI_DAMAGE = 6
+UZI_BULLET_SPEED = 800
+UZI_BULLET_RATE = 90
+UZI_BULLET_LIFETIME = 80
 
-# NEW Custom Player Settings
+# NEW Custom MyTurret settings
+MY_TURRET_IMG = "hitman1_gun.png"
+
+# NEW Custom Player settings
 # viewing angle to be default 60 degrees each side
 VIEWING_ANGLE = 120
 

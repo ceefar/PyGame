@@ -77,7 +77,36 @@ def collide_with_walls(sprite, group, dir):
             sprite.hit_rect.centery = sprite.pos.y  
 
 
+class MyTurret(pg.sprite.Sprite): # new af test - personal turret
+    # have a list of fake name options that are also funny (atleast some anyways)
+    def __init__(self, game, pos, player): #  hp = 0
+        self.groups = game.all_sprites
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.player = player
+        self.image = game.my_turret_img
+        self.rect = self.image.get_rect()
+        self.pos = pos
+        # self.vel = vec(0, 0)
+        # self.pos = vec(x, y) * TILESIZE
+        self.myname = self.get_turret_name()
+        print(f"TURRET {self.myname}, {self.pos=}, {self.player.pos=}")
+
+    def get_turret_name(self):
+        names = ["Loyal Turret", "Honorable Turret", "Turret Boi", "McTurretFace"] # lol loyal turret will die for u, have them have intro lines lmao (like wheatley kinda)
+        roll = randint(0, len(names)-1)
+        print(f"{roll=}, {names[roll]=}")
+        return(names[roll])
+
+    def update(self):
+        pass
+        #temp_pos = self.player.pos.copy() #* TILESIZE
+        #self.pos = vec(temp_pos.x + 50, temp_pos.y + 50)
+        #print(f"TURRENT {self.myname}, {self.pos=}, {self.player.pos=}")
+
+
 class Player(pg.sprite.Sprite):
+    weapon_list = ["pistol", "uzi"]
 
     def __init__(self, game, x, y):
         self.groups = game.all_sprites
@@ -125,6 +154,94 @@ class Player(pg.sprite.Sprite):
         # new player damage stuff, actually altering og code quite substantially for this but will be fine
         self.player_damage = BULLET_DAMAGE
 
+        # new custom clout rating test stuff
+        self.clout_rating_base_timer = False # the timer to initialise the start of a new clout meter beginning or ending
+        self.clout_level = 0 # something like 1-20 for now
+        self.clout_level_timer = False
+        self.clout_rating = 6  # again 1-20 for B+, D- etc, and remember we wanna pass this in to a new level based on what happened in an old one
+        self.won_clout = False # var for if we've won clout or not as part of the running timer
+        self.clout_cooldown_timer = False
+        
+        # new custom dash test stuff
+        self.dash_cooldown = False
+
+        # new player weapon stuff
+        self.current_weapon_id = 1
+        self.current_weapon = Player.weapon_list[0] # remember may be based on other stuff at the start of level, for sure as classes, i geddit
+
+    def set_player_weapon_id(self):
+        # if the current weapon id isn't the list len (allow zeros btw)
+        if self.current_weapon_id >= len(Player.weapon_list):
+            self.current_weapon_id = 1 # loop to start
+        else:
+            self.current_weapon_id += 1 # go to next
+    
+    def return_bullet_rate(self): # just bullet rate for now
+        if self.current_weapon == "pistol":
+            return PISTOL_BULLET_RATE
+        elif self.current_weapon == "uzi":
+            return UZI_BULLET_RATE
+
+    def return_gun_kickback(self): # sep funcs for now
+        if self.current_weapon == "pistol":
+            return PISTOL_KICKBACK
+        elif self.current_weapon == "uzi":
+            return UZI_KICKBACK
+
+    def return_gun_spread(self):
+        if self.current_weapon == "pistol":
+            return PISTOL_SPREAD
+        elif self.current_weapon == "uzi":
+            return UZI_SPREAD
+
+    def get_display_clout_rating(self):
+        # simple af test func to convert the clout rating in to its appropriate string value
+        clout_ratings = {1:"U",2:"F",3:"E-",4:"E",5:"E+",6:"D-",7:"D",8:"D+",9:"C-",10:"C",11:"C+",12:"B-",13:"B",14:"B+",15:"A-",16:"A",17:"A+",18:"A++",19:"A+++",20:"A*"}
+        return(clout_ratings[self.clout_rating])
+
+    def clout_handler(self): # super test af
+        if not self.clout_cooldown_timer:
+            # if the clout is not on cooldown because it has just be reset due to a hit (or moving away from zombie)
+            if not self.clout_rating_base_timer: # so if the clout rating timer is false, its not been activated, no zombies are near
+                for mob in self.game.mobs: # for every zombie in the game (should just do that u can see on screen btw)
+                    if self.is_near(mob.pos.x, mob.pos.y): # if we are near a zombie
+                        self.clout_rating_base_timer = pg.time.get_ticks() # start the clout timer
+                        print(f"Posting Clout... {self.get_display_clout_rating()} + 1")
+                        self.clout_rating += 1
+                        
+            else:
+                # if the base timer is running, so we think we are near a zombie and increasing our clout
+                a_zombie_is_near = False # used to check if any zombie is near throughout the loop
+                for mob in self.game.mobs: # for every zombie in the game (should just do that u can see on screen btw)
+                    if self.is_near(mob.pos.x, mob.pos.y): # if we are near a zombie
+                        a_zombie_is_near = True
+                        break # we dont need to keep looping we just need to be near 1 to confirm it 
+                # if after that loop a_zombie_is_near is still false
+                if not a_zombie_is_near:
+                    # clout_cooldown_timer also!
+                    self.clout_rating_base_timer = False # then stop our clout meter timer
+                    # now check here if we managed to get a kill before it stopped else we didnt win
+
+                    if self.won_clout: # then if u won clout reset won_clout
+                        clout_prize_check = pg.time.get_ticks()
+                        self.clout_rating += 1
+                        clout_prize = clout_prize_check - self.clout_cooldown_timer
+                        self.player_gold += 1000
+                        print(f"[ CLOUTED ] $1000 + ${clout_prize} BONUS!!") # print("[ 60 G'S BAYBAYYY ] +100")  # 60_000 
+                        self.won_clout = False # reset the won clout, only time we should need to me thinks
+                    # else if u didnt win clout, just log it for now but we wanna handle this stuff too for sure
+                    # stuff like u lose followers lol
+                    else:
+                        print("Ur Post Flopped, Fans Unfollowed")
+                    # finally
+                    # if the timer was on and now we're not near any zombie at all, the clout cooldown timer should start
+                    self.clout_cooldown_timer = pg.time.get_ticks()
+        else:
+            # if the cooldown timer itself is on
+            cooldown_check = pg.time.get_ticks() 
+            if cooldown_check - self.clout_cooldown_timer >= 2000: # 2 sec for now, but if working start trying like 5 sec
+                self.clout_cooldown_timer = False 
+
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
         self.vel = vec(0, 0) # define what our keys are going to do
@@ -132,7 +249,7 @@ class Player(pg.sprite.Sprite):
         # -------- dev keys stuff - might integrate tho --------
         if keys[pg.K_p]:
             if not self.toggle_wait: # its lazy but its the autoshoot toggle so its not guna get used enough to matter rn chill
-                print(f"Episode Earnings = {self.player_gold} gold, Take Home PrizeMoney = {self.player_gold} gold")
+                self.set_player_weapon_id()
                 self.toggle_wait = pg.time.get_ticks()
         # -------- player interaction keys stuff --------
         # -- shooting --
@@ -147,12 +264,12 @@ class Player(pg.sprite.Sprite):
             if not self.autoshoot:
                 # temp af for now but should increase the shooting speed by a factor of 2 if not in auto shoot
                 now = pg.time.get_ticks() # track the last time we shot 
-                if now - self.last_shot > BULLET_RATE:
+                if now - self.last_shot > self.return_bullet_rate():
                     self.last_shot = now 
                     dir = vec(1,0).rotate(-self.rot)
                     pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
                     Bullet(self.game, pos, dir)
-                    self.vel = vec(-GUN_KICKBACK,0).rotate(-self.rot)
+                    self.vel = vec(-self.return_gun_kickback(),0).rotate(-self.rot)
         # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
@@ -180,8 +297,16 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.vel = vec(-PLAYER_SPEED /2, 0).rotate(-self.rot) # now we are rotating this is moving backwards, hence the minus player speed and the negative 2 so we've notably slower backwards
             self.state_moving = "walking"      
-        # -------- player sprint stuff --------    
-        if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
+
+        # -- new dash test --
+        if keys[pg.K_LSHIFT]:
+            if not self.dash_cooldown:
+                self.vel *= 4
+                print(f"Dash! => {self.vel}")
+                self.dash_cooldown = pg.time.get_ticks() 
+
+        # -------- player sprint stuff --------  
+        if keys[pg.K_TAB]: # if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:  
             # [ todo ] - own function, is sprinting / handle sprinting - new sprint implementation, only called when holding sprint so any sprint meter stuff needs to be done outside here duh
             self.vel *= self.get_sprint_multiplier() 
             self.state_moving = "sprinting"
@@ -255,6 +380,8 @@ class Player(pg.sprite.Sprite):
                 
     def update(self):
         self.get_keys()
+        print(self.current_weapon_id)
+        self.current_weapon = self.weapon_list[self.current_weapon_id - 1]
         # update the rotation based on where we are facing
         # [note!] - if you want to update the player img u need to do it here as the rotation is done here and thats important mkay
         self.rot = (self.rot + self.rot_speed * self.game.dt) % 360 # modulo 360 so if we hit 361 we just go back to 1
@@ -277,7 +404,9 @@ class Player(pg.sprite.Sprite):
         # if it collides (by moving in the opposite of where we tried to move), so we need to reapply this transformation to the player and not just the hitbox
         self.rect.center = self.hit_rect.center
 
-        # [ todo-asap! ] - new function
+        # new new clout test stuff
+        self.clout_handler()
+
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons
         # again forget actual ranges for now but if we are under 30% we are fatigued
         if self.sprint_meter < 3_000 :
@@ -294,6 +423,12 @@ class Player(pg.sprite.Sprite):
         else:
             self.state_state = "fresh"
         # print(f"{(self.sprint_meter):.1f}% - {self.state_moving = }, {self.state_state = }, {self.vx = }")
+
+        # new test dash cd 
+        cd_end = pg.time.get_ticks() 
+        if cd_end - self.dash_cooldown >= 10000: # 10 sec
+            self.dash_cooldown = False
+        
         # new test
         if self.waiting:
             space_end = pg.time.get_ticks() 
@@ -344,8 +479,8 @@ class Player(pg.sprite.Sprite):
 
                     # use faker to give the zombies fake names, 
                     # have their names be part of their class so can use it obvs 
-                       
-        
+
+
 class Mob(pg.sprite.Sprite):
     showmaker = Faker()
     Zombie_Boys = {} # maybe un-needed, cant remember exactly what is used for rn
@@ -398,7 +533,8 @@ class Mob(pg.sprite.Sprite):
                 return get_first_name        
             else: # return just the first part of the 2 word long name (first name, last name)
                 return(name_attempt[0])
-        self.myname = get_first_name()
+        attempt_name = f"{get_first_name()}" # need to fix this stuff btw, just remove recursion, was nice to implement but nah g that aint it
+        self.myname = attempt_name if len(attempt_name) < 11 else "Zomboy" # have a pre-made list of names for this and return a random one, should just do that anyway, and maybe have faker as a backup idk
         print(f"{self.myname} {'is roaming' if self.health <= 150 else 'is looking for blood' if self.health > 150 and self.health < 250 else 'is enraged'}... [ {self.health}hp ]")
 
     def set_init_hp(self):
@@ -434,7 +570,7 @@ class Mob(pg.sprite.Sprite):
 
     def draw_name(self):
         font = pg.font.Font("Silkscreen-Regular.ttf", 12)
-        textsurface = font.render(self.myname, True, BLACK) # "text", antialias, color
+        textsurface = font.render(f"{self.myname} {self.health}", True, BLACK) # "text", antialias, color
         # then before we draw the name rotate it to where we want it to be, since we're doing it with blit in relation to the camera
         # e.g. this will rotate to face the player => pg.transform.rotate(textsurface, self.game.player.rot)
         #if self.rot > -135 and self.rot < -45: # only do our rotation at certain angles based on the zombie
@@ -595,9 +731,7 @@ class Mob(pg.sprite.Sprite):
                 print(f"{self.myname} - interactions enabled")
                 self.waiting = False
         # more new testing, this time for zombies stalled by entrances  
-        self.am_i_stalled()
-        
-    
+        self.am_i_stalled()    
 
 
 class Bullet(pg.sprite.Sprite):
@@ -614,10 +748,11 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.pos = vec(pos).copy() # position is the one we pass in, pass a copy so we dont update the players position with the bullet... which is fucking hilarious btw
         self.rect.center = pos # put our rectangle there at the center
+        self.live_gun_spread = self.game.player.return_gun_spread()
         if game.player.autoshoot:
-            spread = uniform(-GUN_SPREAD*2, GUN_SPREAD*2) # autoshoot is more inaccurate so its not giga free, easily changed and is temp anyway tbf
+            spread = uniform(-self.live_gun_spread*2, self.live_gun_spread*2) # autoshoot is more inaccurate so its not giga free, easily changed and is temp anyway tbf
         else:
-            spread = uniform(-GUN_SPREAD, GUN_SPREAD) # bullet will come out at a random angle based on the spread, this should really update or be different for autoshoot but is fine for now
+            spread = uniform(-self.live_gun_spread, self.live_gun_spread) # bullet will come out at a random angle based on the spread, this should really update or be different for autoshoot but is fine for now
         self.vel = dir.rotate(spread) * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
         self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
         Bullet.bullet_count += 1

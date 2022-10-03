@@ -53,6 +53,8 @@ class Game:
         self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
         # new bullet img
         self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
+        # new custom test myturret img
+        self.my_turret_img = pg.image.load(path.join(img_folder, MY_TURRET_IMG)).convert_alpha()
         
         # test img stuff
         self.break_wall_0_img = pg.image.load(path.join(img_folder, BREAK_WALL_0_IMG)).convert_alpha()
@@ -88,7 +90,7 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
-        self.unlockwalls = pg.sprite.Group()         
+        self.unlockwalls = pg.sprite.Group()        
         def spawn_stuff_on_map():
             # first run = run only player first 
             # why? = because we need to pass the player object to instances of other interactive things on the map like walls
@@ -108,7 +110,7 @@ class Game:
                                 Wall(self, col, row)
                             if tile == "B":
                                 # place a breakablewall test
-                                BreakableWall(self, col, row, self.player)   
+                                BreakableWall(self, col, row, self.player)  
                         if run == 3:    
                             if tile == "Z":
                                 # place a breakablewall test
@@ -151,6 +153,11 @@ class Game:
         if hits:
             print(f"[ {self.player.health}hp ] Player got Bitchslapped by {hits[0].myname}")
             self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
+            # new clout stuff
+            if self.player.clout_rating_base_timer: # if the clout rating timer is running / active and we just got hit by a zombie
+                self.player.clout_rating_base_timer = False # the player got hit so turn off our timer
+                # some way to print this on screen to the player, or flag it or sumnt idk
+                # we now also need a clout cooldown timer for the player thats started here too 
 
         # k so big note, already know how to add bullets going thru say 5 zombies then dying functionality
         # for bulletstreaks n shit, but problem is it counts every time again, would be an easy enough solution but diminishing returns rn so leaving for now
@@ -176,6 +183,8 @@ class Game:
                 hit.vel = vec(0,0)                
             print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }")                
             if hit.health <= 0:
+                if self.player.clout_rating_base_timer and not self.player.won_clout: # if the clout rating timer is running / active and its not already true so we dont keep trying to set it
+                    self.player.won_clout = True # once the player has 1 kill they won the clout so flag it 
                 print(f"{hit.myname} has Died [ hp: {hit.health} ]")
             else:
                 print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
@@ -196,9 +205,6 @@ class Game:
             accuracy = 0
         # temp, set the caption of the window to be any core debug things, framerate etc
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, ShotsHit: {Bullet.bullet_hit}, ShotsFired: {Bullet.bullet_count}, ShotAccuracy: {accuracy:.0f}%, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
-        
-        # personal new test af draw stuff
-        font = pg.font.SysFont("arial", 16) # [ HERE! ] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,
 
         # actual draw stuff
         self.screen.fill(BGCOLOR)
@@ -218,13 +224,33 @@ class Game:
 
             # only do this draw for instances of the zombie mob
             if isinstance(sprite, Mob):
+                # personal custom zombie name display, note this isn't a sprite or part of the sprint (cause img size = bounds) but drawn ontop during the render so has layering considerations which is why the name is drawn on first, then the hp bar (?)
                 destination = self.camera.apply(sprite).copy()
                 destination.move_ip(-10, TILESIZE/2)
                 self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
+                # actually clean draw health
                 sprite.draw_health()
 
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
+
+            # only do this draw for the player instance
+            #if isinstance(sprite, Player):
+                #sprite.myturret
+
+        def render_to_basic_ui(text, x, y):
+            # personal basic af test ui stuff
+            font = pg.font.Font("Silkscreen-Bold.ttf", 12) # font = pg.font.SysFont("arial", 16) # create the font object
+            text = font.render(f'{text}', True, RED if self.player.clout_rating_base_timer else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text
+            textRect = text.get_rect() # then create a surface for the rect 
+            textRect.x = x # put the center of that rect where we want it
+            textRect.y = y # put the center of that rect where we want it        
+            # copy the text surface object to the screen and render at the given center pos
+            self.screen.blit(text, textRect)
+
+        render_to_basic_ui(f"Rating: {self.player.get_display_clout_rating()}", x = 20, y = 50) 
+        render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 75) 
+
 
         # before final final flip
         draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
