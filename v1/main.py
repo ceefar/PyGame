@@ -223,7 +223,7 @@ class Game:
                 self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
                 sprite.draw_health()
 
-            # take the camera and apply it to that sprite
+            # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
 
         # before final final flip
