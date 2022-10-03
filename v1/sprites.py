@@ -356,6 +356,10 @@ class Mob(pg.sprite.Sprite):
         self.game = game
         self.image = game.mob_img
         self.rect = self.image.get_rect()
+        #print(f"b4: {self.rect}")
+        #self.rect.update((0,0),(self.rect.width * 2,self.rect.height*2))
+        #self.rect.left = self.rect.left + TILESIZE
+        #print(f"af: {self.rect}")
         self.hit_rect = MOB_HIT_RECT.copy() # they all need their own unique hit rect so copy is needed
         self.hit_rect.center = self.rect.center
         self.pos = vec(x, y) * TILESIZE
@@ -387,8 +391,15 @@ class Mob(pg.sprite.Sprite):
         # new stalled fixer test
         self.stalled = False
         # new name
-        self.myname = self.showmaker.name()
-        print(f"{self.myname} {'is roaming' if self.health <= 100 else 'is looking for blood'}... [ {self.health}hp ]")
+        # recursively get the name if it is greater than 2 in len, e.g. mr mrs dr plus 2 words, not just 2 words
+        def get_first_name():
+            name_attempt = self.showmaker.name().split() # if add a [0] here it works without dr mrs etc
+            if len(name_attempt) > 2:
+                return get_first_name        
+            else: # return just the first part of the 2 word long name (first name, last name)
+                return(name_attempt[0])
+        self.myname = get_first_name()
+        print(f"{self.myname} {'is roaming' if self.health <= 150 else 'is looking for blood' if self.health > 150 and self.health < 250 else 'is enraged'}... [ {self.health}hp ]")
 
     def set_init_hp(self):
         # for now keep this super simple and have the hp just be influenced by a random roll
@@ -420,6 +431,18 @@ class Mob(pg.sprite.Sprite):
         if self.health < self.max_health: 
             # draw that self.health_bar on top of our zombies rectangle in the given colour
             pg.draw.rect(self.image, col, self.health_bar) 
+
+    def draw_name(self):
+        font = pg.font.Font("Silkscreen-Regular.ttf", 12)
+        textsurface = font.render(self.myname, True, BLACK) # "text", antialias, color
+        # then before we draw the name rotate it to where we want it to be, since we're doing it with blit in relation to the camera
+        # e.g. this will rotate to face the player => pg.transform.rotate(textsurface, self.game.player.rot)
+        #if self.rot > -135 and self.rot < -45: # only do our rotation at certain angles based on the zombie
+        textsurface = pg.transform.rotate(textsurface, self.rot + 90) # if at this angle rotate my name
+        #else:
+        #    textsurface = pg.transform.rotate(textsurface, self.rot)
+        # print(f"{self.myname} - current rotation: {self.rot}")
+        return(textsurface)
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -573,6 +596,7 @@ class Mob(pg.sprite.Sprite):
                 self.waiting = False
         # more new testing, this time for zombies stalled by entrances  
         self.am_i_stalled()
+        self.draw_name()
 
 
 class Bullet(pg.sprite.Sprite):
@@ -659,7 +683,6 @@ class Bullet(pg.sprite.Sprite):
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME: # do a meeseeks
             self.kill() # delete the bullet
         
-
 
 class Wall(pg.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -828,6 +851,20 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     # [ todo-asap! ] - then continue tuts pls!
 
     # DARKGREY, GREY, LIGHTGREY, PRINT, RUST, HIGHLIGHTER, PALEGREY, TAN, COFFEE, MOONGLOW
+
+# note should test screaming if hit, crit words on the bar for zombie
+# and gold and rating on player too
+
+
+
+
+
+
+
+
+
+
+
 
     # unused implementation of is interacting 
     """

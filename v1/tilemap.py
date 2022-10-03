@@ -37,7 +37,7 @@ class Camera:
     def apply(self, entity):
         # apply this to an object, entity could end it a mob, a wall, whatever
         # return that entities rectangle, and move it by whatever our camera coordinates are
-        # the move command when applied to a rect gives you back a rectanlge that is shifted by the amount sent as a parameter
+        # the move command when applied to a rect gives you back a rectangle that is shifted by the amount sent as a parameter
         return entity.rect.move(self.camera.topleft)
     
     def update(self, target):

@@ -10,6 +10,27 @@ from settings import *
 from sprites import *
 from tilemap import *
 
+# HUD functions
+def draw_player_health(surf, x, y, pct): # surface, pos, pos, percentage of health
+    # incase we pass a negative, pin it at 0
+    if pct < 0:
+        pct = 0
+    BAR_LENGTH = 100
+    BAR_HEIGHT = 20
+    fill = pct * BAR_LENGTH
+    outline_rect = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pg.Rect(x, y, fill, BAR_HEIGHT)
+    # what colour
+    if pct >= 0.6:
+        col = GREEN
+    elif pct >= 0.3:
+        col = YELLOW
+    else:
+        col = RED
+    # then draw it on the surface we said, in the colour we said, using the fill_rect we've passed
+    pg.draw.rect(surf, col, fill_rect)
+    pg.draw.rect(surf, DARKGREY, outline_rect, 2)
+
 class Game:
     def __init__(self):
         pg.init()
@@ -56,23 +77,23 @@ class Game:
         self.break_wall_hl_4_img = pg.transform.scale(self.break_wall_hl_4_img, (TILESIZE, TILESIZE))         
         self.break_wall_hl_4b_img = pg.image.load(path.join(img_folder, BREAK_WALL_HL_4B_IMG)).convert_alpha()  
         self.break_wall_hl_4b_img = pg.transform.scale(self.break_wall_hl_4b_img, (TILESIZE, TILESIZE))  
-
+         
         # self.player_blur3_img = pg.image.load(path.join(img_folder, PLAYER_BLUR3_IMG)).convert_alpha()
         # self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
 
-    def new(self):
+    def new(self):              
         # initialize groups for stuff in game and do all the rest of the setup for a new game
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
-        self.unlockwalls = pg.sprite.Group()
+        self.unlockwalls = pg.sprite.Group()         
         def spawn_stuff_on_map():
             # first run = run only player first 
             # why? = because we need to pass the player object to instances of other interactive things on the map like walls
             # otherwise we have to place the player above any interactive elements, now we can place the player anywhere
-            # enumerate over the map data as each line is a row on the map from top to bottom
+            # enumerate over the map data as   each line is a row on the map from top to bottom
             for i in range(0, 3):
                 run = i+1
                 for row, tiles in enumerate(self.map.data):
@@ -145,7 +166,8 @@ class Game:
             if self.player.player_damage >= 100: 
                 print("CRIT BAYBAYYYYY!")
                 self.player.player_damage = 10
-                # print("PLAYER DAMAGE = 10")
+                # just some quick extra rotation for randomness during this heavier crit pushback
+                hit.look_at(vec(hit.pos.x - 10, hit.pos.y - 10)) 
                 # make this bullet temporarily push the zombie back if its a crit
                 hit.vel = vec(-150,0)
             else:
@@ -174,23 +196,38 @@ class Game:
             accuracy = 0
         # temp, set the caption of the window to be any core debug things, framerate etc
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, ShotsHit: {Bullet.bullet_hit}, ShotsFired: {Bullet.bullet_count}, ShotAccuracy: {accuracy:.0f}%, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
+        
+        # personal new test af draw stuff
+        font = pg.font.SysFont("arial", 16) # [ HERE! ] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,
+
         # actual draw stuff
         self.screen.fill(BGCOLOR)
         want_grid = False
-        if want_grid:
-            self.draw_grid()
-        for sprite in self.all_sprites:
-            # only do this draw for instances of the zombie mob
-            if isinstance(sprite, Mob):
-                sprite.draw_health()
-            # take the camera and apply it to that sprite
-            self.screen.blit(sprite.image, self.camera.apply(sprite))
         # for debugging -> draw the players rectangle, and hitbox
         draw_rect = True
+
         if draw_rect:
             # pg.draw.rect(self.screen, WHITE, self.camera.apply(self.player), 2)
             # wont draw hit rect which is weird af
             pg.draw.rect(self.screen, WHITE, self.player.hit_rect, 5) 
+
+        if want_grid:
+            self.draw_grid()
+            
+        for sprite in self.all_sprites:
+
+            # only do this draw for instances of the zombie mob
+            if isinstance(sprite, Mob):
+                destination = self.camera.apply(sprite).copy()
+                destination.move_ip(-10, TILESIZE/2)
+                self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
+                sprite.draw_health()
+
+            # take the camera and apply it to that sprite
+            self.screen.blit(sprite.image, self.camera.apply(sprite))  
+
+        # before final final flip
+        draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
         pg.display.flip()
 
     def events(self):
