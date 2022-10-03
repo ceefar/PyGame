@@ -596,7 +596,8 @@ class Mob(pg.sprite.Sprite):
                 self.waiting = False
         # more new testing, this time for zombies stalled by entrances  
         self.am_i_stalled()
-        self.draw_name()
+        
+    
 
 
 class Bullet(pg.sprite.Sprite):
