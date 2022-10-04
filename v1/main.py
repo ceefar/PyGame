@@ -337,6 +337,7 @@ class Game:
         #         self.comment_timer = False
         if not self.twitch_chat.is_spawn_on_cooldown:
             self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
+            self.twitch_chat.is_spawn_on_cooldown = True
         self.twitch_chat.update_all_comments(self.sidebar.image)
         self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
         

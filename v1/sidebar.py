@@ -42,12 +42,14 @@ class SideBar_Bottom(object):
 class Comment_Handler(object):
     """ temp test """
     all_comments = {} # instance of object key : pos/y_pos value
+    is_chat_maxed_out = False
     
     def __init__(self, game, sidebar, offset=0): # probs dont need all these btw but had to take all for initial refactor 
         self.game = game
         self.sidebar = sidebar
         self.offset = offset
         self.is_spawn_on_cooldown = False
+        self.max_comments = 5 # on screen at one time, which is the amount we allow in the all_comments list (dict!)
 
     def create_new_comment(self):
         new_comment = Comment(self.game, self.sidebar, self.offset)
@@ -59,20 +61,26 @@ class Comment_Handler(object):
         # check we even have a dictionary first, might not be any comments to check
         if Comment_Handler.all_comments:
             # for the very first item in the list (we need to handle a max amount now we're adding this btw)
-            first_comment = list(Comment_Handler.all_comments.keys())[0] # get the first item in the dictionary
-            if first_comment.pos.y > 55: # hard code this to be the height of the most recent comment plus a small margin like + 5
+            current_comment = list(Comment_Handler.all_comments.keys())[-1] # get the most recent item in the dictionary # len(Comment_Handler.all_comments) - 1
+            #print(f"Check is my {current_comment.myid} myYpos: {current_comment.pos.y:.0f} Greater Than whereIshouldBe: {50 * len(Comment_Handler.all_comments)}")
+            if current_comment.pos.y > 55 * len(Comment_Handler.all_comments): # hard code this to be the height of the most recent comment plus a small margin like + 5
                 self.is_spawn_on_cooldown = True # if the toppest one is not at the top, spawn comment is still on cooldown
             else: # else if it has reached the top the cooldown is now off and we need to remove this object from the list (dict) for tracking
                 self.is_spawn_on_cooldown = False
-                del Comment_Handler.all_comments[first_comment] # stop tracking this comment now that is it at the top
+                # but we only want to remove it from the top if the list is greater than a max size
+                if len(Comment_Handler.all_comments) >= self.max_comments: # note if the list isnt max size we'll be using the list length as a multiplier to that 55 value (most recent comment height + 5 border)
+                    print(f"TWITCH CHAT IS FULL!\nDeleting Comment {current_comment.myid}")
+                    Comment_Handler.is_chat_maxed_out = True
+                    # del Comment_Handler.all_comments[current_comment] # stop tracking this comment now that is it at the top
+                    # if we dont do the del here it stops at max, which we want, as we want it to scroll through now
             for comment in Comment_Handler.all_comments.keys():
                 comment.draw(surf) # move dem all on dis surface
                 self.update_comments_list(comment) # update the list of their y positions if they're all not moving
 
+
 class Comment(object): # note have this be rough for now as im an idiot, twitch goes top to bottom, but dw at all for now will be hella refactors
     """ class for the Comments shown in the sidebar """
-    comment_locations = {} # all instances of comments current y position, when updating just say if its y is greater than we wanna be tracking then remove it from here and or delete / kill (actually del, its not a zombie we dont want to consider reusing it)
-
+   
     def __init__(self, game, sidebar, offset=0):
         self.game = game
         self.image =  self.select_bg()
@@ -81,12 +89,13 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         self.pos = vec(0, start_pos) # always want to start at the bottom of the sidebar # SIDEBAR_SIZE[1] - self.rect.y
         self.sidebar = sidebar
         self.comment_positions = () # fixed positions, should be a constant class var but this is temp af so dw
-        Comment.comment_locations[self] = self.pos.y # self is key (tho maybe id if this object becomes massive tho shouldnt matter as is only like 20 on screen max or whatever)
         # for refactor
         Comment_Handler.all_comments[self] = self.pos.y # now add it here too
         # testing potential to add
         self.rect.center = self.pos
         self.vel = vec(0,0)
+        self.myid = len(Comment_Handler.all_comments)
+        self.comment_move_speed = 120 # the velocity which we move the comments
 
     def update_comment_handler_list(self):
         for comment in Comment_Handler.all_comments.keys(): # for every comment which is the key in this dict
@@ -99,7 +108,7 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         ...
     
     def select_bg(self):
-        roll = randint(1,4)
+        roll = randint(1,3)
         if roll == 1:
             return(self.game.comment_img_1)
         elif roll == 2:
@@ -107,7 +116,7 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         elif roll == 3:
             return(self.game.comment_img_3)
         else:
-            return(self.game.comment_img_4)            
+            return(self.game.comment_img_4) # blank one nearly fucked me up lol    
     
     def write_username():
         ...
@@ -124,33 +133,35 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         
     def update(self):
         # set our move speed but this wont move us yet
-        if self.pos.y >= 55: # increase velocity up to this point
-            self.vel = vec(0, -100)
-        else: # else stop dead lol
-            self.vel = vec(0, 0)
+        # but what were saying is move us, at this speed upwards if we are not at the top yet
+        if Comment_Handler.is_chat_maxed_out == False: # if the chat is not full
+            if self.pos.y >= 50 * len(Comment_Handler.all_comments): # increase velocity up to this point
+                self.vel = vec(0, -self.comment_move_speed)
+            else: # else stop dead lol
+                self.vel = vec(0, 0) 
+            self.pos += self.vel * self.game.dt
+        # if it is maxed out then move everyone by the same velocity - then in handler dont update until the last item is at the top then remove that item 
+        else:
+            # might work if it gets to max filled bar, check, but either way call then done
+            # put the names in
+            # put some basic semi contextual randomised comments in 
+            # then just continue (subs, viewers | bullet count ui | buyable walls and couple more zeds)
+            
+            # then
+            # finally
+            # move us to the top position gradually
+            self.vel = vec(0, -self.comment_move_speed)
+            self.pos += self.vel * self.game.dt
+        # print(f"Comment [ {self.myid} ] - position:{self.pos}, sidebar:{self.sidebar.pos}")
 
-        # decide if we can move by checking above us
-        if Comment_Handler.all_comments:
-            print(f"{Comment_Handler.all_comments = }") # not yet implemented yet tho huh          
-
-        # move us to the top position gradually
-        self.pos += self.vel * self.game.dt
-        # and ensure we keep the dict storing their positions up to date
-        Comment.comment_locations[self] = self.pos.y
-        
-        print(f"COMMENT - position:{self.pos}, sidebar:{self.sidebar.pos}")
 
 
+# might work if it gets to max filled bar, check, but either way call then done
+# then record this, maybe with commentary but idk, actually yh why not
+# put the names in
+# put some basic semi contextual randomised comments in 
+# then just continue (subs, viewers | bullet count ui | buyable walls and couple more zeds)
 
-
-# k so legit learned a lot
-# obvs this needs a refactor from scratch due to fact that i want a comment creater and then the comment class like how it is now
-# since thats long...
-
-# rn just do font with fake name and fake contextual comment
-# make 3 instances of comment at top, comment 1,2,3
-# and have the comment start its draw only when x zombies remaining!
-# easy af
 # then record this
 # and continue to...
 # buyable walls
