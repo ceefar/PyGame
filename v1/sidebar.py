@@ -6,22 +6,40 @@ SIDEBAR_SIZE = (250, 768)
 BACKGROUND_COLOR = (30, 40, 50)
 SIDEBAR_COMMENT_SIZE = (250, 40)
 
+
+# to do properly, and also when done move me to new module like tools or sumnt
+class Roll(object):
+    def __init__():
+        pass
+
+    def has_won_roll(range=100, chance=50):
+        if isinstance(range, list):
+            range = len(range) -1
+        roll = randint(1, range)
+        if roll > chance:
+            return(False)
+        else:
+            return(True)
+
+
 class SideBar(object):
     """ class for the HUD which is displayed on the right of the screen """
     def __init__(self, game):
         self.game = game
-        self.image = game.test_sidebar_img
+        # self.image = game.test_sidebar_img
+        self.image = pg.Surface((250, 768))
         self.rect = self.image.get_rect(x=WIDTH - SIDEBAR_SIZE[0]) # width minus the width of the actual sidebar size (not the img so its squished?)
         self.pos = vec(self.rect.x, self.rect.y)
         self.centerpos = vec(self.rect.centerx, self.rect.centery) # self.rect.x = 774, self.rect.centerx = 899
 
-    def update(self, player):
+    def update(self): # player
         """ update and redraw all elements to the image """
-        self.image.fill(BACKGROUND_COLOR)
+        self.image.fill(WHITE)
 
     def draw(self, surface, offset=0):
         """ standard draw """
         surface.blit(self.image, (self.rect.x+offset, self.rect.y))
+        self.update()
 
 
 class SideBar_Bottom(object):
@@ -37,6 +55,21 @@ class SideBar_Bottom(object):
     def draw(self, surface):
         """ standard draw """
         surface.blit(self.image, (0, self.sidebar.rect.height - self.rect.height))
+        
+
+class SideBar_Top(object):
+    """ temp af """
+    def __init__(self, game, sidebar):
+        self.game = game
+        self.image = game.sidebar_top_img
+        self.rect = self.image.get_rect() # width minus the width of the actual sidebar size (not the img so its squished?)
+        self.pos = sidebar.pos # vec(self.rect.x, self.rect.y)
+        self.sidebar = sidebar
+        # self.centerpos = vec(self.rect.centerx, self.rect.centery) # self.rect.x = 774, self.rect.centerx = 899
+    
+    def draw(self, surface):
+        """ standard draw """
+        surface.blit(self.image, (0, 0))
         
 
 class Comment_Handler(object):
@@ -95,7 +128,10 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         self.rect.center = self.pos
         self.vel = vec(0,0)
         self.myid = len(Comment_Handler.all_comments)
-        self.comment_move_speed = 120 # the velocity which we move the comments
+        self.comment_move_speed = 330 # the velocity which we move the comments
+        self.commenter_username = self.get_commenter_username()
+        self.commenter_color = self.get_a_random_colour()
+        self.commenter_comment = self.get_commenter_comment()
 
     def update_comment_handler_list(self):
         for comment in Comment_Handler.all_comments.keys(): # for every comment which is the key in this dict
@@ -106,7 +142,40 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
     def write_comment(self, player):
         """ write a basic comment based on some context """
         ...
-    
+
+    def get_commenter_username(self): # to do 
+        commenter_usernames = [f"{self.game.username} Da Bes!", f"{self.game.username}'s #1 Fan", f"{self.game.username} Is LIFE", f"PogChamp69", "YoMommaDoucheCanoe", f"xXx_69_zOmBiEkIlLA_69_xXx", "OnlyClaps", "McSlappington"]
+        roll = randint(1, len(commenter_usernames)-1)
+        name_attempt = commenter_usernames[roll]
+        # some validation pls, actually note, sometimes we maybe even want two messages in a row ngl that would be kewl but excessive af so allow for now lol
+        return(name_attempt)
+
+    def get_commenter_comment(self): # to do 
+        # comment type, sentiment and ting, etc etc dw for now tho
+        commenter_comment = [f"Wtf 10 v 1 lol", f"{self.game.username} EZ Clap!", f"Pog", f"Oof", "Wait did u guys see that wtffff", f"yo i swear he was in my class" f"Looooooooooooooool", "Dub", "Big Dub", "Pogggggggg","Nice stream bro", "Dope", "Bruh this guy sucks hes guna die this season", "Season 12 Baybayyyyyyyy"]
+        roll = randint(1, len(commenter_comment)-1)
+        comment_attempt = commenter_comment[roll]
+        return(comment_attempt)
+
+    def get_a_random_colour(self):
+        color_picker = [LIME, PRINT, ORANGE, BLUE, RED, PURPLE]
+        roll = randint(1, len(color_picker)-1)
+        return(color_picker[roll])
+
+    def write_commenter_comment(self):
+        font = pg.font.Font("Kappa_Regular.otf", 11) # Kappa_Regular KappaDisplay_ExtraBold.otf Kappa_Black.otf KappaDisplay_Regular.otf KappaDisplay_Bold.otf
+        # so far colour options are lime pink orange red blue purple
+        textsurface = font.render(self.commenter_comment, False, DARKGREY) # "text", antialias, color
+        textsurface = pg.transform.rotate(textsurface, 0) # if at this angle rotate my name
+        return(textsurface)
+
+    def write_commenter_username(self):
+        font = pg.font.Font("KappaDisplay_ExtraBold.otf", 12) # Kappa_Regular KappaDisplay_ExtraBold.otf Kappa_Black.otf KappaDisplay_Regular.otf KappaDisplay_Bold.otf
+        # so far colour options are lime pink orange red blue purple
+        textsurface = font.render(self.commenter_username, False, self.commenter_color) # "text", antialias, color
+        textsurface = pg.transform.rotate(textsurface, 0) # if at this angle rotate my name
+        return(textsurface)
+
     def select_bg(self):
         roll = randint(1,3)
         if roll == 1:
@@ -129,7 +198,11 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
 
     def draw(self, surface):
         self.update() # before we draw, run update, remember this isnt a sprite so update isnt running by itself
+        # if self.vel.y == -self.comment_move_speed: # if ur moving then draw else dont, might get a bit iffy if things are starting and stopping moving at different trailing offsets tho
         surface.blit(self.image, self.pos) # (self.rect.x, self.rect.y)) # draw it on top of the sidebar, not the screen < test this quickly
+        surface.blit(self.write_commenter_username(), (self.pos.x + 50, self.pos.y))  
+        surface.blit(self.write_commenter_comment(), (self.pos.x + 30, self.pos.y + 20))  
+          
         
     def update(self):
         # set our move speed but this wont move us yet

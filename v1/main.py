@@ -64,7 +64,10 @@ class Game:
         self.load_data()
         self.sidebar = SideBar(self) # create the new sidebar ui object
         self.sidebar_bottom = SideBar_Bottom(self, self.sidebar) # temp af
+        self.sidebar_top = SideBar_Top(self, self.sidebar) # temp af 
         self.twitch_chat = Comment_Handler(self, self.sidebar) # note in an object not a sprite
+        self.username = "PlayerMan" # to add this in a menu, will have in twitch chat fans with ur name lol
+        self.want_twitch = True
 
     def load_data(self):
         # location of where our game is running from, main.py
@@ -110,12 +113,12 @@ class Game:
         self.test_bg_img = pg.transform.scale(self.test_bg_img, (WIDTH, HEIGHT))  
         self.test_sidebar_img = pg.image.load(path.join(img_folder, TEST_SIDEBAR_IMG)).convert_alpha() 
         self.sidebar_bottom_img = pg.image.load(path.join(img_folder, SIDEBAR_BOTTOM_IMG)).convert_alpha() 
+        self.sidebar_top_img = pg.image.load(path.join(img_folder, SIDEBAR_TOP_IMG)).convert_alpha()
         self.comment_img_1 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_1_BG_IMG)).convert_alpha() 
         self.comment_img_2 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_2_BG_IMG)).convert_alpha() 
         self.comment_img_3 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_3_BG_IMG)).convert_alpha() 
         self.comment_img_4 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_4_BG_IMG)).convert_alpha() 
         
-         
         # self.player_blur3_img = pg.image.load(path.join(img_folder, PLAYER_BLUR3_IMG)).convert_alpha()
         # self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
 
@@ -291,15 +294,18 @@ class Game:
             textRect.y = y # put the center of that rect where we want it        
             # copy the text surface object to the screen and render at the given center pos
             self.screen.blit(text, textRect)
+        player_clip_size = self.player.return_clip_size()
+        bullets_remaining = self.player.return_clip_size() - self.player.clip_counter
         # -- ui text renders --
         # temp to do proper
         render_to_basic_ui(f"Rating: {self.player.get_display_clout_rating()} [{self.player.clout_rating_detail}]", x = 20, y = 50, color = "rating") 
         render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
         render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings") 
         render_to_basic_ui(f"Zombies Remaining: {Mob.get_my_hps()}", x = 20, y = 110, color = "zombies") 
+        render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}", x = 20, y = 130, color = "weapon") 
         # temp afaf
         if self.player.clout_rating_base_timer:
-            render_to_basic_ui(f"Going Viral?... [ x{self.player.clout_sub_level} ]" if self.player.clout_sub_level > 1 else "Going Viral?...", x = 20, y = 130, color="rating") 
+            render_to_basic_ui(f"Going Viral?... [ x{self.player.clout_sub_level} ]" if self.player.clout_sub_level > 1 else "Going Viral?...", x = 20, y = 150, color="rating") 
         # -- draw player hp bar --
         # before final final flip
         draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
@@ -311,10 +317,20 @@ class Game:
             flashme = int(f"{flashme}"[1])
             if flashme % 2 != 0: # if the highest digit number is even on if not off, for flash                                                                          
                 render_to_basic_ui(f"Reloading!", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, ((reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())) # flashing?
+                flashme = False
             # isnt actually subclout btw but reload
             draw_player_subclout(self.screen, (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2), (reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())   # self.screen.get_width() / 2, self.screen.get_height() /2,
+        else:
+            # if player is not reloading, check if u are low ammo, if so then flash it to player
+            if bullets_remaining < 10: # less than 20%
+                flashme2 = pg.time.get_ticks() 
+                flashme2 = int(f"{flashme2}"[1])
+                if flashme2 % 2 != 0: # if the highest digit number is even on if not off, for flash   
+                    render_to_basic_ui(f"Danger! Low Ammo", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, color = "weapon") 
+                    flashme2 = False  
+
         # -- draw player clout multiplier bar --
-        # if atleast 1 zombie is still alive
+        # if atleast 1 zombie is still alive 
         if Mob.get_my_hps():
             if self.player.clout_sub_level > 1:
                 render_to_basic_ui(f"Clout Multiplier: {self.player.clout_sub_level}", x = 20, y = 680) # viewer boost / subscriber boost
@@ -329,19 +345,22 @@ class Game:
 
         # -- new test ui stuff --
         # draw the sidebar
-        self.sidebar.draw(self.screen)     
+        if self.want_twitch:
+            self.sidebar.draw(self.screen)     
+            # drop twitch chat
+            if not self.twitch_chat.is_spawn_on_cooldown:
+                if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
+                    if not self.player.waiting:
+                        roll = randint(1,6) 
+                        if roll == 2: # this is effectively spawn rate now, if u make this a funct and just give it a percent chance! bosh
+                            self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
+                            self.twitch_chat.is_spawn_on_cooldown = True
+                        self.player.waiting = pg.time.get_ticks()
+            if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet                
+                self.twitch_chat.update_all_comments(self.sidebar.image)
+            self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
+            self.sidebar_top.draw(self.sidebar.image)
 
-        # self.comment_check = pg.time.get_ticks()
-        # if self.comment_timer:
-        #     if self.comment_check - self.comment_timer > 1000: # 1 sec then can go again
-        #         self.comment_timer = False
-        if not self.twitch_chat.is_spawn_on_cooldown:
-            if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet
-                self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
-                self.twitch_chat.is_spawn_on_cooldown = True
-        self.twitch_chat.update_all_comments(self.sidebar.image)
-        self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
-        
         # -- finally done, flip the display and render complelet --
         pg.display.flip()
 

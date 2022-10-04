@@ -177,6 +177,9 @@ class Player(pg.sprite.Sprite):
         self.current_weapon_id = 1
         self.current_weapon = Player.weapon_list[0] # remember may be based on other stuff at the start of level, for sure as classes, i geddit
 
+        # test sidebar display
+        
+
     def set_player_weapon_id(self):
         # if the current weapon id isn't the list len (allow zeros btw)
         if self.current_weapon_id >= len(Player.weapon_list):
@@ -308,6 +311,13 @@ class Player(pg.sprite.Sprite):
                 self.set_player_weapon_id()
                 self.toggle_wait = pg.time.get_ticks()
         # -------- player interaction keys stuff --------
+        # -- twitch chat sidebar --
+        if keys[pg.K_t]: # for twitch tho also is temp af
+            if not self.toggle_wait:
+                # dont let us toggle 1 jillion times per second
+                self.game.want_twitch = False if self.game.want_twitch else True # flip it
+                self.toggle_wait = pg.time.get_ticks() 
+                print(f"{self.game.want_twitch = }")
         # -- shooting --
         # -- toggle auto shooting --
         if keys[pg.K_b]: # for bullets... or beginner but easily could be harder tho so nah
