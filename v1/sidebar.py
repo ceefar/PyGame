@@ -49,7 +49,7 @@ class Comment_Handler(object):
         self.sidebar = sidebar
         self.offset = offset
         self.is_spawn_on_cooldown = False
-        self.max_comments = 5 # on screen at one time, which is the amount we allow in the all_comments list (dict!)
+        self.max_comments = 15 # on screen at one time, which is the amount we allow in the all_comments list (dict!)
 
     def create_new_comment(self):
         new_comment = Comment(self.game, self.sidebar, self.offset)
@@ -142,23 +142,19 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
             self.pos += self.vel * self.game.dt
         # if it is maxed out then move everyone by the same velocity - then in handler dont update until the last item is at the top then remove that item 
         else:
-            # might work if it gets to max filled bar, check, but either way call then done
-            # put the names in
-            # put some basic semi contextual randomised comments in 
-            # then just continue (subs, viewers | bullet count ui | buyable walls and couple more zeds)
-            
+            # doesnt work as expected just due to it printing loads under these conditions, leaving for now so disabling on full
             # then
             # finally
             # move us to the top position gradually
-            self.vel = vec(0, -self.comment_move_speed)
-            self.pos += self.vel * self.game.dt
+            # self.vel = vec(0, -self.comment_move_speed)
+            # self.pos += self.vel * self.game.dt
+            pass
         # print(f"Comment [ {self.myid} ] - position:{self.pos}, sidebar:{self.sidebar.pos}")
 
 
 
-# might work if it gets to max filled bar, check, but either way call then done
-# then record this, maybe with commentary but idk, actually yh why not
-# put the names in
+# record this, maybe with commentary but idk, actually yh why not
+# put the names in the comments
 # put some basic semi contextual randomised comments in 
 # then just continue (subs, viewers | bullet count ui | buyable walls and couple more zeds)
 
