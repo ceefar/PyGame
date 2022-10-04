@@ -95,7 +95,7 @@ class MyTurret(pg.sprite.Sprite): # new af test - personal turret
     def get_turret_name(self):
         names = ["Loyal Turret", "Honorable Turret", "Turret Boi", "McTurretFace"] # lol loyal turret will die for u, have them have intro lines lmao (like wheatley kinda)
         roll = randint(0, len(names)-1)
-        print(f"{roll=}, {names[roll]=}")
+        #print(f"{roll=}, {names[roll]=}")
         return(names[roll])
 
     def update(self):
@@ -106,7 +106,7 @@ class MyTurret(pg.sprite.Sprite): # new af test - personal turret
 
 
 class Player(pg.sprite.Sprite):
-    weapon_list = ["pistol", "uzi"]
+    weapon_list = ["uzi", "pistol"]
 
     def __init__(self, game, x, y):
         self.groups = game.all_sprites
@@ -148,7 +148,7 @@ class Player(pg.sprite.Sprite):
         self.toggle_wait = False
 
         # new player rating test stuff - clout rating boom
-        self.clout_rating = 10 # work in integers for now, but want this to represent the float 1, so its 1.0, 11 would be 1.1, so double clout_rating from base is 20
+        self.clout_rating_detail = 100 # work in integers for now, let this represent a decimal btw 
         # obvs need to handle and update clout, and zombies will be affected by ur clout too 
 
         # new player damage stuff, actually altering og code quite substantially for this but will be fine
@@ -158,12 +158,20 @@ class Player(pg.sprite.Sprite):
         self.clout_rating_base_timer = False # the timer to initialise the start of a new clout meter beginning or ending
         self.clout_level = 0 # something like 1-20 for now
         self.clout_level_timer = False
-        self.clout_rating = 6  # again 1-20 for B+, D- etc, and remember we wanna pass this in to a new level based on what happened in an old one
+        self.clout_rating = 1  # again 1-20 for B+, D- etc, and remember we wanna pass this in to a new level based on what happened in an old one
         self.won_clout = False # var for if we've won clout or not as part of the running timer
         self.clout_cooldown_timer = False
-        
+        self.clout_sub_cooldown_timer = False
+        self.clout_sub_level = 0 # literally just the amount of ticks over x seconds of the sublevel
+        self.sub_clout_base_time = 2000 # ms per tick of sub level
+        self.sub_clout_time = 0
+
         # new custom dash test stuff
         self.dash_cooldown = False
+
+        # new gun clip
+        self.clip_counter = 0
+        self.is_reloading = False
 
         # new player weapon stuff
         self.current_weapon_id = 1
@@ -175,7 +183,13 @@ class Player(pg.sprite.Sprite):
             self.current_weapon_id = 1 # loop to start
         else:
             self.current_weapon_id += 1 # go to next
-    
+
+    def return_clip_size(self):
+        if self.current_weapon == "uzi":
+            return(UZI_CLIP_SIZE)
+        if self.current_weapon == "pistol":
+            return(PISTOL_CLIP_SIZE)
+
     def return_bullet_rate(self): # just bullet rate for now
         if self.current_weapon == "pistol":
             return PISTOL_BULLET_RATE
@@ -188,6 +202,12 @@ class Player(pg.sprite.Sprite):
         elif self.current_weapon == "uzi":
             return UZI_KICKBACK
 
+    def return_gun_reload_speed(self):
+        if self.current_weapon == "pistol":
+            return PISTOL_RELOAD_SPEED
+        elif self.current_weapon == "uzi":
+            return UZI_RELOAD_SPEED            
+
     def return_gun_spread(self):
         if self.current_weapon == "pistol":
             return PISTOL_SPREAD
@@ -197,7 +217,9 @@ class Player(pg.sprite.Sprite):
     def get_display_clout_rating(self):
         # simple af test func to convert the clout rating in to its appropriate string value
         clout_ratings = {1:"U",2:"F",3:"E-",4:"E",5:"E+",6:"D-",7:"D",8:"D+",9:"C-",10:"C",11:"C+",12:"B-",13:"B",14:"B+",15:"A-",16:"A",17:"A+",18:"A++",19:"A+++",20:"A*"}
-        return(clout_ratings[self.clout_rating])
+        closest = min(clout_ratings.keys(), key=lambda x: abs(x - self.clout_rating))
+        #print(f"{closest = }")
+        return(clout_ratings[closest])    # clout_ratings[self.clout_rating]
 
     def clout_handler(self): # super test af
         if not self.clout_cooldown_timer:
@@ -206,9 +228,8 @@ class Player(pg.sprite.Sprite):
                 for mob in self.game.mobs: # for every zombie in the game (should just do that u can see on screen btw)
                     if self.is_near(mob.pos.x, mob.pos.y): # if we are near a zombie
                         self.clout_rating_base_timer = pg.time.get_ticks() # start the clout timer
-                        print(f"Posting Clout... {self.get_display_clout_rating()} + 1")
-                        self.clout_rating += 1
-                        
+                        print(f"Near Zombie, Starting Main Clout Timer... {self.get_display_clout_rating()}")
+            # else timer is running so check if we are still near zombies to decide if we need to end timers and count the score or just keep checking instead
             else:
                 # if the base timer is running, so we think we are near a zombie and increasing our clout
                 a_zombie_is_near = False # used to check if any zombie is near throughout the loop
@@ -218,29 +239,64 @@ class Player(pg.sprite.Sprite):
                         break # we dont need to keep looping we just need to be near 1 to confirm it 
                 # if after that loop a_zombie_is_near is still false
                 if not a_zombie_is_near:
+                    print(f"Clout Streak Ended - Checking For Score")
                     # clout_cooldown_timer also!
+                    self.clout_cooldown_timer = False
                     self.clout_rating_base_timer = False # then stop our clout meter timer
                     # now check here if we managed to get a kill before it stopped else we didnt win
 
                     if self.won_clout: # then if u won clout reset won_clout
-                        clout_prize_check = pg.time.get_ticks()
-                        self.clout_rating += 1
+                        clout_prize_check = pg.time.get_ticks()                        
                         clout_prize = clout_prize_check - self.clout_cooldown_timer
-                        self.player_gold += 1000
-                        print(f"[ CLOUTED ] $1000 + ${clout_prize} BONUS!!") # print("[ 60 G'S BAYBAYYY ] +100")  # 60_000 
+                        # print(f"Clout Rating From => {self.clout_rating}")
+                        #self.clout_rating += (clout_prize // 10000)
+                        # print(f"Clout Rating To => {self.clout_rating}")
+
+                        self.player_gold += clout_prize
+                        print(f"[ CLOUTED ] +${clout_prize} BONUS!!") # print("[ 60 G'S BAYBAYYYY ] +100")  # 60_000 
                         self.won_clout = False # reset the won clout, only time we should need to me thinks
                     # else if u didnt win clout, just log it for now but we wanna handle this stuff too for sure
                     # stuff like u lose followers lol
                     else:
-                        print("Ur Post Flopped, Fans Unfollowed")
+                        print("No Clout Won, Unfollow Streak Incoming")
                     # finally
                     # if the timer was on and now we're not near any zombie at all, the clout cooldown timer should start
                     self.clout_cooldown_timer = pg.time.get_ticks()
+                    self.clout_sub_cooldown_timer = False # and reset the sub timer
+                    print(f"Sub Clout Reset [ {self.clout_sub_level} ]")
+                    self.clout_sub_level = 0
         else:
             # if the cooldown timer itself is on
             cooldown_check = pg.time.get_ticks() 
             if cooldown_check - self.clout_cooldown_timer >= 2000: # 2 sec for now, but if working start trying like 5 sec
                 self.clout_cooldown_timer = False 
+
+    def sub_clout_handler(self): # for the inner level timings
+        # we're already guna run it when it has to have the other timer on so dw about a check here
+        if not self.clout_sub_cooldown_timer:
+            print(f"New SubTimer => subcloutLvl: [ {self.clout_sub_level} ]")
+            # if timer not started, start the timer
+            self.clout_sub_cooldown_timer = pg.time.get_ticks()
+        else:
+            sub_timer_check = pg.time.get_ticks()
+            # print(f"{sub_timer_check - self.clout_sub_cooldown_timer = }") 
+            self.sub_clout_time = sub_timer_check - self.clout_sub_cooldown_timer
+            if sub_timer_check - self.clout_sub_cooldown_timer >= 2000: # every x seconds, do whatever this extra clout level should do
+                print(f"Extra Clout For SubLevel Bonus! = {self.clout_sub_level + 1}")
+                # self.clout_rating += 1
+                self.clout_sub_level += 1
+                self.clout_sub_cooldown_timer = False
+        # if its just been reset, set the sub level back to 0 too 
+        if self.clout_sub_cooldown_timer == False:
+            pass
+                
+    def update_clout_from_gold(self): # rudimentarily using gold for now
+        self.clout_rating_detail = (self.player_gold // 100) + 100
+        self.clout_rating_detail = self.clout_rating_detail / 100
+        self.clout_rating = self.clout_rating_detail
+        # idk but forget this shit for now 
+        # print(self.clout_rating_detail // 100)
+        #print(f"{self.clout_rating_detail = }")
 
     def get_keys(self):
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
@@ -262,14 +318,16 @@ class Player(pg.sprite.Sprite):
         # -- actual shooting --
         if keys[pg.K_SPACE]:
             if not self.autoshoot:
-                # temp af for now but should increase the shooting speed by a factor of 2 if not in auto shoot
-                now = pg.time.get_ticks() # track the last time we shot 
-                if now - self.last_shot > self.return_bullet_rate():
-                    self.last_shot = now 
-                    dir = vec(1,0).rotate(-self.rot)
-                    pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
-                    Bullet(self.game, pos, dir)
-                    self.vel = vec(-self.return_gun_kickback(),0).rotate(-self.rot)
+                if not self.is_reloading:
+                    # temp af for now but should increase the shooting speed by a factor of 2 if not in auto shoot
+                    now = pg.time.get_ticks() # track the last time we shot 
+                    if now - self.last_shot > self.return_bullet_rate():
+                        self.last_shot = now 
+                        dir = vec(1,0).rotate(-self.rot)
+                        pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
+                        Bullet(self.game, pos, dir)
+                        self.clip_counter += 1 # add one to the clip counter which tracks which bullet in the clip we have just fired
+                        self.vel = vec(-self.return_gun_kickback(),0).rotate(-self.rot)
         # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
@@ -307,17 +365,17 @@ class Player(pg.sprite.Sprite):
 
         # -------- player sprint stuff --------  
         if keys[pg.K_TAB]: # if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:  
-            # [ todo ] - own function, is sprinting / handle sprinting - new sprint implementation, only called when holding sprint so any sprint meter stuff needs to be done outside here duh
+            # to make as own function, is sprinting / handle sprinting - new sprint implementation, only called when holding sprint so any sprint meter stuff needs to be done outside here duh
             self.vel *= self.get_sprint_multiplier() 
             self.state_moving = "sprinting"
             self.sprint_meter -= self.sprint_meter / 100
-        # [ duh! ] - if we are defo not sprinting things here
+        # duh if we are defo not sprinting things here
         else:
             #self.image = self.game.player_img
-            # [ todo ] - own function, is not sprinting / handle walking
+            # make own function, is not sprinting / handle walking
             # if the sprint meter is not full, start to refill it
             if self.sprint_meter < 10_000:
-                # [ todo ] - new function - handle sprint meter
+                # make new function - handle sprint meter
                 # if we are defo not sprinting the refill the bar, by 0.5 percent each frame
                 # CHECK IF WE ARE STANDING STILL FIRST, IF WE ARE RECOVER BY MORE
                 self.sprint_meter += self.sprint_meter / 200
@@ -378,9 +436,15 @@ class Player(pg.sprite.Sprite):
         #     print(f"Dist = {pythag_dist}")
         return True if pythag_dist < how_near else False
                 
+    def handle_reload(self):
+        # if we've hit the limit of our weapons clip size
+        if self.clip_counter >= self.return_clip_size():
+            print("RELOADING!!!")
+            self.clip_counter = 0 # reset the clip counter
+            self.is_reloading = pg.time.get_ticks()
+
     def update(self):
         self.get_keys()
-        print(self.current_weapon_id)
         self.current_weapon = self.weapon_list[self.current_weapon_id - 1]
         # update the rotation based on where we are facing
         # [note!] - if you want to update the player img u need to do it here as the rotation is done here and thats important mkay
@@ -406,6 +470,7 @@ class Player(pg.sprite.Sprite):
 
         # new new clout test stuff
         self.clout_handler()
+        self.sub_clout_handler() # if timer running the sub timer should be too
 
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons
         # again forget actual ranges for now but if we are under 30% we are fatigued
@@ -424,11 +489,20 @@ class Player(pg.sprite.Sprite):
             self.state_state = "fresh"
         # print(f"{(self.sprint_meter):.1f}% - {self.state_moving = }, {self.state_state = }, {self.vx = }")
 
+        self.update_clout_from_gold()
         # new test dash cd 
         cd_end = pg.time.get_ticks() 
         if cd_end - self.dash_cooldown >= 10000: # 10 sec
             self.dash_cooldown = False
         
+        # new test handle reload
+        self.handle_reload()
+        reload_end = pg.time.get_ticks() 
+        if self.is_reloading: # if this is a timer and not a False bool
+            if reload_end - self.is_reloading >= self.return_gun_reload_speed(): # 10 sec
+                # if ur done reloading reset this var and its gravy
+                self.is_reloading = False
+
         # new test
         if self.waiting:
             space_end = pg.time.get_ticks() 
@@ -449,6 +523,7 @@ class Player(pg.sprite.Sprite):
         if self.autoshoot: # if autoshoot is on, currently the b key
             BULLET_RATE = 300 # temp
             for mob in self.game.mobs:
+                # temp test -> save all the zombie hps, if they are all dead then stop all timers (well we defo wanna no this too so gg4dat)
                 if now - self.last_shot > BULLET_RATE: # fixes double bullets by being inside
                     if self.is_near(mob.pos.x, mob.pos.y, PISTOL_SIGHT): # shortly this will become current weapon sight
                         # now we need not only if the player is in range, but if the player is facing the right direction, no backwards shooting
@@ -473,7 +548,9 @@ class Player(pg.sprite.Sprite):
                             Bullet(self.game, pos, dir_to_mob)
                             # fake way to do kickback in autoshoot for now, but needs to be fixed obvs
                             self.vel = vec(-200,0) # kickback the player slightly in the opposite direction after every shot, rotated to push in the opposite of the direction ur facing
-                    
+        
+        # print(f"{(Mob.get_my_hps()) = }")    
+        # Mob.get_my_hps()        
                     # still big issue with shooting order, need to be checking whos closest? idk need to confirm tbf
                     # just do collisions quickly ffs
 
@@ -484,6 +561,7 @@ class Player(pg.sprite.Sprite):
 class Mob(pg.sprite.Sprite):
     showmaker = Faker()
     Zombie_Boys = {} # maybe un-needed, cant remember exactly what is used for rn
+    Mob_hps = {}
 
     def __init__(self, game, x, y, bwalls): #  hp = 0
         self.groups = game.all_sprites, game.mobs
@@ -611,6 +689,16 @@ class Mob(pg.sprite.Sprite):
             # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
             return True if pythag_dist < next_to else False
 
+    def get_my_hps(want_return="count"):
+        """ default returns the count of how many alive zombies there are else returns a list of their ids """
+        # can return as list of id or hps or both or dict or whatever, currently using to return the count
+        result = [id for id, hp in Mob.Mob_hps.items() if hp > 0]
+        if want_return=="count":
+            return(len(result)) 
+        else:
+            # the list 
+            return(result) # use this to display how many alive
+
     # needs to be fixed proto
     def break_barracade(self, bwall):
         # print(f"Break Barracade? => {self.myid}: {self.myname} = {self.waiting}")
@@ -662,7 +750,10 @@ class Mob(pg.sprite.Sprite):
                         self.stalled = False
 
     # i mean look we got some bouncing issues and many other issues but i 
-        
+
+    def add_hps(self):
+        self.Mob_hps[self.myid] = self.health
+
     def update(self):
         list_of_bwall_dists = []
         closest_bwall = "" # not actually a string, becomes the object instance
@@ -731,7 +822,9 @@ class Mob(pg.sprite.Sprite):
                 print(f"{self.myname} - interactions enabled")
                 self.waiting = False
         # more new testing, this time for zombies stalled by entrances  
-        self.am_i_stalled()    
+        self.am_i_stalled()  
+        # stick ur hp in a list so we can have dem all
+        self.add_hps()
 
 
 class Bullet(pg.sprite.Sprite):

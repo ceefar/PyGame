@@ -77,6 +77,8 @@ PISTOL_DAMAGE = 11
 PISTOL_BULLET_SPEED = 500
 PISTOL_BULLET_RATE = 150
 PISTOL_BULLET_LIFETIME = 100
+PISTOL_CLIP_SIZE = 15
+PISTOL_RELOAD_SPEED = 500 # ms
 
 # NEW Custom Multi-Weapon settings 
 UZI_SIGHT = 220
@@ -88,6 +90,8 @@ UZI_DAMAGE = 6
 UZI_BULLET_SPEED = 800
 UZI_BULLET_RATE = 90
 UZI_BULLET_LIFETIME = 80
+UZI_CLIP_SIZE = 30
+UZI_RELOAD_SPEED = 1000 # ms
 
 # NEW Custom MyTurret settings
 MY_TURRET_IMG = "hitman1_gun.png"
@@ -124,3 +128,14 @@ BREAK_WALL_HL_4B_IMG = "wallTestHL_4b.png"
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
 PLAYER_BLUR3_IMG = "manBlue_gun_blur3.png"
 PLAYER_INJURY1_IMG = "manBlue_gun_injury1.png"
+
+
+# test af stuff
+TEST_BG_IMG = "test_bg.png"
+TEST_SIDEBAR_IMG = "empty_sidebar_1.png"
+SIDEBAR_BOTTOM_IMG = "sidebar_bottom.png"
+SIDEBAR_TOP_IMG = "sidebar_top.png"
+SIDEBAR_COMMENT_1_BG_IMG = "comment_bg_1.png"
+SIDEBAR_COMMENT_2_BG_IMG = "comment_bg_2.png"
+SIDEBAR_COMMENT_3_BG_IMG = "comment_bg_3.png"
+SIDEBAR_COMMENT_4_BG_IMG = "comment_bg_4.png"
