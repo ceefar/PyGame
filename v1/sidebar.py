@@ -198,11 +198,9 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
 
     def draw(self, surface):
         self.update() # before we draw, run update, remember this isnt a sprite so update isnt running by itself
-        # if self.vel.y == -self.comment_move_speed: # if ur moving then draw else dont, might get a bit iffy if things are starting and stopping moving at different trailing offsets tho
         surface.blit(self.image, self.pos) # (self.rect.x, self.rect.y)) # draw it on top of the sidebar, not the screen < test this quickly
         surface.blit(self.write_commenter_username(), (self.pos.x + 50, self.pos.y))  
         surface.blit(self.write_commenter_comment(), (self.pos.x + 30, self.pos.y + 20))  
-          
         
     def update(self):
         # set our move speed but this wont move us yet
@@ -225,13 +223,18 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         # print(f"Comment [ {self.myid} ] - position:{self.pos}, sidebar:{self.sidebar.pos}")
 
 
+# (actually do leetcode first pls)
+# rn pls just do some bwalls then...
+# - find the question and solution i just did on that test in leetcode and write it up
+# - find the EXACT problems the Abu mentioned and writing the full solutions in IDE too
+ 
+# then finish the tut
 
-# record this, maybe with commentary but idk, actually yh why not
-# put the names in the comments
-# put some basic semi contextual randomised comments in 
-# then just continue (subs, viewers | bullet count ui | buyable walls and couple more zeds)
 
-# then record this
-# and continue to...
-# buyable walls
-# and then just finish the tut bosh
+
+# so what u should have is a sidebar that you blit stuff on to in the class and then u blit that sidebar to the screen once
+
+# could do the sidebar big refactor for only one blit to screen n ting, but tbh i think its best to just continue and do that separately / when refactoring from scratch (and do ui first tbh)
+# - tho imo either duplicate now or make a test folder or sumnt as wanna test out a few things with this (tho again a clean project would be best so meh could just allow for now...)
+
+# (subs, viewers | bullet count ui) <<<< done or not worth doing until refactor due to ui issues

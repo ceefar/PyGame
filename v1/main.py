@@ -354,10 +354,8 @@ class Game:
                         roll = randint(1,6) 
                         if roll == 2: # this is effectively spawn rate now, if u make this a funct and just give it a percent chance! bosh
                             self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
-                            self.twitch_chat.is_spawn_on_cooldown = True
-                        self.player.waiting = pg.time.get_ticks()
-            if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet                
-                self.twitch_chat.update_all_comments(self.sidebar.image)
+                            self.twitch_chat.is_spawn_on_cooldown = pg.time.get_ticks()
+            self.twitch_chat.update_all_comments(self.sidebar.image)
             self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
             self.sidebar_top.draw(self.sidebar.image)
 
