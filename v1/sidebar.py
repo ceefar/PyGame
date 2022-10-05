@@ -139,10 +139,6 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
                 if Comment_Handler.all_comments[comment] != self.pos.y: # dont do a write for no reason 
                     Comment_Handler.all_comments[comment] = self.pos.y # update ur y pos
 
-    def write_comment(self, player):
-        """ write a basic comment based on some context """
-        ...
-
     def get_commenter_username(self): # to do 
         commenter_usernames = [f"{self.game.username} Da Bes!", f"{self.game.username}'s #1 Fan", f"{self.game.username} Is LIFE", f"PogChamp69", "YoMommaDoucheCanoe", f"xXx_69_zOmBiEkIlLA_69_xXx", "OnlyClaps", "McSlappington"]
         roll = randint(1, len(commenter_usernames)-1)
