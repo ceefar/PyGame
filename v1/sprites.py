@@ -14,67 +14,71 @@ from faker import Faker
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
 # need to refactor this so it actually works just with group lol
-def collide_with_walls(sprite, group, dir):
+def collide_with_walls(sprite, group=False, dir=False, collision_type="standard"): # making group False as we dont need to pass it for bwalls, again tho pls just refactor, as like dir had to be False due to the default before it and now its just a silly mess lmao
     # if checking an x collision, note were using a custom hitbox hit_rect now
     if dir == "x":
-        # then check if we the player have collied with a wall
-        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
-        if hits:
-            # check if the walls center is greater than the players center
-            # if the players center is greater than the walls center 
-            # im on the right hand side of the wall
-            if hits[0].rect.centerx > sprite.hit_rect.centerx: 
-                # our x should be what ever it was that we hit(s) minus however wide we are
-                sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
-            # else if its less than its to the left
-            if hits[0].rect.centerx < sprite.hit_rect.centerx:
-                # put ourselves to the right of the thing we hit(s)[0]
-                sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
-            # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
-            sprite.vel.x = 0
-            sprite.hit_rect.centerx = sprite.pos.x        
-        bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
-        if bhits:
-            # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
-            # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
-            if bhits[0].get_hp() <= 0:
-                # bhits[0].try_repair_wall()
-                pass # through freely                
-            else:
-                if bhits[0].rect.centerx > sprite.hit_rect.centerx:
+        # simple switch for wall/collision type as all have slightly different conditions, this could be further refactored and improved but just rushing out a working version for now
+        if collision_type == "standard":
+            # then check if we the player have collied with a wall
+            hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect) # so big note btw, we are passing in the group if using standard so u can use that for other stuff in future - this is why i mean could easily refactor more, as for bwalls we dont actually need the group
+            if hits:
+                # check if the walls center is greater than the players center
+                # if the players center is greater than the walls center 
+                # im on the right hand side of the wall
+                if hits[0].rect.centerx > sprite.hit_rect.centerx: 
                     # our x should be what ever it was that we hit(s) minus however wide we are
-                    sprite.pos.x = bhits[0].rect.left - sprite.hit_rect.width / 2
-                # if the speed is the opposite direction then we were moving to the left so
-                if bhits[0].rect.centerx < sprite.hit_rect.centerx:
+                    sprite.pos.x = hits[0].rect.left - sprite.hit_rect.width / 2
+                # else if its less than its to the left
+                if hits[0].rect.centerx < sprite.hit_rect.centerx:
                     # put ourselves to the right of the thing we hit(s)[0]
-                    sprite.pos.x = bhits[0].rect.right + sprite.hit_rect.width / 2
+                    sprite.pos.x = hits[0].rect.right + sprite.hit_rect.width / 2
                 # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
                 sprite.vel.x = 0
-                sprite.hit_rect.centerx = sprite.pos.x    
+                sprite.hit_rect.centerx = sprite.pos.x   
+        if collision_type == "breakable":              
+            bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
+            if bhits:
+                # if i have hit something, check which side is it left or right using our velocity (which direction and where are we moving to)
+                # if we were moving to the right when we collided with the wall, so put ourselves on that side of the wall
+                if bhits[0].get_hp() <= 0:
+                    # bhits[0].try_repair_wall()
+                    pass # through freely                
+                else:
+                    if bhits[0].rect.centerx > sprite.hit_rect.centerx:
+                        # our x should be what ever it was that we hit(s) minus however wide we are
+                        sprite.pos.x = bhits[0].rect.left - sprite.hit_rect.width / 2
+                    # if the speed is the opposite direction then we were moving to the left so
+                    if bhits[0].rect.centerx < sprite.hit_rect.centerx:
+                        # put ourselves to the right of the thing we hit(s)[0]
+                        sprite.pos.x = bhits[0].rect.right + sprite.hit_rect.width / 2
+                    # regardless of where we hit we are going to stop ourselves moving on this axis (x), because we've hit a wall to either side of us
+                    sprite.vel.x = 0
+                    sprite.hit_rect.centerx = sprite.pos.x    
     if dir == "y":
-        bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
-        # breakable wall
-        if bhits:
-            # print(f"Collided Wall Hp : {bhits[0].get_hp()}")
-            if bhits[0].get_hp() <= 0:
-                # bhits[0].try_repair_wall()
-                pass # through freely
-            else:
-                if bhits[0].rect.centery > sprite.hit_rect.centery:
-                    sprite.pos.y = bhits[0].rect.top - sprite.hit_rect.height / 2
-                if bhits[0].rect.centery < sprite.hit_rect.centery:
-                    sprite.pos.y = bhits[0].rect.bottom + sprite.hit_rect.height / 2
+        if collision_type == "breakable":
+            bhits = pg.sprite.spritecollide(sprite, sprite.game.breakablewalls, False, collide_hit_rect)
+            # breakable wall
+            if bhits:
+                # print(f"Collided Wall Hp : {bhits[0].get_hp()}")
+                if bhits[0].get_hp() <= 0:
+                    # bhits[0].try_repair_wall()
+                    pass # through freely
+                else:
+                    if bhits[0].rect.centery > sprite.hit_rect.centery:
+                        sprite.pos.y = bhits[0].rect.top - sprite.hit_rect.height / 2
+                    if bhits[0].rect.centery < sprite.hit_rect.centery:
+                        sprite.pos.y = bhits[0].rect.bottom + sprite.hit_rect.height / 2
+                    sprite.vel.y = 0
+                    sprite.hit_rect.centery = sprite.pos.y             
+        if collision_type == "standard": # normal wall  
+            hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
+            if hits:
+                if hits[0].rect.centery > sprite.hit_rect.centery:
+                    sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
+                if hits[0].rect.centery < sprite.hit_rect.centery:
+                    sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2
                 sprite.vel.y = 0
-                sprite.hit_rect.centery = sprite.pos.y             
-        # normal wall    
-        hits = pg.sprite.spritecollide(sprite, group, False, collide_hit_rect)
-        if hits:
-            if hits[0].rect.centery > sprite.hit_rect.centery:
-                sprite.pos.y = hits[0].rect.top - sprite.hit_rect.height / 2
-            if hits[0].rect.centery < sprite.hit_rect.centery:
-                sprite.pos.y = hits[0].rect.bottom + sprite.hit_rect.height / 2
-            sprite.vel.y = 0
-            sprite.hit_rect.centery = sprite.pos.y  
+                sprite.hit_rect.centery = sprite.pos.y  
 
 
 class MyTurret(pg.sprite.Sprite): # new af test - personal turret
@@ -178,7 +182,6 @@ class Player(pg.sprite.Sprite):
         self.current_weapon = Player.weapon_list[0] # remember may be based on other stuff at the start of level, for sure as classes, i geddit
 
         # test sidebar display
-        
 
     def set_player_weapon_id(self):
         # if the current weapon id isn't the list len (allow zeros btw)
@@ -341,11 +344,28 @@ class Player(pg.sprite.Sprite):
         # pass the game, the player(pos), and the rotation vector we've just figured out (where the player is facing)
         # -- action key --    
         if keys[pg.K_e]: # if E
-            # check any breakable walls interaction
+            # need to fix this so it only takes payment once, and then when that works make it infectious, for now i really dont care enough its a simple af functionality so its fine for now
+            # handle paywalls action button press interactions
+            for paywall in self.game.paywalls:
+                # we dont need to check already unlocked walls
+                if not paywall.is_unlocked:
+                        # most computationally expensive part so do any break conditions before this 
+                        if paywall.is_near(self.pos.x, self.pos.y): # i get this so much now right, like ur for sure doing this twice, once here, and once to highlight them, which is silly, reducing stuff like this is crucial in refactor and moving forwards                            
+                            unlock_cost = paywall.get_unlock_cost() # using function assuming that we'll start doing it dynamically shortly
+                            if self.player_gold >= unlock_cost:
+                                self.player_gold -= unlock_cost
+                                print(f"BALLIN' - Splashed ${unlock_cost} To Bypass A PayWall")
+                                paywall.is_unlocked = True
+                                break # and if one of these break conditions has been met, stop checking to see if were near any other walls
+                            else:
+                                print("PAYWALLED! - Get more kills and subscribers to earn more CA$H!")
+                                break                          
+            # handle breakable walls action button press interactions
             for a_wall in self.game.breakablewalls:
                 # if player is near a breakable wall
                 if a_wall.is_near(None, None):
                     a_wall.try_repair_wall()
+                    # new test but assume fine, just a condition to break the loop if we are near a wall, no need to check for more
             # only allow one interaction at a time, 2 sec pause currently should reduce tho
             self.is_interacting = True
         else:
@@ -469,10 +489,14 @@ class Player(pg.sprite.Sprite):
         self.hit_rect.centerx = self.pos.x
         # update the position of the player based on keys pressed using velocity vector
         self.pos += self.vel * self.game.dt
-        collide_with_walls(self, self.game.walls, 'x')
+        collide_with_walls(sprite=self, group=self.game.walls, dir='x')
+        collide_with_walls(sprite=self, dir='x', collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="x")
         # basically were doing 2 collision check, 1 for each axis
         self.hit_rect.centery = self.pos.y
-        collide_with_walls(self, self.game.walls, 'y') 
+        collide_with_walls(sprite=self, group=self.game.walls, dir='y')
+        collide_with_walls(sprite=self, dir='y', collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="y")
         # after collision make sure our regular rect is set to the position of our hit rect, 
         # since we're now updating the hict rects position (not rotation, or velocity, just pos) 
         # if it collides (by moving in the opposite of where we tried to move), so we need to reapply this transformation to the player and not just the hitbox
@@ -682,10 +706,11 @@ class Mob(pg.sprite.Sprite):
         if bhits:
             if not self.climbed_in:
                 # so here is ur warning stuff nice
+                # should do like, if ur nearest bwall is broken then set urself to climbed in so u start going for the player bosh and pretty easy too
                 print(f"{self.myname} Broke In @ {self.pos.x}, {self.pos.y} [Collided With B Wall]")
-            self.climbed_in = True
-            self.stalled = False # cant be stalled outside, for now anyway
-        self.climbed_in = True
+                self.climbed_in = True
+            # self.stalled = False # cant be stalled outside, for now anyway
+        # self.climbed_in = True
 
     def is_near(self, x, y):
             # abstract this properly pls 
@@ -724,9 +749,9 @@ class Mob(pg.sprite.Sprite):
                 
                 # be sure we have some speed, otherwise the bounce wont be noticeable 
                 if self.vel.x < 10 and self.vel.y < 10:  
-                    self.vel = vec(-200,0).rotate(-self.rot) # NEW TEST AF
+                    self.vel = vec(-100,0).rotate(-self.rot) # NEW TEST AF
                 elif self.vel.x > -10 and self.vel.x < 0 and self.vel.y > -10 and self.vel.y < 0:
-                    self.vel = vec(-200,0).rotate(-self.rot)
+                    self.vel = vec(-100,0).rotate(-self.rot)
 
                 #self.vel.y = -self.vel.y
                 self.acc.x -= (self.acc.x / 100) * 80
@@ -754,8 +779,8 @@ class Mob(pg.sprite.Sprite):
                     if time_end - self.stalled >= 6000:
                         # if i have been touching this wall and not reset yet
                         print(f"[{self.myname}] I'm Stalled, Change My Velocity -> {self.vel}") 
-                        random_rot_angle_adjust = randint(-40,40)
-                        self.vel = vec(-100, 0).rotate(-self.rot + random_rot_angle_adjust)
+                        random_rot_angle_adjust = randint(-50,50)
+                        self.vel = vec(-250, 0).rotate(-self.rot + random_rot_angle_adjust)
                         self.look_at(bwall.rect.center)
                         self.stalled = False
 
@@ -802,9 +827,13 @@ class Mob(pg.sprite.Sprite):
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
         # now we know where the sprite should be set its rect center
         self.hit_rect.centerx = self.pos.x
-        collide_with_walls(self, self.game.walls,'x')
+        collide_with_walls(sprite=self, group=self.game.walls, dir="x")
+        collide_with_walls(sprite=self, dir="x", collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="x")
         self.hit_rect.centery = self.pos.y
-        collide_with_walls(self, self.game.walls,'y')
+        collide_with_walls(sprite=self, group=self.game.walls, dir="y")
+        collide_with_walls(sprite=self, dir="y", collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="y")
         # then set our regular rect to our hit rect, remember we primarily use the hit rect then set it to the regular rect at the end (the visual doesnt match the pixel precision)
         self.rect.center = self.hit_rect.center
         # if the zombie health ever less than zero, kill it, idk why this isnt first in update tho? <= test it defo 
@@ -1086,21 +1115,65 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         else:
             self.update_image()
 
-    # [ todo-asap! ] - wall max hp broken again
-    # [ todo-asap! ] - then continue tuts pls!
 
-    # DARKGREY, GREY, LIGHTGREY, PRINT, RUST, HIGHLIGHTER, PALEGREY, TAN, COFFEE, MOONGLOW
+class PayWall(pg.sprite.Sprite): # literally call it this in game too
+    all_paywalls = {}
+    
+    def __init__(self, game, x, y, player):
+        self.groups = game.all_sprites, game.paywalls
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.image = game.paywall_img
+        self.rect = self.image.get_rect()
+        self.pos = vec(x, y) * TILESIZE
+        self.player = player
+        self.game = game
+        self.unlock_cost = 1000 # self.get_unlock_cost()
+        self.unlock_condition = 0 # based on subscribers
+        self.is_unlocked = False
+        self.myid = len(PayWall.all_paywalls)
+        PayWall.all_paywalls[self.myid] = self # add urself to the all_paywalls dict as a value, with ur id which is ur index, as the key 
 
-# note should test screaming if hit, crit words on the bar for zombie
-# and gold and rating on player too
+    def update(self):
+        # if we (this iinstance of breakable wall) are near the player
+        self.rect.x = self.pos.x
+        self.rect.y = self.pos.y
+        self.update_image()
 
+    def get_unlock_cost(self):
+        return(self.unlock_cost)
+        
+    def is_near(self, x, y, how_close = 180): # 180 as default 'close' is for 64 tilesize
+        # use hypotenus of the xy vectors to find out how close we are to the player
+        pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
+        # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
+        return True if pythag_dist < how_close else False # print(f"near paywall? = {pythag_dist < close}")
 
+    def update_image(self):
+        if self.is_unlocked:
+            self.kill() # self.image.fill(BGCOLOR)
+        # no need to do is_near check if ur unlocked
+        elif self.is_near(self.player.pos.x, self.player.pos.y):
+            self.image = self.game.break_wall_hl_4_img
+        else:
+            self.image = self.game.paywall_img
 
+    def infect_walls(self):
+        # for infectious buildling, repairing a tile will repairing any that are touching it
+        for a_wall in self.wall_ids:
+            # check if we this wall is near any other walls
+            if a_wall.is_near(self.pos.x, self.pos.y):
+                # if we both tiles dont have the same hp, update them so they are
+                if a_wall.hp_current != self.hp_current:
+                    self.print_once(f"Shared Our HP Commrade -> {a_wall.hp_current}, {self.hp_current}")
+                    a_wall.hp_current = self.hp_current
 
-
-
-
-
+    # basically now in collide with walls at the top here
+    # all u wanna do is add a string parameter to say what group it is
+    # then pass in the group for set conditions
+    # then abstract out bwalls from that loop as now we're doing those checks twice for no reason
+    # then finish up the anims and the functionality stuff
+    # then design a lil map and test it and record it
+    # and continue with tut ig
 
 
 

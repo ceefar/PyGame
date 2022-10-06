@@ -39,7 +39,8 @@ class SideBar(object):
     def draw(self, surface, offset=0):
         """ standard draw """
         surface.blit(self.image, (self.rect.x+offset, self.rect.y))
-        self.update()
+        #self.update()
+        self.image.fill(WHITE)
 
 
 class SideBar_Bottom(object):
@@ -74,7 +75,6 @@ class SideBar_Top(object):
 
 class Comment_Handler(object):
     """ temp test """
-    all_comments = [] # instance of object key : pos/y_pos value
     is_chat_maxed_out = False
     
     def __init__(self, game, sidebar, offset=0): # probs dont need all these btw but had to take all for initial refactor 
@@ -87,14 +87,12 @@ class Comment_Handler(object):
     def create_new_comment(self):
         new_comment = Comment(self.game, self.sidebar, self.offset)
 
-    def update_comments_list(self, comment): # its not actually a list but whatever
-        comment.update_comment_handler_list()
-
     def update_all_comments(self, surf):
-        for comment in Comment_Handler.all_comments:
-            comment.draw(surf)
+        # for i, comment in enumerate(Comment_Handler.all_comments):
+        #     comment.draw(surf, i)        
+        Comment.draw(Comment, surf)
         if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
-            if len(Comment_Handler.all_comments) >= self.max_comments:
+            if len(Comment.all_comments) >= self.max_comments:
                 Comment_Handler.is_chat_maxed_out = True
 
 
@@ -120,6 +118,7 @@ class Comment_Handler(object):
 
 class Comment(object): # note have this be rough for now as im an idiot, twitch goes top to bottom, but dw at all for now will be hella refactors
     """ class for the Comments shown in the sidebar """
+    all_comments = []
    
     def __init__(self, game, sidebar, offset=0):
         self.game = game
@@ -129,25 +128,18 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         self.pos = vec(0, start_pos) # always want to start at the bottom of the sidebar # SIDEBAR_SIZE[1] - self.rect.y
         self.sidebar = sidebar
         self.comment_positions = () # fixed positions, should be a constant class var but this is temp af so dw
-        # for refactor
-        #Comment_Handler.all_comments[self] = self.pos.y # now add it here too
         # testing potential to add
         self.rect.center = self.pos
         self.vel = vec(0,0)
-        self.myid = len(Comment_Handler.all_comments)
+        self.myid = len(Comment.all_comments)
         self.comment_move_speed = 330 # the velocity which we move the comments
         self.commenter_username = self.get_commenter_username()
         self.commenter_color = self.get_a_random_colour()
         self.commenter_comment = self.get_commenter_comment()
-        # test
-        Comment_Handler.all_comments.append(self)
-
-    def update_comment_handler_list(self):
-        pass
-        # for comment in Comment_Handler.all_comments.keys(): # for every comment which is the key in this dict
-        #     if Comment_Handler.all_comments[comment] == self: # if dis is you
-        #         if Comment_Handler.all_comments[comment] != self.pos.y: # dont do a write for no reason 
-        #             Comment_Handler.all_comments[comment] = self.pos.y # update ur y pos
+        # test  
+        self.username_textsurface = self.write_commenter_username()
+        self.comment_body_textsurface = self.write_commenter_comment()
+        self.all_comments.append(self)
 
     def get_commenter_username(self): # to do 
         commenter_usernames = [f"{self.game.username} Da Bes!", f"{self.game.username}'s #1 Fan", f"{self.game.username} Is LIFE", f"PogChamp69", "YoMommaDoucheCanoe", f"xXx_69_zOmBiEkIlLA_69_xXx", "OnlyClaps", "McSlappington"]
@@ -180,7 +172,8 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         # so far colour options are lime pink orange red blue purple
         textsurface = font.render(self.commenter_username, False, self.commenter_color) # "text", antialias, color
         textsurface = pg.transform.rotate(textsurface, 0) # if at this angle rotate my name
-        return(textsurface)
+        print(f"write_commenter_username: {self.myid} {self.commenter_username}, {self.commenter_color}")
+        return(textsurface) 
 
     def select_bg(self):
         roll = randint(1,3)
@@ -192,47 +185,35 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
             return(self.game.comment_img_3)
         else:
             return(self.game.comment_img_4) # blank one nearly fucked me up lol    
-    
-    def write_username():
-        ...
 
-    def find_my_position():
-        """ find the position of the comment above you """
-        # yeah so the big thing about this is obviously they move to a position, then when a new one spawns, everything moves
-        # this is then heavily correlated to the amount in the class var with positions as can just use the length of that ig
-        # for now im just guna have 20 fixed positions that they move to, then once the list is at a full length, just move up one and delete one and bosh
-
-    def draw(self, surface):
-        self.update() # before we draw, run update, remember this isnt a sprite so update isnt running by itself
-        # if self.pos.y >= 50 * len(Comment_Handler.all_comments):
-        surface.blit(self.image, self.pos) # (self.rect.x, self.rect.y)) # draw it on top of the sidebar, not the screen < test this quickly
-        if self.vel.y == -self.comment_move_speed: # if we are moving, draw the names
-            print(f"Drawing {self.myid}, {self.pos.x + 50 = }, {self.pos.y = } {self.vel.y = }, {-self.comment_move_speed = }")
-            self.image.blit(self.write_commenter_username(), (self.pos.x + 50, self.pos.y))  
-            # self.image.blit(self.write_commenter_comment(), (self.pos.x + 30, self.pos.y + 20))  
-        else:
-            print(f"Not Drawing {self.myid}, {self.vel.y = }, {-self.comment_move_speed = }")
-        
-        
+    def draw(self, surface): # index
+        # before we draw, run update, remember this isnt a sprite so update isnt running by itself
+        for comment in self.all_comments:
+            comment.update()
+            surface.blit(comment.username_textsurface, (comment.pos.x + 50, comment.pos.y))  
+            surface.blit(comment.comment_body_textsurface, (comment.pos.x + 30, comment.pos.y + 20))  
+            surface.blit(comment.image, comment.pos)
+            
     def update(self):
-        # set our move speed but this wont move us yet
-        # but what were saying is move us, at this speed upwards if we are not at the top yet
-        if Comment_Handler.is_chat_maxed_out == False: # if the chat is not full
-            if self.pos.y >= 50 * len(Comment_Handler.all_comments): # increase velocity up to this point
+        if Comment_Handler.is_chat_maxed_out == False: # if the chat is not full move individually, else you move all as a whole
+            if self.pos.y >= 50 * len(self.all_comments): # set our move speed but this wont move us yet but what were saying is move us, at this speed upwards if we are not at the top yet
                 self.vel = vec(0, -self.comment_move_speed)
             else: # else stop dead lol
                 self.vel = vec(0, 0) 
             self.pos += self.vel * self.game.dt
-        # if it is maxed out then move everyone by the same velocity - then in handler dont update until the last item is at the top then remove that item 
-        else:
-            # doesnt work as expected just due to it printing loads under these conditions, leaving for now so disabling on full
-            # then
-            # finally
-            # move us to the top position gradually
-            # self.vel = vec(0, -self.comment_move_speed)
-            # self.pos += self.vel * self.game.dt
-            pass
-        # print(f"Comment [ {self.myid} ] - position:{self.pos}, sidebar:{self.sidebar.pos}")
+        # update the list stuff should go here
+
+
+# big note here, i think a part of the issue may be initialising everything for ui during the game
+# is it possible to like initialise everything except the actual writing first as templates complete and ready in memory
+# then just write then stuff and blit on init
+
+
+# real quick, if ur the bg with only 1 img on it, move the x pos over a bit (so minus from the existing number)
+# buyable and subscribers (basic af ui for it)
+# consider try moving the screen, could google it too tbf
+# then just pure leetcode
+# note, obvs have foobar open tomo init
 
 
 # (actually do leetcode first pls)
@@ -241,12 +222,5 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
 # - find the EXACT problems the Abu mentioned and writing the full solutions in IDE too
  
 # then finish the tut
-
-
-
-# so what u should have is a sidebar that you blit stuff on to in the class and then u blit that sidebar to the screen once
-
-# could do the sidebar big refactor for only one blit to screen n ting, but tbh i think its best to just continue and do that separately / when refactoring from scratch (and do ui first tbh)
-# - tho imo either duplicate now or make a test folder or sumnt as wanna test out a few things with this (tho again a clean project would be best so meh could just allow for now...)
 
 # (subs, viewers | bullet count ui) <<<< done or not worth doing until refactor due to ui issues

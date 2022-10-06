@@ -124,6 +124,9 @@ BREAK_WALL_HL_3_IMG = "wallTestHL_3.png"
 BREAK_WALL_HL_4_IMG = "wallTestHL_4.png"
 BREAK_WALL_HL_4B_IMG = "wallTestHL_4b.png"
 
+# pay wall test stuff
+PAY_WALL_IMG = "tileGreen_39.png"
+
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
 PLAYER_BLUR3_IMG = "manBlue_gun_blur3.png"

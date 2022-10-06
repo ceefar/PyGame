@@ -84,6 +84,9 @@ class Game:
         self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
         # new custom test myturret img
         self.my_turret_img = pg.image.load(path.join(img_folder, MY_TURRET_IMG)).convert_alpha()
+        # scale up our new loaded wall image to the tilesize, if need to reuse functionality then make this a function or a class
+        self.paywall_img = pg.image.load(path.join(img_folder, PAY_WALL_IMG)).convert_alpha()
+        self.paywall_img = pg.transform.scale(self.paywall_img, (TILESIZE, TILESIZE))        
         
         # test img stuff
         self.break_wall_0_img = pg.image.load(path.join(img_folder, BREAK_WALL_0_IMG)).convert_alpha()
@@ -129,7 +132,7 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
-        self.unlockwalls = pg.sprite.Group()    
+        self.paywalls = pg.sprite.Group()    
             
         def spawn_stuff_on_map():
             # first run = run only player first 
@@ -151,6 +154,9 @@ class Game:
                             if tile == "B":
                                 # place a breakablewall test
                                 BreakableWall(self, col, row, self.player)  
+                            if tile == "M":
+                                # place a paywall
+                                PayWall(self, col, row, self.player)  
                         if run == 3:    
                             if tile == "Z":
                                 # place a breakablewall test
@@ -341,21 +347,30 @@ class Game:
             if want_celebrate:
                 self.player.rot += 5
                 self.player.vel = vec(1,0)
-                pos = self.player.pos # + BARREL_OFFSET.rotate(-self.player.rot) 
+                # pos = self.player.pos # + BARREL_OFFSET.rotate(-self.player.rot) # was for shooting bullets idea but didnt get there in the end and forget it for now anyways
 
         # -- new test ui stuff --
+        # handle (temp test) comment cooldown timer
+        cd_check = pg.time.get_ticks()
+        if self.twitch_chat.is_spawn_on_cooldown: # if the timer is running
+            if self.twitch_chat.is_chat_maxed_out:
+                self.twitch_chat.is_spawn_on_cooldown = True # dont draw if its maxed out (for now anyway, as we can handle a different way ooo)
+            elif cd_check - self.twitch_chat.is_spawn_on_cooldown > 2000: # every 2 sec, # elif so if above is true we can skip this
+                self.twitch_chat.is_spawn_on_cooldown = False
+
         # draw the sidebar
         if self.want_twitch:
-            self.sidebar.draw(self.screen)     
-            # drop twitch chat
+                
+            # twitch chat
             if not self.twitch_chat.is_spawn_on_cooldown:
-                if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
-                    if not self.player.waiting:
+                # if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
+                    # if not self.player.waiting:
                         roll = randint(1,6) 
                         if roll == 2: # this is effectively spawn rate now, if u make this a funct and just give it a percent chance! bosh
                             self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
                             self.twitch_chat.is_spawn_on_cooldown = pg.time.get_ticks()
             self.twitch_chat.update_all_comments(self.sidebar.image)
+            self.sidebar.draw(self.screen) 
             self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
             self.sidebar_top.draw(self.sidebar.image)
 
@@ -386,19 +401,3 @@ while True:
     g.show_go_screen()
 
 
-
-# TUT AND CLOUT RATING! + GOLD SCORE & UNLOCK
-
-# DO FAKER NAMES AND FINISH TUT PLS!
-
-# check out some new art work pls, especially main character
-
-# look into ui and animations and vfx pls 
-
-# zombie logic for getting stuck, if touching wall, go to nearest sumnt ?
-
-
-# rn do the vids and continue as rapidly as possible
-# however
-# if u really quickly wanna try destroying walls, say by 3 bumps into them, having them change colour to show hp
-# or by button press, with button to build back up too 
