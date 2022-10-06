@@ -69,7 +69,8 @@ class Game:
         self.twitch_chat = Comment_Handler(self, self.sidebar) # note in an object not a sprite
         self.username = "PlayerMan" # to add this in a menu, will have in twitch chat fans with ur name lol
         self.want_twitch = True
-
+        self.clout_streak = 0
+ 
     def load_data(self):
         # location of where our game is running from, main.py
         game_folder = path.dirname(__file__)
@@ -205,9 +206,12 @@ class Game:
             self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
             # new clout stuff
             if self.player.clout_rating_base_timer: # if the clout rating timer is running / active and we just got hit by a zombie
+                self.player.is_clout_bonus_active = False
                 self.player.clout_rating_base_timer = False # the player got hit so turn off our timer
                 # some way to print this on screen to the player, or flag it or sumnt idk
                 # we now also need a clout cooldown timer for the player thats started here too 
+
+        # to add to player if you we're hit so you've now lost any streak u had by us turning off the active bonus timer, also activate the cooldown timer here too
 
         # k so big note, already know how to add bullets going thru say 5 zombies then dying functionality
         # for bulletstreaks n shit, but problem is it counts every time again, would be an easy enough solution but diminishing returns rn so leaving for now
@@ -233,16 +237,16 @@ class Game:
                 hit.vel = vec(0,0)                
             print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }")                
             if hit.health <= 0:
-                if self.player.clout_rating_base_timer and not self.player.won_clout: # if the clout rating timer is running / active and its not already true so we dont keep trying to set it
-                    self.player.won_clout = True # once the player has 1 kill they won the clout so flag it
-                    print(f"Clout Prize Confirmed!") 
+                if not self.player.clout_rating_base_timer and not self.player.clout_cooldown_timer:  # or is_clout_bonus_active ?
+                    # you've killed a zombie, so if this is not on, and also not on cooldown, then activate the clout bonus, else it is just running
+                    self.player.is_clout_bonus_active = True 
                 print(f"{hit.myname} has Died [ hp: {hit.health} ]")
+                self.clout_streak += 1
             else:
                 print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
         # test and temp af
-        # self.sidebar.update(self.player) # guna be unused but will need to pass the player to update things on this ui if actually guna use this siderbar object
-        #    
-        # yeah for really all stats stuff to be done here duh!
+        # test_timer = pg.time.get_ticks() 
+        # if test_timer - self.player.clout_rating_base_timer > 5000: # if ur 5 second timer has ran out
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -350,7 +354,7 @@ class Game:
         render_to_basic_ui(f"{self.player.get_display_clout_rating()}", x = 1085, y = 530, font_size=44)
         # if atleast 1 zombie is still alive 
         if Mob.get_my_hps():
-            if self.player.clout_sub_level >= 1:
+            if self.player.is_clout_bonus_active:
                 # -- the small potential winnings pot during clout level activation --
                 render_to_basic_ui(f"$100,000", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
                 # -- for flashing going viral text -- ... >> make own function or decorator! <<   :o
@@ -362,7 +366,7 @@ class Game:
                 # -- semi large clout multiplier number  --
                 render_to_basic_ui(f"x{self.player.clout_sub_level}", x = 1080, y = 600, font_size=24)
                 # -- clout level multiplier charge bar --
-                draw_a_chargebar(self.screen, 905, 635, self.player.sub_clout_time / self.player.sub_clout_base_time, bar_width=220, bar_height=25)
+                draw_a_chargebar(self.screen, 905, 635, self.player.sub_clout_time, bar_width=220, bar_height=25)
         else:
             # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
             want_celebrate = False
@@ -399,8 +403,7 @@ class Game:
             self.sidebar.draw(self.screen) 
             self.sidebar_top.draw(self.sidebar.image)
             
-
-        # -- finally done, flip the display and render complelet --
+        # -- finally done, flip the display and render complete --
         pg.display.flip()
 
     def events(self):

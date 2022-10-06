@@ -159,7 +159,8 @@ class Player(pg.sprite.Sprite):
         self.player_damage = BULLET_DAMAGE
 
         # new custom clout rating test stuff
-        self.clout_rating_base_timer = False # the timer to initialise the start of a new clout meter beginning or ending
+        self.clout_rating_base_timer = False # the timer to initialise the start of a new clout meter beginning or ending'
+        self.is_clout_bonus_active = False # new way we're doing this for on kill
         self.clout_level = 0 # something like 1-20 for now
         self.clout_level_timer = False
         self.clout_rating = 1  # again 1-20 for B+, D- etc, and remember we wanna pass this in to a new level based on what happened in an old one
@@ -168,7 +169,11 @@ class Player(pg.sprite.Sprite):
         self.clout_sub_cooldown_timer = False
         self.clout_sub_level = 0 # literally just the amount of ticks over x seconds of the sublevel
         self.sub_clout_base_time = 2000 # ms per tick of sub level
+        self.clout_level_base_timer = 5000 # the new implementation, delete old stuff once completed
         self.sub_clout_time = 0
+
+        # new
+        self.sub_timer_check = False
 
         # new custom dash test stuff
         self.dash_cooldown = False
@@ -227,44 +232,71 @@ class Player(pg.sprite.Sprite):
         #print(f"{closest = }")
         return(clout_ratings[closest])    # clout_ratings[self.clout_rating]
 
+    def handle_clout(self):
+        # if ur clout bonus is active, activate the sub timer
+        if self.is_clout_bonus_active:
+            self.handle_clout_streak()
+
+    def handle_clout_streak(self): # for the inner level timings
+        # handle any changes to the base timer based on the level here
+        if not self.clout_sub_cooldown_timer:
+            # if timer not started, start the timer
+            print(f"Starting Clout Streak Timer")
+            self.clout_sub_cooldown_timer = pg.time.get_ticks()
+        # else if the timer has started check if its run over 5 seconds       
+        else:
+            if not self.sub_timer_check:
+                self.sub_timer_check = pg.time.get_ticks()
+            self.sub_clout_time = self.sub_timer_check - self.clout_sub_cooldown_timer
+            # if 5 seconds have passed
+            if self.sub_timer_check - self.clout_sub_cooldown_timer >= 5000:
+                self.sub_timer_check = False
+                self.clout_sub_cooldown_timer = False
+            else:
+                # if the timer is under 5 seconds still
+                if self.game.clout_streak == self.clout_sub_level: # the game is tracking ur streak, ur sub level goes up at same rate
+                    print(f"Still no kill yet...")
+                # else if you didnt get a kill
+                elif self.game.clout_streak > self.clout_sub_level:          
+                # because u killed a zombie before this timer reset, add a level and reset the timer to 0
+                    self.sub_timer_check = pg.time.get_ticks()
+                    self.clout_sub_level += 1
+                    print(f"Extra Clout For SubLevel Bonus! = {self.clout_sub_level}")
+                    self.clout_sub_cooldown_timer = False
+
+
     def clout_handler(self): # super test af
         if not self.clout_cooldown_timer:
-            # if the clout is not on cooldown because it has just be reset due to a hit (or moving away from zombie)
-            if not self.clout_rating_base_timer: # so if the clout rating timer is false, its not been activated, no zombies are near
-                for mob in self.game.mobs: # for every zombie in the game (should just do that u can see on screen btw)
-                    if self.is_near(mob.pos.x, mob.pos.y): # if we are near a zombie
-                        self.clout_rating_base_timer = pg.time.get_ticks() # start the clout timer
-                        print(f"Near Zombie, Starting Main Clout Timer... {self.get_display_clout_rating()}")
-            # else timer is running so check if we are still near zombies to decide if we need to end timers and count the score or just keep checking instead
+            # if its (clout bonus) not only cooldown and its not active, make it active
+            if self.is_clout_bonus_active: 
+                self.clout_rating_base_timer = pg.time.get_ticks() # start the clout timer
+                print(f"Kill Confirmed! Starting Bonus Timer... {self.get_display_clout_rating()}")
+            # else timer is running so check if we are checking to see if we should end the timer or if we've won
             else:
-                # if the base timer is running, so we think we are near a zombie and increasing our clout
-                a_zombie_is_near = False # used to check if any zombie is near throughout the loop
-                for mob in self.game.mobs: # for every zombie in the game (should just do that u can see on screen btw)
-                    if self.is_near(mob.pos.x, mob.pos.y): # if we are near a zombie
-                        a_zombie_is_near = True
-                        break # we dont need to keep looping we just need to be near 1 to confirm it 
-                # if after that loop a_zombie_is_near is still false
-                if not a_zombie_is_near:
+                clout_bonus_check = pg.time.get_ticks() 
+                if clout_bonus_check - self.clout_rating_base_timer >= self.clout_level_base_timer:
+                    print(f"{clout_bonus_check = }, {self.clout_rating_base_timer =}")
+                    self.is_clout_bonus_active = False 
+                    # if this has happened, because its naturally gotten to here, over 5 seconds, and wasnt stopped before (by a zombie hit for example)...
+                    # then you have won
                     print(f"Clout Streak Ended - Checking For Score")
                     # clout_cooldown_timer also!
                     self.clout_cooldown_timer = False
                     self.clout_rating_base_timer = False # then stop our clout meter timer
                     # now check here if we managed to get a kill before it stopped else we didnt win
+                
+                    clout_prize_check = pg.time.get_ticks()                        
+                    clout_prize = clout_prize_check - self.clout_cooldown_timer
+                    # print(f"Clout Rating From => {self.clout_rating}")
+                    #self.clout_rating += (clout_prize // 10000)
+                    # print(f"Clout Rating To => {self.clout_rating}")
 
-                    if self.won_clout: # then if u won clout reset won_clout
-                        clout_prize_check = pg.time.get_ticks()                        
-                        clout_prize = clout_prize_check - self.clout_cooldown_timer
-                        # print(f"Clout Rating From => {self.clout_rating}")
-                        #self.clout_rating += (clout_prize // 10000)
-                        # print(f"Clout Rating To => {self.clout_rating}")
-
-                        self.player_gold += clout_prize
-                        print(f"[ CLOUTED ] +${clout_prize} BONUS!!") # print("[ 60 G'S BAYBAYYYY ] +100")  # 60_000 
-                        self.won_clout = False # reset the won clout, only time we should need to me thinks
+                    self.player_gold += clout_prize
+                    print(f"[ CLOUTED ] +${clout_prize} BONUS!!") # print("[ 60 G'S BAYBAYYYY ] +100")  # 60_000 
+                    self.won_clout = False # reset the won clout, only time we should need to me thinks
                     # else if u didnt win clout, just log it for now but we wanna handle this stuff too for sure
                     # stuff like u lose followers lol
-                    else:
-                        print("No Clout Won, Unfollow Streak Incoming")
+                        
                     # finally
                     # if the timer was on and now we're not near any zombie at all, the clout cooldown timer should start
                     self.clout_cooldown_timer = pg.time.get_ticks()
@@ -287,7 +319,7 @@ class Player(pg.sprite.Sprite):
             sub_timer_check = pg.time.get_ticks()
             # print(f"{sub_timer_check - self.clout_sub_cooldown_timer = }") 
             self.sub_clout_time = sub_timer_check - self.clout_sub_cooldown_timer
-            if sub_timer_check - self.clout_sub_cooldown_timer >= 2000: # every x seconds, do whatever this extra clout level should do
+            if sub_timer_check - self.clout_sub_cooldown_timer >= 5000: # every x seconds, do whatever this extra clout level should do
                 print(f"Extra Clout For SubLevel Bonus! = {self.clout_sub_level + 1}")
                 # self.clout_rating += 1
                 self.clout_sub_level += 1
@@ -503,8 +535,9 @@ class Player(pg.sprite.Sprite):
         self.rect.center = self.hit_rect.center
 
         # new new clout test stuff
-        self.clout_handler()
-        self.sub_clout_handler() # if timer running the sub timer should be too
+        self.handle_clout()
+        #self.clout_handler()
+        #self.sub_clout_handler() # if timer running the sub timer should be too
 
         # need sumnt like set state, unsure if best after or before keys but assumed after for obvs reasons
         # again forget actual ranges for now but if we are under 30% we are fatigued
