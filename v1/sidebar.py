@@ -74,7 +74,7 @@ class SideBar_Top(object):
 
 class Comment_Handler(object):
     """ temp test """
-    all_comments = {} # instance of object key : pos/y_pos value
+    all_comments = [] # instance of object key : pos/y_pos value
     is_chat_maxed_out = False
     
     def __init__(self, game, sidebar, offset=0): # probs dont need all these btw but had to take all for initial refactor 
@@ -91,24 +91,31 @@ class Comment_Handler(object):
         comment.update_comment_handler_list()
 
     def update_all_comments(self, surf):
-        # check we even have a dictionary first, might not be any comments to check
-        if Comment_Handler.all_comments:
-            # for the very first item in the list (we need to handle a max amount now we're adding this btw)
-            current_comment = list(Comment_Handler.all_comments.keys())[-1] # get the most recent item in the dictionary # len(Comment_Handler.all_comments) - 1
-            #print(f"Check is my {current_comment.myid} myYpos: {current_comment.pos.y:.0f} Greater Than whereIshouldBe: {50 * len(Comment_Handler.all_comments)}")
-            if current_comment.pos.y > 55 * len(Comment_Handler.all_comments): # hard code this to be the height of the most recent comment plus a small margin like + 5
-                self.is_spawn_on_cooldown = True # if the toppest one is not at the top, spawn comment is still on cooldown
-            else: # else if it has reached the top the cooldown is now off and we need to remove this object from the list (dict) for tracking
-                self.is_spawn_on_cooldown = False
-                # but we only want to remove it from the top if the list is greater than a max size
-                if len(Comment_Handler.all_comments) >= self.max_comments: # note if the list isnt max size we'll be using the list length as a multiplier to that 55 value (most recent comment height + 5 border)
-                    print(f"TWITCH CHAT IS FULL!\nDeleting Comment {current_comment.myid}")
-                    Comment_Handler.is_chat_maxed_out = True
-                    # del Comment_Handler.all_comments[current_comment] # stop tracking this comment now that is it at the top
-                    # if we dont do the del here it stops at max, which we want, as we want it to scroll through now
-            for comment in Comment_Handler.all_comments.keys():
-                comment.draw(surf) # move dem all on dis surface
-                self.update_comments_list(comment) # update the list of their y positions if they're all not moving
+        for comment in Comment_Handler.all_comments:
+            comment.draw(surf)
+        if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
+            if len(Comment_Handler.all_comments) >= self.max_comments:
+                Comment_Handler.is_chat_maxed_out = True
+
+
+        # # check we even have a dictionary first, might not be any comments to check
+        # if Comment_Handler.all_comments:
+        #     # for the very first item in the list (we need to handle a max amount now we're adding this btw)
+        #     current_comment = list(Comment_Handler.all_comments.keys())[-1] # get the most recent item in the dictionary # len(Comment_Handler.all_comments) - 1
+        #     #print(f"Check is my {current_comment.myid} myYpos: {current_comment.pos.y:.0f} Greater Than whereIshouldBe: {50 * len(Comment_Handler.all_comments)}")
+        #     if current_comment.pos.y > 55 * len(Comment_Handler.all_comments): # hard code this to be the height of the most recent comment plus a small margin like + 5
+        #         self.is_spawn_on_cooldown = True # if the toppest one is not at the top, spawn comment is still on cooldown
+        #     else: # else if it has reached the top the cooldown is now off and we need to remove this object from the list (dict) for tracking
+        #         self.is_spawn_on_cooldown = False
+        #         # but we only want to remove it from the top if the list is greater than a max size
+        #         if len(Comment_Handler.all_comments) >= self.max_comments: # note if the list isnt max size we'll be using the list length as a multiplier to that 55 value (most recent comment height + 5 border)
+        #             print(f"TWITCH CHAT IS FULL!\nDeleting Comment {current_comment.myid}")
+        #             Comment_Handler.is_chat_maxed_out = True
+        #             # del Comment_Handler.all_comments[current_comment] # stop tracking this comment now that is it at the top
+        #             # if we dont do the del here it stops at max, which we want, as we want it to scroll through now
+        #     for comment in Comment_Handler.all_comments.keys():
+        #         comment.draw(surf) # move dem all on dis surface
+        #         self.update_comments_list(comment) # update the list of their y positions if they're all not moving
 
 
 class Comment(object): # note have this be rough for now as im an idiot, twitch goes top to bottom, but dw at all for now will be hella refactors
@@ -117,13 +124,13 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
     def __init__(self, game, sidebar, offset=0):
         self.game = game
         self.image =  self.select_bg()
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect() # 250
         start_pos = 760 - self.rect.height + offset # guna need to increase this so that it is actually hidden when theres an img infront, and have it scroll from under that, but is fine for now
         self.pos = vec(0, start_pos) # always want to start at the bottom of the sidebar # SIDEBAR_SIZE[1] - self.rect.y
         self.sidebar = sidebar
         self.comment_positions = () # fixed positions, should be a constant class var but this is temp af so dw
         # for refactor
-        Comment_Handler.all_comments[self] = self.pos.y # now add it here too
+        #Comment_Handler.all_comments[self] = self.pos.y # now add it here too
         # testing potential to add
         self.rect.center = self.pos
         self.vel = vec(0,0)
@@ -132,12 +139,15 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         self.commenter_username = self.get_commenter_username()
         self.commenter_color = self.get_a_random_colour()
         self.commenter_comment = self.get_commenter_comment()
+        # test
+        Comment_Handler.all_comments.append(self)
 
     def update_comment_handler_list(self):
-        for comment in Comment_Handler.all_comments.keys(): # for every comment which is the key in this dict
-            if Comment_Handler.all_comments[comment] == self: # if dis is you
-                if Comment_Handler.all_comments[comment] != self.pos.y: # dont do a write for no reason 
-                    Comment_Handler.all_comments[comment] = self.pos.y # update ur y pos
+        pass
+        # for comment in Comment_Handler.all_comments.keys(): # for every comment which is the key in this dict
+        #     if Comment_Handler.all_comments[comment] == self: # if dis is you
+        #         if Comment_Handler.all_comments[comment] != self.pos.y: # dont do a write for no reason 
+        #             Comment_Handler.all_comments[comment] = self.pos.y # update ur y pos
 
     def get_commenter_username(self): # to do 
         commenter_usernames = [f"{self.game.username} Da Bes!", f"{self.game.username}'s #1 Fan", f"{self.game.username} Is LIFE", f"PogChamp69", "YoMommaDoucheCanoe", f"xXx_69_zOmBiEkIlLA_69_xXx", "OnlyClaps", "McSlappington"]
@@ -194,9 +204,15 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
 
     def draw(self, surface):
         self.update() # before we draw, run update, remember this isnt a sprite so update isnt running by itself
+        # if self.pos.y >= 50 * len(Comment_Handler.all_comments):
         surface.blit(self.image, self.pos) # (self.rect.x, self.rect.y)) # draw it on top of the sidebar, not the screen < test this quickly
-        surface.blit(self.write_commenter_username(), (self.pos.x + 50, self.pos.y))  
-        surface.blit(self.write_commenter_comment(), (self.pos.x + 30, self.pos.y + 20))  
+        if self.vel.y == -self.comment_move_speed: # if we are moving, draw the names
+            print(f"Drawing {self.myid}, {self.pos.x + 50 = }, {self.pos.y = } {self.vel.y = }, {-self.comment_move_speed = }")
+            self.image.blit(self.write_commenter_username(), (self.pos.x + 50, self.pos.y))  
+            # self.image.blit(self.write_commenter_comment(), (self.pos.x + 30, self.pos.y + 20))  
+        else:
+            print(f"Not Drawing {self.myid}, {self.vel.y = }, {-self.comment_move_speed = }")
+        
         
     def update(self):
         # set our move speed but this wont move us yet
