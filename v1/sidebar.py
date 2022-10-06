@@ -43,6 +43,41 @@ class SideBar(object):
         self.image.fill(WHITE)
 
 
+
+class SubsBar(object):
+    """ bottom bar """
+    def __init__(self, game):
+        self.game = game
+        self.image = pg.Surface((WIDTH, 70))
+        self.rect = self.image.get_rect() # width minus the width of the actual sidebar size (not the img so its squished?)
+        self.pos = vec(self.rect.x, self.rect.y)
+        self.centerpos = vec(self.rect.centerx, self.rect.centery) # self.rect.x = 774, self.rect.centerx = 899
+
+    def update(self): # player
+        """ update and redraw all elements to the image """
+        self.image.fill(WHITE)
+
+    def draw(self, surface):
+        """ standard draw """
+        surface.blit(self.image, (0, HEIGHT-SUBSBAR_HEIGHT))
+        #self.update()
+        self.image.fill(WHITE)
+        self.draw_right_img(surface)
+        self.draw_left_img(surface)
+
+    def draw_right_img(self, surface):  # both wrong way round btw lmao
+        self.right_image = self.game.sidebar_bottom_right_img
+        self.right_image_rect = self.right_image.get_rect()
+        self.right_image_pos = vec(0, HEIGHT - SUBSBAR_HEIGHT) # 250 SIDEBAR_WIDTH hard code as constant pls
+        surface.blit(self.right_image, self.right_image_pos)
+
+    def draw_left_img(self, surface):
+        self.left_image = self.game.sidebar_bottom_left_img
+        self.left_image_rect = self.right_image.get_rect()
+        self.left_image_pos = vec(WIDTH - SIDEBAR_SIZE[0] - self.left_image_rect.width + 20, HEIGHT - SUBSBAR_HEIGHT) # 250 SIDEBAR_WIDTH hard code as constant pls
+        surface.blit(self.left_image, self.left_image_pos)
+
+
 class SideBar_Bottom(object):
     """ temp af """
     def __init__(self, game, sidebar):

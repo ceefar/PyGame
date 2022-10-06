@@ -37,11 +37,14 @@ BROWNPALE =  (215, 195, 163)
 BLUEMIDNIGHT = (0, 51, 102)
 
 # game settings
-WIDTH = 1024   # 16 * 64 or 32 * 32 or 64 * 16
-HEIGHT = 768  # 16 * 48 or 32 * 24 or 64 * 12
+WIDTH = 1408 # 1024   # 16 * 64 or 32 * 32 or 64 * 16
+HEIGHT = 768 # 768  # 16 * 48 or 32 * 24 or 64 * 12
 FPS = 60
 TITLE = "Tilemap Demo"
 BGCOLOR = BROWNPALE
+
+# new own custom test game constants/settings for ui stuff
+SUBSBAR_HEIGHT = 70
 
 TILESIZE = 64 # default 32, increase the tilesize to zoom in further (i.e. 64 for twice as close), or decrease (by multiples of 2) to zoom out
 GRIDWIDTH = WIDTH / TILESIZE
@@ -132,12 +135,13 @@ PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
 PLAYER_BLUR3_IMG = "manBlue_gun_blur3.png"
 PLAYER_INJURY1_IMG = "manBlue_gun_injury1.png"
 
-
 # test af stuff
 TEST_BG_IMG = "test_bg.png"
 TEST_SIDEBAR_IMG = "empty_sidebar_1.png"
 SIDEBAR_BOTTOM_IMG = "sidebar_bottom.png"
 SIDEBAR_TOP_IMG = "sidebar_top.png"
+SIDEBAR_BOTTOM_RIGHT_IMG = "subsbar_img_left_2.png"
+SIDEBAR_BOTTOM_LEFT_IMG = "subsbar_img_left_1.png"
 SIDEBAR_COMMENT_1_BG_IMG = "comment_bg_1.png"
 SIDEBAR_COMMENT_2_BG_IMG = "comment_bg_2.png"
 SIDEBAR_COMMENT_3_BG_IMG = "comment_bg_3.png"

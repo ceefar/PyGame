@@ -34,12 +34,12 @@ def draw_player_health(surf, x, y, pct): # surface, pos, pos, percentage of heal
     pg.draw.rect(surf, DARKGREY, outline_rect, 2)
 
 # test af, needs a better name too
-def draw_player_subclout(surf, x, y, pct): # surface, pos, pos, percentage of health
+def draw_a_chargebar(surf, x, y, pct, bar_width=100, bar_height=20): # surface, pos, pos, percentage of health
     # incase we pass a negative, pin it at 0
     if pct < 0:
         pct = 0
-    BAR_LENGTH = 100
-    BAR_HEIGHT = 20
+    BAR_LENGTH = bar_width
+    BAR_HEIGHT = bar_height
     fill = pct * BAR_LENGTH
     outline_rect = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pg.Rect(x, y, fill, BAR_HEIGHT)
@@ -63,6 +63,7 @@ class Game:
         pg.key.set_repeat(500, 100)
         self.load_data()
         self.sidebar = SideBar(self) # create the new sidebar ui object
+        self.subsbar = SubsBar(self) # create the new subsbar ui object
         self.sidebar_bottom = SideBar_Bottom(self, self.sidebar) # temp af
         self.sidebar_top = SideBar_Top(self, self.sidebar) # temp af 
         self.twitch_chat = Comment_Handler(self, self.sidebar) # note in an object not a sprite
@@ -116,6 +117,8 @@ class Game:
         self.test_bg_img = pg.transform.scale(self.test_bg_img, (WIDTH, HEIGHT))  
         self.test_sidebar_img = pg.image.load(path.join(img_folder, TEST_SIDEBAR_IMG)).convert_alpha() 
         self.sidebar_bottom_img = pg.image.load(path.join(img_folder, SIDEBAR_BOTTOM_IMG)).convert_alpha() 
+        self.sidebar_bottom_right_img = pg.image.load(path.join(img_folder, SIDEBAR_BOTTOM_RIGHT_IMG)).convert_alpha() 
+        self.sidebar_bottom_left_img = pg.image.load(path.join(img_folder, SIDEBAR_BOTTOM_LEFT_IMG)).convert_alpha() 
         self.sidebar_top_img = pg.image.load(path.join(img_folder, SIDEBAR_TOP_IMG)).convert_alpha()
         self.comment_img_1 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_1_BG_IMG)).convert_alpha() 
         self.comment_img_2 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_2_BG_IMG)).convert_alpha() 
@@ -195,6 +198,7 @@ class Game:
             # have the mob stop again
             if self.player.health <= 0:
                 # game over man, game over
+                Comment.all_comments = [] # for now, wipe the comments if u die
                 self.playing = False 
         if hits:
             print(f"[ {self.player.health}hp ] Player got Bitchslapped by {hits[0].myname}")
@@ -281,10 +285,14 @@ class Game:
                 sprite.draw_health()
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
-        # -- nested func for rendering basic text which guna move to ui functs shortly --            
-        def render_to_basic_ui(text, x, y, color=None):
+        # -- nested func for rendering basic text which guna move to ui functs shortly --
+        # literally is just here cause its used regularly while figuring things out so pointless moving it            
+        def render_to_basic_ui(text, x, y, color=None, font_size=12, want_font="silk_bold", alignment="center"):
             # personal basic af test ui stuff
-            font = pg.font.Font("Silkscreen-Bold.ttf", 12) # font = pg.font.SysFont("arial", 16) # create the font object
+            if want_font == "silk_bold":
+                font = pg.font.Font("Silkscreen-Bold.ttf", font_size) # font = pg.font.SysFont("arial", 16) # create the font object
+            elif want_font == "silk_regular":
+                font = pg.font.Font("Silkscreen-Regular.ttf", font_size)
             if color == "rating": # the colours here do change based on things which should keep tbf but dont over kill it tho
                 text = font.render(f'{text}', True, RED if self.player.clout_rating_base_timer else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text
             elif color == "earnings":
@@ -293,10 +301,14 @@ class Game:
                 text = font.render(f'{text}', True, GREEN if Mob.get_my_hps() < 9 else RED, BLUEMIDNIGHT) # use the font object to render ur text   
             elif color == "weapons": # the colours here do change based on things which should keep tbf but dont over kill it tho
                 text = font.render(f'{text}', True, MAGENTA if self.player.autoshoot else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text                                 
+            elif color == "green": # temp, for has_won clout multiplier stuff, so need to proper implementation, as will everything here tbf
+                text = font.render(f'{text}', True, GREEN, BLUEMIDNIGHT)
             else:
                 text = font.render(f'{text}', True, HIGHLIGHTER, BLUEMIDNIGHT) # use the font object to render ur text             
             textRect = text.get_rect() # then create a surface for the rect 
             textRect.x = x # put the center of that rect where we want it
+            if alignment == "right":
+                textRect.midright = (x, 28) # fyi this y is surely rect.centery or rect.width / 2 or sumnt but not 28 pls duhh
             textRect.y = y # put the center of that rect where we want it        
             # copy the text surface object to the screen and render at the given center pos
             self.screen.blit(text, textRect)
@@ -309,9 +321,6 @@ class Game:
         render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings") 
         render_to_basic_ui(f"Zombies Remaining: {Mob.get_my_hps()}", x = 20, y = 110, color = "zombies") 
         render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}", x = 20, y = 130, color = "weapon") 
-        # temp afaf
-        if self.player.clout_rating_base_timer:
-            render_to_basic_ui(f"Going Viral?... [ x{self.player.clout_sub_level} ]" if self.player.clout_sub_level > 1 else "Going Viral?...", x = 20, y = 150, color="rating") 
         # -- draw player hp bar --
         # before final final flip
         draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
@@ -325,7 +334,7 @@ class Game:
                 render_to_basic_ui(f"Reloading!", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, ((reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())) # flashing?
                 flashme = False
             # isnt actually subclout btw but reload
-            draw_player_subclout(self.screen, (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2), (reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())   # self.screen.get_width() / 2, self.screen.get_height() /2,
+            draw_a_chargebar(self.screen, (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2), (reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())   # self.screen.get_width() / 2, self.screen.get_height() /2,
         else:
             # if player is not reloading, check if u are low ammo, if so then flash it to player
             if bullets_remaining < 10: # less than 20%
@@ -335,12 +344,25 @@ class Game:
                     render_to_basic_ui(f"Danger! Low Ammo", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, color = "weapon") 
                     flashme2 = False  
 
-        # -- draw player clout multiplier bar --
+        # ---- draw player clout multiplier bar stuff ----
+        # -- the large clout rating letter + title --
+        render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
+        render_to_basic_ui(f"{self.player.get_display_clout_rating()}", x = 1085, y = 530, font_size=44)
         # if atleast 1 zombie is still alive 
         if Mob.get_my_hps():
-            if self.player.clout_sub_level > 1:
-                render_to_basic_ui(f"Clout Multiplier: {self.player.clout_sub_level}", x = 20, y = 680) # viewer boost / subscriber boost
-                draw_player_subclout(self.screen, 20, 700, self.player.sub_clout_time / self.player.sub_clout_base_time)
+            if self.player.clout_sub_level >= 1:
+                # -- the small potential winnings pot during clout level activation --
+                render_to_basic_ui(f"$100,000", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
+                # -- for flashing going viral text -- ... >> make own function or decorator! <<   :o
+                flash_viral = pg.time.get_ticks() 
+                flash_viral = int(f"{flash_viral}"[1])
+                if flash_viral % 5 != 0: # if the highest digit number is even on if not off, for flash   
+                    render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
+                    flash_viral = False
+                # -- semi large clout multiplier number  --
+                render_to_basic_ui(f"x{self.player.clout_sub_level}", x = 1080, y = 600, font_size=24)
+                # -- clout level multiplier charge bar --
+                draw_a_chargebar(self.screen, 905, 635, self.player.sub_clout_time / self.player.sub_clout_base_time, bar_width=220, bar_height=25)
         else:
             # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
             want_celebrate = False
@@ -362,6 +384,9 @@ class Game:
         if self.want_twitch:
                 
             # twitch chat
+            # new subs bar
+            self.subsbar.draw(self.screen)
+            # want above subs bar behind the side bar so render it first
             if not self.twitch_chat.is_spawn_on_cooldown:
                 # if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
                     # if not self.player.waiting:
@@ -370,9 +395,10 @@ class Game:
                             self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
                             self.twitch_chat.is_spawn_on_cooldown = pg.time.get_ticks()
             self.twitch_chat.update_all_comments(self.sidebar.image)
-            self.sidebar.draw(self.screen) 
             self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
+            self.sidebar.draw(self.screen) 
             self.sidebar_top.draw(self.sidebar.image)
+            
 
         # -- finally done, flip the display and render complelet --
         pg.display.flip()
