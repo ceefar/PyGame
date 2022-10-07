@@ -73,28 +73,28 @@ BULLET_DAMAGE = 10
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
 PISTOL_SIGHT = 300 # the distance from which you will begin to fire on a zombie with this weapon
 PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert to ranges, with the ranges becoming shorter based on the time in game ooo (or even bullets fired n shit lol)
-PISTOL_CRIT_RATE = 10 # the crit number is just an improvement thats added to the 1 - 100 random int check, so adding 10 crit chance literally remove 10 of 100 numbers from the range to check against
+PISTOL_CRIT_RATE = 15 # the crit number is just an improvement thats added to the 1 - 100 random int check, so adding 10 crit chance literally remove 10 of 100 numbers from the range to check against
 PISTOL_KICKBACK = 200
 PISTOL_SPREAD = 20
-PISTOL_DAMAGE = 11
+PISTOL_DAMAGE = 15
 PISTOL_BULLET_SPEED = 500
 PISTOL_BULLET_RATE = 150
 PISTOL_BULLET_LIFETIME = 100
-PISTOL_CLIP_SIZE = 15
-PISTOL_RELOAD_SPEED = 500 # ms
+PISTOL_CLIP_SIZE = 20
+PISTOL_RELOAD_SPEED = 400 # ms
 
 # NEW Custom Multi-Weapon settings 
 UZI_SIGHT = 220
 UZI_ACCURACY = 70
-UZI_CRIT_RATE = 3
+UZI_CRIT_RATE = 4
 UZI_KICKBACK = 250
 UZI_SPREAD = 15
-UZI_DAMAGE = 6
+UZI_DAMAGE = 7
 UZI_BULLET_SPEED = 800
 UZI_BULLET_RATE = 90
 UZI_BULLET_LIFETIME = 80
-UZI_CLIP_SIZE = 30
-UZI_RELOAD_SPEED = 1000 # ms
+UZI_CLIP_SIZE = 50
+UZI_RELOAD_SPEED = 900 # ms
 
 # NEW Custom MyTurret settings
 MY_TURRET_IMG = "hitman1_gun.png"

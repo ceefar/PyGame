@@ -69,8 +69,14 @@ class Game:
         self.twitch_chat = Comment_Handler(self, self.sidebar) # note in an object not a sprite
         self.username = "PlayerMan" # to add this in a menu, will have in twitch chat fans with ur name lol
         self.want_twitch = True
+        self.want_clout_ui = True
+        # guna make the below stuff into its own class that we'll initialise here ig, but leaving here for now...
         self.clout_streak = 0
+        self.clout_streak_timer = 0
+        self.clout_cooldown_timer = 0
+        self.clout_wallet = 0
  
+
     def load_data(self):
         # location of where our game is running from, main.py
         game_folder = path.dirname(__file__)
@@ -170,7 +176,8 @@ class Game:
                             if tile == "P":
                                 # spawn them at the col, row position on the map 
                                 self.player = Player(self, col, row)
-        spawn_stuff_on_map()                          
+        spawn_stuff_on_map()   
+        self.map_mob_count = len(self.mobs) # how many are spawned at the start of the round                       
         self.camera = Camera(self.map.width, self.map.height)
 
     def run(self): 
@@ -192,6 +199,16 @@ class Game:
         # update the camera based on the position of the player
         self.camera.update(self.player) # any sprite you put in here the camera will follow, dope af!
 
+        # new test for clout rework
+        if self.clout_cooldown_timer:
+            check_time = pg.time.get_ticks()
+            if check_time - self.clout_cooldown_timer > 2000:
+                check_time = 0
+                self.clout_cooldown_timer = 0
+                # so when this gets trigger for the reset, also add the gold but check if the gold was defo won first (which we havent implemented yet but is only 1 case for now so dw)
+                self.player.player_gold += self.clout_wallet
+                self.clout_wallet = 0
+
         # mobs hit player
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
@@ -206,26 +223,18 @@ class Game:
             self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
             # new clout stuff
             if self.player.clout_rating_base_timer: # if the clout rating timer is running / active and we just got hit by a zombie
-                self.player.is_clout_bonus_active = False
                 self.player.clout_rating_base_timer = False # the player got hit so turn off our timer
-                # some way to print this on screen to the player, or flag it or sumnt idk
-                # we now also need a clout cooldown timer for the player thats started here too 
-
-        # to add to player if you we're hit so you've now lost any streak u had by us turning off the active bonus timer, also activate the cooldown timer here too
-
-        # k so big note, already know how to add bullets going thru say 5 zombies then dying functionality
-        # for bulletstreaks n shit, but problem is it counts every time again, would be an easy enough solution but diminishing returns rn so leaving for now
-
+          
         # bullets hit mobs <= this type of implementation here is likely a good starting point for handling ui stuff like killstreaks i reckon
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True) # zombie stay, bullets go
         for hit in hits:
             # was previously constant global from settings as player_damage, now we need to set it for crits hence this, temp for now anywayas
             hit.health -= self.player.player_damage
             
-            # tho do need to do collisions properly seems so far that the way ive set it up, it is still only crit for the bullet that is crit, not for any others flying around
-            # i think so anyway but unsure, either way need to do collisions properly anyway so dw for now
             if self.player.player_damage >= 100: 
                 print("CRIT BAYBAYYYYY!")
+                if self.clout_streak_timer:
+                    self.clout_wallet += 1
                 self.player.player_damage = 10
                 # just some quick extra rotation for randomness during this heavier crit pushback
                 hit.look_at(vec(hit.pos.x - 10, hit.pos.y - 10)) 
@@ -235,13 +244,28 @@ class Game:
                 hit.vel = vec(0,0)
                 # make this bullet temporarily slow the zombie a normal amount
                 hit.vel = vec(0,0)                
-            print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }")                
+            print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }") 
+            # <==== zombie has died here ====================================================================================================               
             if hit.health <= 0:
-                if not self.player.clout_rating_base_timer and not self.player.clout_cooldown_timer:  # or is_clout_bonus_active ?
-                    # you've killed a zombie, so if this is not on, and also not on cooldown, then activate the clout bonus, else it is just running
-                    self.player.is_clout_bonus_active = True 
+                # <==== zombie has died here ====================================================================================================
                 print(f"{hit.myname} has Died [ hp: {hit.health} ]")
-                self.clout_streak += 1
+                
+                # only count towards the cloutstreak if its not on cooldown (a few seconds after weve just had a clout streak)
+                if self.clout_cooldown_timer == 0:
+                    self.clout_streak += 1
+
+                # temp
+                BASE_KILL_GOLD = 100
+                # increase the clout wallet by the gold won for this kill, plus 10% of the increment var... also me this stuff its own function / class pls
+                self.clout_wallet += BASE_KILL_GOLD + (BASE_KILL_GOLD * (self.clout_streak / 10)) # ARBITRARY NUMBER TO HARD CODE FOR GOLD ASAP PLS!
+
+                if self.clout_streak_timer > 0: # if the timer is on, you have an active streak, and if you do and you've got another kill, we reset the timer
+                    self.clout_streak_timer = pg.time.get_ticks()
+                    print(f"Hot Streak Baybayyyy {self.clout_streak}")
+                else:
+                    # this is the initial one, incase we want to handle them differently
+                    self.clout_streak_timer = pg.time.get_ticks()
+                    print(self.clout_streak_timer)
             else:
                 print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
         # test and temp af
@@ -293,37 +317,37 @@ class Game:
         # literally is just here cause its used regularly while figuring things out so pointless moving it            
         def render_to_basic_ui(text, x, y, color=None, font_size=12, want_font="silk_bold", alignment="center"):
             # personal basic af test ui stuff
+            # fonts switch
             if want_font == "silk_bold":
                 font = pg.font.Font("Silkscreen-Bold.ttf", font_size) # font = pg.font.SysFont("arial", 16) # create the font object
             elif want_font == "silk_regular":
                 font = pg.font.Font("Silkscreen-Regular.ttf", font_size)
-            if color == "rating": # the colours here do change based on things which should keep tbf but dont over kill it tho
-                text = font.render(f'{text}', True, RED if self.player.clout_rating_base_timer else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text
-            elif color == "earnings":
-                text = font.render(f'{text}', True, GREEN if self.player.won_clout else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text  
+            # colours switch
+            if color == "earnings":
+                text = font.render(f'{text}', False, GREEN, BLUEMIDNIGHT) # use the font object to render ur text 
+                # text = font.render(f'{text}', True, GREEN if self.player.won_clout else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text  
             elif color == "zombies": # the colours here do change based on things which should keep tbf but dont over kill it tho
-                text = font.render(f'{text}', True, GREEN if Mob.get_my_hps() < 9 else RED, BLUEMIDNIGHT) # use the font object to render ur text   
+                text = font.render(f'{text}', False, GREEN if len(self.mobs) < int(self.map_mob_count / 2) else RED, BLUEMIDNIGHT) # if less than half mobs text changes colour
             elif color == "weapons": # the colours here do change based on things which should keep tbf but dont over kill it tho
-                text = font.render(f'{text}', True, MAGENTA if self.player.autoshoot else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text                                 
+                text = font.render(f'{text}', False, MAGENTA if self.player.autoshoot else YELLOW, BLUEMIDNIGHT) # use the font object to render ur text                                 
             elif color == "green": # temp, for has_won clout multiplier stuff, so need to proper implementation, as will everything here tbf
-                text = font.render(f'{text}', True, GREEN, BLUEMIDNIGHT)
+                text = font.render(f'{text}', False, GREEN, BLUEMIDNIGHT)
             else:
-                text = font.render(f'{text}', True, HIGHLIGHTER, BLUEMIDNIGHT) # use the font object to render ur text             
+                text = font.render(f'{text}', False, HIGHLIGHTER, BLUEMIDNIGHT) # use the font object to render ur text             
             textRect = text.get_rect() # then create a surface for the rect 
             textRect.x = x # put the center of that rect where we want it
+            # alignment
             if alignment == "right":
                 textRect.midright = (x, 28) # fyi this y is surely rect.centery or rect.width / 2 or sumnt but not 28 pls duhh
             textRect.y = y # put the center of that rect where we want it        
             # copy the text surface object to the screen and render at the given center pos
             self.screen.blit(text, textRect)
-        player_clip_size = self.player.return_clip_size()
         bullets_remaining = self.player.return_clip_size() - self.player.clip_counter
         # -- ui text renders --
         # temp to do proper
-        render_to_basic_ui(f"Rating: {self.player.get_display_clout_rating()} [{self.player.clout_rating_detail}]", x = 20, y = 50, color = "rating") 
         render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
-        render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings") 
-        render_to_basic_ui(f"Zombies Remaining: {Mob.get_my_hps()}", x = 20, y = 110, color = "zombies") 
+        render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings")
+        render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)}", x = 20, y = 110, color = "zombies") 
         render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}", x = 20, y = 130, color = "weapon") 
         # -- draw player hp bar --
         # before final final flip
@@ -348,32 +372,54 @@ class Game:
                     render_to_basic_ui(f"Danger! Low Ammo", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, color = "weapon") 
                     flashme2 = False  
 
-        # ---- draw player clout multiplier bar stuff ----
-        # -- the large clout rating letter + title --
-        render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
-        render_to_basic_ui(f"{self.player.get_display_clout_rating()}", x = 1085, y = 530, font_size=44)
-        # if atleast 1 zombie is still alive 
-        if Mob.get_my_hps():
-            if self.player.is_clout_bonus_active:
-                # -- the small potential winnings pot during clout level activation --
-                render_to_basic_ui(f"$100,000", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
-                # -- for flashing going viral text -- ... >> make own function or decorator! <<   :o
-                flash_viral = pg.time.get_ticks() 
-                flash_viral = int(f"{flash_viral}"[1])
-                if flash_viral % 5 != 0: # if the highest digit number is even on if not off, for flash   
-                    render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
-                    flash_viral = False
-                # -- semi large clout multiplier number  --
-                render_to_basic_ui(f"x{self.player.clout_sub_level}", x = 1080, y = 600, font_size=24)
-                # -- clout level multiplier charge bar --
-                draw_a_chargebar(self.screen, 905, 635, self.player.sub_clout_time, bar_width=220, bar_height=25)
-        else:
-            # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
-            want_celebrate = False
-            if want_celebrate:
-                self.player.rot += 5
-                self.player.vel = vec(1,0)
-                # pos = self.player.pos # + BARREL_OFFSET.rotate(-self.player.rot) # was for shooting bullets idea but didnt get there in the end and forget it for now anyways
+        if self.want_clout_ui:
+            # ---- draw player clout multiplier bar stuff ----
+            # -- the large clout rating letter + title --
+            render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
+            render_to_basic_ui(f"{self.player.get_display_clout_level()}", x = 1085, y = 530, font_size=44)
+            # if atleast 1 zombie is still alive 
+            if self.mobs: # Mob.get_my_hps():
+                if self.clout_streak >= 1 or self.clout_cooldown_timer > 0: # cooldown allows short the short window to display the results of the streak / bonus if u won it
+                    
+                    # -- the small potential winnings pot during clout level activation --
+                    render_to_basic_ui(f"${self.clout_wallet}", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
+                    
+                    # if on cooldown flash you win instead (tho not accurate need both cases am just confirming works fine)
+                    if self.clout_cooldown_timer > 0:
+                        # will just have some new bool if you've been hit that triggers you lose and then when the cooldown timer is turned off also turn that off too (or on whatever just the opposite)
+                        render_to_basic_ui(f"You Win!", x = 900, y = 600, want_font="silk_bold", font_size=20, color="green") # viewer boost / subscriber boost
+                    else:
+                        # -- for flashing going viral text, removed for now but add back pls, was banging -- ... >> make own function or decorator! <<   :o            
+                        render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
+
+                    # -- semi large clout multiplier number  --
+                    render_to_basic_ui(f"x{self.clout_streak}", x = 1080, y = 600, font_size=24)
+
+                    
+                    # note - remove all existing main wallet functionality now too!
+
+
+                    # -- clout level multiplier charge bar --
+                    # if self.clout_streak_timer > 0:
+                    if self.clout_streak_timer:
+                        streak_check = pg.time.get_ticks()
+                        streak_timer = (streak_check - self.clout_streak_timer) / 5000 # from 0 - 100% for the 5 second clout streak timer
+                        # if the timer has hit 5000
+                        if streak_check - self.clout_streak_timer > 5000: # << HARD CODE ME ASAP BAYBAYYYYY
+                            # ig wanna check hasn't been hit or sumnt btw? nah as that will just kill the timers!
+                            self.clout_streak_timer = 0 # stop the timers
+                            streak_check = 0
+                            self.clout_streak = 0 # and reset the streak
+                            # and also start the cooldown for this entire mechanic also
+                            self.clout_cooldown_timer = pg.time.get_ticks()
+                        draw_a_chargebar(self.screen, 905, 635, streak_timer, bar_width=100, bar_height=25)
+            # else:
+            # # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
+            # want_celebrate = False
+            # if want_celebrate:
+            #     self.player.rot += 5
+            #     self.player.vel = vec(1,0)
+            #     # pos = self.player.pos # + BARREL_OFFSET.rotate(-self.player.rot) # was for shooting bullets idea but didnt get there in the end and forget it for now anyways
 
         # -- new test ui stuff --
         # handle (temp test) comment cooldown timer
