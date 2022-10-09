@@ -715,6 +715,17 @@ class Mob(pg.sprite.Sprite):
         """
         # print(f"{self.myid = }, {self.vel = }")
         if self.is_looking_at == "bwall":
+            # self.breaking_and_entering()
+            # 
+            #
+            # until some condition like broken wall in front of me...  
+            # if the the wall in front of me is no hp? # optional, would reduce checks but meh 
+            #   if right_next_to_pos_infront_of_me: # which will just happen if we've broken the wall as we're looking at it
+            #       self.is_looking_at = "player": # this then being the only condition that flips the zombie out of the bwall chasing/breaking in state
+            #   else:
+            #       self.is_looking_at = "bwall":
+            #
+            #
             self.is_looking_at = "bwall" # i know it LOOKS stupid, but we're just forcing this condition (for now) over all others
             #if self.pos.y > self.game.player.pos.y:
                 #print(f"{self.myid} I've hit a wall - at pos {self.pos}, at {self.vel}kph, going to wall at {self.rot}. [NOTE] PLAYER Y POS = {self.game.player.pos.y}")
@@ -732,15 +743,36 @@ class Mob(pg.sprite.Sprite):
                         # again note, sure its not ideal i bet, but its optimised atleast slightly doing it this way
                         # as we're only doing the more complex check against wall collision, if we've slowed down to the point that we might be on a wall
                         if self.am_i_by_a_wall(): # then if we have hit a wall, set us to looking at bwall, else keep looking at what we were looking at, as we probably just got hit by a bullet to slow down
-                            # 
-                            #
-                            # until some condition like broken wall in front of me that is
-                            #
-                            #
                             print(f"ZOMBIE {self.myid}: was looking at player, collided with a wall, now looking at bwall")
                             self.is_looking_at = "bwall" # set what we are looking at to the bwall'
 
+    def breaking_and_entering(self):
+        # some way to find the looking at bwall object but efficiently'
+        # go thru the game objects
+        for a_wall in self.game.walls:
+            # if this is the wall u are right next to, save it as an actual instance variable,
+                # - and remember wipe this when its no longer valid (as the wall is broken)
+                # - and only try to set it if it's not set, else dont do this all walls loop check
+                    # if the wall has hp > 0:
+                        # attack it = true 
+                        # if attack it
+                            # if it is then the zombie will start their new chargebar
+                            # and on hit i.e. full charge bar, you take down the hp by 1 and infect walls
+                            # thats legitly the basics of it
+                        # (eventually - some cooldown timer here)
+                        # then (either way) look at bwall
+                        # and will break as its in an if else condition
+                    # then just an else condition,
+                    # set if the wall in front has no hp, then
+                        # if you've ur really close distance to the place in front or whatever (loads of ways to do, i.e. infront of the thing ur looking at +/- a tilesize depending on if its above or below you)
+                            # look at player
+                        # else
+                        # still look at bwall (as ur still breaking in)
+                    
+            pass
+
     # so new break in function
+    # which will be run if am_i_by_a_wall above
     # condition to enter will be
     # - looking at bwall
     # - and in very close distance of bwall, use actual distance check here as will then just work all positions + all sides bosh 
@@ -768,6 +800,7 @@ class Mob(pg.sprite.Sprite):
     # -
     # - if so, and no frame rate issues, you have a working game
     # - add pause menu roll thing
+    # - placeable turret and other similar "items" like dat
     # - add levels
     #    - add increasing sight range thing too btw
     # - improve the map
@@ -777,7 +810,20 @@ class Mob(pg.sprite.Sprite):
     # - then probably start the newer version as will have a great idea of how to do everything i want in that!
     #   - and when you start that ur just starting with single shooting mechanic thing, 
     #   - then zombie spawning on map stuff infintely where you just have them 1 hit for now and see how many you can swap in comfortably when they are at their simplest!
+    # - consider also this new idea of unit spawns which might mean that top to bottom style is just waaay easier
+    #   - could then do strict survivor.io style after
 
+    #######################################################################################################################################################
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #
+    # random btw but please note to start tracking urgently >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> write out exact patterns for wild rift bot patterns #
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #
+    #                                                                                                                                                     #    
+    #######################################################################################################################################################
 
     # to properly do this parameter for checking x or y btw
     def am_i_by_a_wall(self, x_or_y="y"):
