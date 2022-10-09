@@ -4,12 +4,10 @@ from settings import *
 from tilemap import collide_hit_rect
 # start using vectors instead of individual xypos vars
 vec = pg.math.Vector2
-# for calculating distance between 2 objects
-from math import hypot
+# for calculating distance between 2 objects and ceiling (and floor) div
+from math import hypot, ceil
 # for random numbers, uniform is real numbers between given range
 from random import randint, uniform
-# for fake names
-from faker import Faker
 
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
@@ -171,7 +169,8 @@ class Player(pg.sprite.Sprite):
         self.current_weapon_id = 1
         self.current_weapon = Player.weapon_list[0] # remember may be based on other stuff at the start of level, for sure as classes, i geddit
 
-        # test sidebar display
+        # new test player stats stuff
+        self.current_accuracy = [0,0] # amount hit, amount missed, then just add them both if u want totals 
 
     def set_player_weapon_id(self):
         # if the current weapon id isn't the list len (allow zeros btw)
@@ -234,11 +233,18 @@ class Player(pg.sprite.Sprite):
         # -------- player interaction keys stuff --------
         # -- bottom clout ui sidebar --
         if keys[pg.K_u]: # for twitch tho also is temp af
-            if not self.toggle_wait:
+            if not self.toggle_wait: # <<<<<<<<<<<<<<<<<<<<<<<<<<< ffs make this a function or better still a class
                 # dont let us toggle 1 jillion times per second
                 self.game.want_clout_ui = False if self.game.want_clout_ui else True # flip it
                 self.toggle_wait = pg.time.get_ticks() 
                 print(f"{self.game.want_clout_ui = }")
+        # -- zombie names - for debugging mostly --
+        if keys[pg.K_y]: # y for your name? nah idk its just in the middle of u for ui and t for twitch chat so made sense
+            if not self.toggle_wait:
+                # dont let us toggle 1 jillion times per second
+                self.game.want_zombie_names = False if self.game.want_zombie_names else True # flip it
+                self.toggle_wait = pg.time.get_ticks() 
+                print(f"{self.game.want_zombie_names = }")
         # -- twitch chat sidebar --
         if keys[pg.K_t]: # for twitch tho also is temp af
             if not self.toggle_wait:
@@ -312,14 +318,14 @@ class Player(pg.sprite.Sprite):
             self.state_moving = "walking"      
 
         # -- new dash test --
-        if keys[pg.K_LSHIFT]:
+        if keys[pg.K_TAB]:
             if not self.dash_cooldown:
                 self.vel *= 4
                 print(f"Dash! => {self.vel}")
                 self.dash_cooldown = pg.time.get_ticks() 
 
         # -------- player sprint stuff --------  
-        if keys[pg.K_TAB]: # if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:  
+        if keys[pg.K_LSHIFT]: # if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:  
             # to make as own function, is sprinting / handle sprinting - new sprint implementation, only called when holding sprint so any sprint meter stuff needs to be done outside here duh
             self.vel *= self.get_sprint_multiplier() 
             self.state_moving = "sprinting"
@@ -505,9 +511,8 @@ class Player(pg.sprite.Sprite):
 
 
 class Mob(pg.sprite.Sprite):
-    showmaker = Faker()
     zombie_id_counter = 0
-
+        
     def __init__(self, game, x, y, bwalls): #  hp = 0
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -519,10 +524,14 @@ class Mob(pg.sprite.Sprite):
         self.pos = vec(x, y) * TILESIZE
         self.rect.center = self.pos
         self.rot = 0
-        self.vel = vec(0,0)
+        self.vel = vec(1,1)
         self.acc = vec(0,0) 
         
-        self.max_health = 150 # self.set_init_hp()    # get a random number for our initial max health, else its 100
+        # new test font constants
+        self.FONT_SILK_REGULAR_12 = pg.font.Font("Silkscreen-Regular.ttf", 12)
+        self.FONT_SILK_REGULAR_32 = pg.font.Font("Silkscreen-Regular.ttf", 32)
+
+        self.max_health = self.set_init_hp() # 150  # get a random number for our initial max health, else its 100
         # then set the starting health to that max health
         self.health = self.max_health 
 
@@ -535,67 +544,79 @@ class Mob(pg.sprite.Sprite):
         # could do stuff here too for different value zombies, difficulty, etc, all off random
         self.waiting = False # give them their own waiting too, for breaking stuff and hiting the player
         self.waiting_speed = 1000 # seconds so this is half a second, can say thats quick/avg for now
-        
+
         # generate ids
         Mob.zombie_id_counter += 1
         self.myid = Mob.zombie_id_counter
         
-        # new stalled fixer test
+        # - currently unused - new stalled fixer test
         self.stalled = False
-        # new name
-        # recursively get the name if it is greater than 2 in len, e.g. mr mrs dr plus 2 words, not just 2 words
-        def get_first_name():
-            name_attempt = self.showmaker.name().split() # if add a [0] here it works without dr mrs etc
-            if len(name_attempt) > 2:
-                return get_first_name        
-            else: # return just the first part of the 2 word long name (first name, last name)
-                return(name_attempt[0])
-        attempt_name = f"{get_first_name()}" # need to fix this stuff btw, just remove recursion, was nice to implement but nah g that aint it
-        self.myname = attempt_name if len(attempt_name) < 11 else "Zomboy" # have a pre-made list of names for this and return a random one, should just do that anyway, and maybe have faker as a backup idk
+
+        # name stuff
+        self.myname = f"{self.get_first_name()}" # need to fix this stuff btw, just remove recursion, was nice to implement but nah g that aint it
         print(f"{self.myname} {'is roaming' if self.health <= 150 else 'is looking for blood' if self.health > 150 and self.health < 250 else 'is enraged'}... [ {self.health}hp ]")
 
+        # [NEW!] rework/refactor
+        self.is_looking_at = "roaming"
+        self.closest_bwall = [0,0]
+        self.last_target = 0 # for super basic roaming
+        self.random_place_to_look = (randint(1,WIDTH)*TILESIZE, randint(1,HEIGHT)*TILESIZE) # very very very temporary test
+        self.zombie_sight_range = randint(300,600)
+        # self.check_and_update_looking_at_status()
+        # ---- end init ----
+
+    def get_first_name(self):
+        list_of_names = ["Zob", "Zenjamin", "Zames", "Zohn", "Zichard", "Zhomas", "Zhristopher", "Zaniel", "Znthony"]
+        return(list_of_names[randint(0, 8)])
+
     def set_init_hp(self):
-        # for now keep this super simple and have the hp just be influenced by a random roll
-        # in future pass the zombies class n shit and have that affect the base hp -> other things too like game diff, and character things like items, abilities, traits, etc
         roll_chance = randint(1, 10)
-        #print(f"wantCrit? => {crit_chance = }, {actual_chance = }, {actual_chance >= crit_chance = }")
-        # if our number range / numbers (our crit chance) is greater than or equal to our random chance 1 to 100 roll 
         if roll_chance <= 5:        
             maxhp = (randint(1, 10) * 10) + MOB_BASE_HEALTH # if the zombie won a 50/50 head or tails, then give it up to 100 more hp based on its second roll 1 - 10 
         else:
-            maxhp = MOB_BASE_HEALTH
-        # should also include potential punishments this way too
-        # also should make this more dynamic by giving each zombie traits like luck too
-        return(maxhp)
+            maxhp = MOB_BASE_HEALTH       
+        return(maxhp)  # should make this more dynamic by giving each zombie traits like luck too
 
     def draw_health(self):
-        # simple hp bar
-        if self.health >= (self.max_health / 10) * 6: # 60%
+        if self.health >= (self.max_health / 10) * 6: # simple hp bar
             col = GREEN
         elif self.health >= (self.max_health / 10) * 3: # greater than 30%
             col = YELLOW
         else: # else is 30% or less
-            col = RED
-        # width of bar is just the width of this zombies rect time the percent of hp remaining
-        width = int(self.rect.width * self.health / self.max_health)
-        # the location on the sprite image not on the screen
-        self.health_bar = pg.Rect(0, 0, width, 7) # 7 is thickness
-        # only draw the bar if the zombie is not full hp
-        if self.health < self.max_health: 
-            # draw that self.health_bar on top of our zombies rectangle in the given colour
-            pg.draw.rect(self.image, col, self.health_bar) 
+            col = RED        
+        width = int(self.rect.width * self.health / self.max_health) # width of bar is just the width of this zombies rect time the percent of hp remaining       
+        self.health_bar = pg.Rect(0, 0, width, 7)  # the location on the sprite image not on the screen, 7 is thickness        
+        if self.health < self.max_health:  # only draw the bar if the zombie is not full hp            
+            pg.draw.rect(self.image, col, self.health_bar) # draw that self.health_bar on top of our zombies rectangle in the given colour
 
-    def draw_name(self):
-        font = pg.font.Font("Silkscreen-Regular.ttf", 12)
-        textsurface = font.render(f"{self.myname} {self.health}", True, BLACK) # "text", antialias, color
+    def get_display_status(self):
+        if self.is_looking_at == "bwall":
+            status = "?"
+        elif self.is_looking_at == "player":
+            status = "!"
+        elif self.is_looking_at == "roaming":
+            status = ":)"
+        #if self.max_health > 200:
+        #    status += " [tanky boi]"
+        return status
+
+    def draw_status(self):
+        status = self.get_display_status()
+        color = NAVYBLUE if status == ":)" else RED if status == "!" else ORANGE
         # then before we draw the name rotate it to where we want it to be, since we're doing it with blit in relation to the camera
+        self.name_textsurface = self.FONT_SILK_REGULAR_32.render(f"{status}", True, color) # (f"{self.myname} {self.health}", True, BLACK)  # "text", antialias, color
         # e.g. this will rotate to face the player => pg.transform.rotate(textsurface, self.game.player.rot)
         #if self.rot > -135 and self.rot < -45: # only do our rotation at certain angles based on the zombie
-        textsurface = pg.transform.rotate(textsurface, self.rot + 90) # if at this angle rotate my name
-        #else:
-        #    textsurface = pg.transform.rotate(textsurface, self.rot)
-        # print(f"{self.myname} - current rotation: {self.rot}")
-        return(textsurface)
+        self.name_textsurface = pg.transform.rotate(self.name_textsurface, self.rot + 90) # if at this angle rotate my name
+        return self.name_textsurface 
+
+    def draw_name(self):
+        # then before we draw the name rotate it to where we want it to be, since we're doing it with blit in relation to the camera
+        self.name_textsurface = self.FONT_SILK_REGULAR_12.render(f"{self.myname}", True, BLACK) # (f"{self.myname} {self.health}", True, BLACK)  # "text", antialias, color
+        # e.g. this will rotate to face the player => pg.transform.rotate(textsurface, self.game.player.rot)
+        #if self.rot > -135 and self.rot < -45: # only do our rotation at certain angles based on the zombie
+        self.name_textsurface = pg.transform.rotate(self.name_textsurface, self.rot + 90) # if at this angle rotate my name
+        return self.name_textsurface 
 
     def look_at(self, look_at_me):        
         # minus the players pos from this zombies pos to get the vector zombie -> to -> player
@@ -607,27 +628,22 @@ class Mob(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def can_climb_in(self):
+        """ if you have collided with a"""
         bhits = pg.sprite.spritecollide(self, self.game.breakablewalls, False, collide_hit_rect)
-        if bhits:
-            if not self.climbed_in:
-                # so here is ur warning stuff nice
-                # should do like, if ur nearest bwall is broken then set urself to climbed in so u start going for the player bosh and pretty easy too
-                print(f"{self.myname} Broke In @ {self.pos.x}, {self.pos.y} [Collided With B Wall]")
-                self.climbed_in = True
-            # self.stalled = False # cant be stalled outside, for now anyway
-        # self.climbed_in = True
+        if bhits:  
+            # so here is ur warning stuff nice
+            # should do like, if ur nearest bwall is broken then set urself to climbed in so u start going for the player bosh and pretty easy too
+            print(f"{self.myname} Broke In @ {self.pos.x}, {self.pos.y} [Collided With B Wall]")
+            self.climbed_in = True
 
-    def is_near(self, x, y):
-            # abstract this properly pls 
-            next_to = 15 # for 64 tilesize
-            literally_next_to = 14
+    def is_near(self, x, y, next_to=15, return_distance=False): # for 64 tilesize
             # use hypotenus of the xy vectors to find out how close we are to the given vector pos
             pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
-            # if pythag_dist < next_to:
-                # print(f"{self.myid=},{pythag_dist=}\n{x=},{y=},{self.pos.y=},{self.pos.x=}")
-                # print(f"{pythag_dist=}, {self.myid}, {self.pos.x=}, {self.pos.y=}\n{x=}, {y=}")
-            # if we are right next to the sprite our pythag_dist will be the size of the tile e.g. 32 
-            return True if pythag_dist < next_to else False
+            if return_distance:
+                # print(f"{pythag_dist=}")
+                return pythag_dist
+            else:
+                return True if pythag_dist < next_to else False
 
     # needs to be fixed proto
     def break_barracade(self, bwall):
@@ -661,58 +677,149 @@ class Mob(pg.sprite.Sprite):
                 # really want some validation ur not stuck or sumnt here btw
                 pass
 
-    def am_i_stalled(self):
-        for bwall in self.bwalls:
-            # if i, this zombie, am near a bwall 
-            if self.is_near(bwall.pos.x, bwall.pos.y):
-                if not self.stalled:
-                    # if stalled is false, start a timer with it
-                    self.stalled = pg.time.get_ticks()
-                else:
-                    # if i am stalled
-                    time_end = pg.time.get_ticks() 
-                    if time_end - self.stalled >= 6000:
-                        # if i have been touching this wall and not reset yet
-                        print(f"[{self.myname}] I'm Stalled, Change My Velocity -> {self.vel}") 
-                        random_rot_angle_adjust = randint(-50,50)
-                        self.vel = vec(-250, 0).rotate(-self.rot + random_rot_angle_adjust)
-                        self.look_at(bwall.rect.center)
-                        self.stalled = False
+    def check_wall_distance_every_second(self): # completely unused
+        if not self.check_dist_timer: # dont start it again if its already on (unsure how get_ticks works tbf, it may do this inherently idk)
+            self.check_dist_timer = pg.time.get_ticks() 
+        else: # if the timer is running
+            check_timer = pg.time.get_ticks() 
+            if check_timer - self.check_dist_timer > 200: # check to see if the timer has passed 1 second
+                self.check_dist_timer = 0 # if it has reset the timer and do what you want to happen each second here
 
-    # i mean look we got some bouncing issues and many other issues but i 
-
-    def update(self):
-        list_of_bwall_dists = []
-        closest_bwall = "" # not actually a string, becomes the object instance
-        # new test stuff
-        # if we have collided with a bwall, we have now climbed in, else this will still be false
-        self.can_climb_in()
-        # if we have climbed in we hunt the player, else we keep trying to climb in
-        if self.climbed_in:
-            # look at the player, and anything else associated with this toggle state
-            self.look_at(self.game.player.rect.center)
+    def set_closest_bwall_position(self): # now using the constant position for the wall created as a .game variable when the walls are placed
+        bwall_distances = []
+        for a_bwall in self.game.all_bwall_positions: # loop the list of tuples of positions, but only do this once we need to know where to look at, and only do it once overall, not per frame
+            current_bwall_distance = self.is_near(a_bwall[0], a_bwall[1], return_distance=True)
+            bwall_distances.append(current_bwall_distance)
+        # set our closest bwall to the closest bwall, thank you for coming to my TEDtalk 
+        closest_bwall_index = bwall_distances.index(min(bwall_distances))
+        # then here check if its index is even as its on the left, so we want to change it to look at the right one instead (since its looking at the left most point and not the center) - note to tell if the bwall selected is on the left or right just check if its index is odd or even since they are always inserted right to left and always in pairs (will work for y walls anyway)
+        if closest_bwall_index % 2 == 0:
+            closest_bwall_index += 1 # change it to the right one, as these are printed left right pairs its always just +1 for now anyways
+        closest_bwall_position = self.game.all_bwall_positions[closest_bwall_index]
+        # if this zombie is above the wall or below it set the one tile up difference to be positive or negative
+        if closest_bwall_position[1] > self.pos.y: # the y position
+            
+            self.closest_bwall = closest_bwall_position[0], closest_bwall_position[1] + TILESIZE # look one tile down for y collision where wall is above you
         else:
-            # else if we have not climbed in yet, loop the walls to find the closest wall etc, important as we can subvert calculating the distance for all walls for this zombie once it has entered (which actually means that this could easily gate us if complexity becomes large, amount of zombies outside walls + lots of bwalls at later levels so calc how many u can handle outside if its insane then dw)
-            for bwall in self.bwalls:
-                pythag_dist = hypot(self.pos.x-bwall.pos.x, self.pos.y-bwall.pos.y)
-                # temp implementation of a warning for when zombie is close (would be like a screen arrow oooo)
-                if pythag_dist < 500: # if zombie is close to door
-                    pass
-                    # some kinda warning arrow or maybe even state change idk
-                    # print(f"ZOMBIE CLOSING IN TO DOOR WARNING!\nid:{bwall.myid}, pos:{bwall.pos}, dist:{pythag_dist}")
-                list_of_bwall_dists.append(pythag_dist)
-                if pythag_dist == min(list_of_bwall_dists):
-                    closest_bwall = bwall
-            # end loop all breakable walls
-            # closest_bwall_dist = min(list_of_bwall_dists) incase we want to check the closest few which we will eventually but is there print(f"{closest_bwall_dist = } - {list_of_bwall_dists = }")
-            # ****** need to do for 0 hp stuff here eventually ******
-            # look at bwalls
-            self.look_at(closest_bwall.pos) # rect.center
-        # ---- end , deciding who to look at)
-        # ---- actual code ----
-        # our acceleration is going to be mob speed constant, run in the forward direction rotated by whatever this zombies rotation is
-        self.acc = vec(MOB_SPEED, 0).rotate(-self.rot)
+            self.closest_bwall = closest_bwall_position[0], closest_bwall_position[1] - TILESIZE # else look one tile up as the wall collided beneath you
+        
+        # so since we only do this once, HERE, is where we will add the check left or right side code and return it for where the zombie should be exactly looking at
+        # you just minus or add half a tile size depending on left or right
+        # obvs need to add left and right too
+        
+    def check_and_update_looking_at_status(self):
+        """
+        - if you are 400+ away from player you are roaming
+        - if you are not roaming you are looking at the player
+        - if you were looking at the player and you collided with this wall, you are now finding the closest way in
+        """
+        # print(f"{self.myid = }, {self.vel = }")
+        if self.is_looking_at == "bwall":
+            self.is_looking_at = "bwall" # i know it LOOKS stupid, but we're just forcing this condition (for now) over all others
+            #if self.pos.y > self.game.player.pos.y:
+                #print(f"{self.myid} I've hit a wall - at pos {self.pos}, at {self.vel}kph, going to wall at {self.rot}. [NOTE] PLAYER Y POS = {self.game.player.pos.y}")
+            # i.e. if you've hit a wall after you were looking at the player, keep looking at the place past that wall (until we then destroy it >>>> and then implement that bosh)
+        else:
+            #print(f"{self.game.zombies_distances_to_player[self.myid] = }")
+            if self.game.zombies_distances_to_player[self.myid] > self.zombie_sight_range:                
+                self.is_looking_at = "roaming"                
+            else:# should 100% be looking at the player btw, so below if is pointless, however if the conditions deepen then will be necessary so leave it for now
+                self.is_looking_at = "player"
+                if self.is_looking_at == "player": # if we were looking at the player
+                    # when you initially collide with a horizontal (x axis) wall, you're y will hit 0 for a frame, use that frame to set us to now finding a way in
+                    print(f"{self.myid} is looking at player, at position {self.pos}, speed = {self.vel}, tile = {ceil(self.pos.y/TILESIZE)}, player at {self.game.player.pos}")
+                    if self.vel.y <= 0.5: # to decide if we should be finding a wall to break into, use this vel collision, and then checking if ur by a wall - as if could have been a bullet that changed ur velocity (or another zombie when removed grouping)
+                        # again note, sure its not ideal i bet, but its optimised atleast slightly doing it this way
+                        # as we're only doing the more complex check against wall collision, if we've slowed down to the point that we might be on a wall
+                        if self.am_i_by_a_wall(): # then if we have hit a wall, set us to looking at bwall, else keep looking at what we were looking at, as we probably just got hit by a bullet to slow down
+                            # 
+                            #
+                            # until some condition like broken wall in front of me that is
+                            #
+                            #
+                            print(f"ZOMBIE {self.myid}: was looking at player, collided with a wall, now looking at bwall")
+                            self.is_looking_at = "bwall" # set what we are looking at to the bwall'
+
+    # so new break in function
+    # condition to enter will be
+    # - looking at bwall
+    # - and in very close distance of bwall, use actual distance check here as will then just work all positions + all sides bosh 
+    # - if so
+    # - if bwall DOES have health left
+    #   - charge up, showing bar, 
+    #   - hit wall (change sprite? - even just to dull or red and use it for hit by bullet too)
+    #   - show wall lose health (consider making custom barracade, just 4 wood planks over a door frame with one less each time lovely) (in future can then have some short anim play while building that shows little transparent planks rising up in front of you to the wall ur targeting oooo)
+    #       - note this is just the image update thing, try to get this only happening on hit tho, not on check to save amount of computations (tho dont stress it if not tbf just get it done)
+    #   - knock zombie back
+    #   - zombie should just keep going back as once u enter bwall tracking u dont lose it, but confirm that still works
+    #   - then if it does that loop should continue until a wall has no hp
+    #   - then add if a wall has lost hp, infect near by walls, 
+    #   - probably just use positions og .game variable if the actual positions, 
+    #   - just find any that has ur x or y, if it does set it to ur hp
+    # - then that should be the final loop sorted
+    # - the only remaining this to do is add,
+    # - if zombie literally at the place they are looking at in front of the y wall (will be slightly different for x remember)
+    
+
+
+    # to properly do this parameter for checking x or y btw
+    def am_i_by_a_wall(self, x_or_y="y"):
+        if x_or_y == "y":
+            if self.pos.y < self.game.player.pos.y: # the collision is slightly different if ur hitting a wall above or below or take this into consideration
+                true_grid_position = (ceil(self.pos.y/TILESIZE))  # the y position you are on the 48 x 64 tilemap i.e. 15 (removing the idea of 1/2 or 1/4 tiles due to which side judging the collision of a rectangle)      
+                # if the true grid y position ur at is also a walls y position (because its in the y_walls_unique list)
+                return True if true_grid_position in self.game.y_walls_unique else False
+            elif self.pos.y > self.game.player.pos.y:
+                true_grid_position = (ceil(self.pos.y/TILESIZE)) - 2
+                return True if true_grid_position in self.game.y_walls_unique else False
+    # you need to do this as you could be 0 vel for many reasons, and once we confirm ur by a wall...
+    # you can do breaking and entering yay! then actually probably just make 2 versions    
+    # also quick add, if looking at bwall and player gets slightly further than normal sight range, say + 100, then back to roaming bosh
+    # then check literally how many zombies on screen, maybe restart laptop first too for best reading
+    # THEN decide whether rework / refactor with 2 different semi similar games is the best idea
+
+
+    def update(self): # run every frame
+        ######
+        # CRITICAL! : this has to check if you're also next to a wall, as bullets call also change our velocity
+        # UPDATE! : semi fixed below hackily using the only pos i wanna check, just do this dynamically for each unique y pos and its gravy
+        ######
+        if not self.game.zombies_distances_to_player:
+            self.game.set_zombies_distances_to_player()
+            print(f"{self.game.zombies_distances_to_player = }")
+
+        self.check_and_update_looking_at_status()
+        if self.is_looking_at == "roaming":
+            self.acc = vec(int(MOB_SPEED/4), 0).rotate(-self.rot) # make the zombos slower if roaming
+            # super basic roaming 
+            self.look_at(self.random_place_to_look)
+            
+        else:
+            self.acc = vec(MOB_SPEED, 0).rotate(-self.rot) # else if thiss zombo is not roaming, make it normal speed
+
+            if self.is_looking_at == "player": # if we're looking at the player
+                self.look_at(self.game.player.rect.center)
+                self.closest_bwall = [0,0] # ensure this isnt a true type value if we are looking at the player             
+                # until some condition like broken wall in front of me that is
+                
+            if self.is_looking_at == "bwall":
+                # if we havent found the closest bwall to you yet, then do that
+                if self.closest_bwall == [0,0]: # if the var closest wall var isn't already set, or has been turned off because we'd broken a wall but now have hit another one 
+                    self.set_closest_bwall_position() # <= this actually does the set tho
+                self.look_at(self.closest_bwall)
+
+
+            # set the closest bwall if it is not already set
+            # if it is already set, look at this position,
+            # then when thats working
+            # when you are x close to b wall, hit it and bounce back slightly,
+            # then go again,
+            # include the left or right hand thing at this point too    
+            # and dont check every frame for every zombie, even half second probs fine, could even have them all share the same class timer variable
+
+        # ---- actual code ----  
         # once we got the direction, quickly reduce the amount he accelerates by
+        # self.acc = vec(MOB_SPEED, 0).rotate(-self.rot) < moved up to create if else roaming slow
         self.acc += self.vel * -1
         self.vel += self.acc * self.game.dt
         # eq of motion, velocity times time times half the acceleration, times the time squared
@@ -732,38 +839,20 @@ class Mob(pg.sprite.Sprite):
         # note-tho! => tbf for things like waiting i get that but surely not last last atleast mid is best but idk (nah waiting doesnt matter as its self.waiting not player but confirm tbf)
         if self.health <= 0:
             self.kill()
-        
-        # more testing (for breaking it down stuff)
-        # check every breakable wall to see if a zombie is near
-        for bwall in self.bwalls:
-            # if zombie is near a bwall 
-            if self.is_near(bwall.pos.x, bwall.pos.y):
-                # print(f"ZOMBIE SPEED => {self.myid = }, {self.acc = }, {self.vel = }")
-                if self.vel.x < 0.5 and self.vel.y < 0.5:
-                    # this is the test for speed if you, the zombie have stalled, want this to pop but testing with pos for now
-                    # if the walls x position is less than urs its to the left, else its to the right (?)
-                    #if bwall.pos.x < self.pos.x:
-                    pass
-                # test break it
-                self.break_barracade(bwall)
-        # end by updating waiting
+        # end by updating waiting, bloc/cooldown main interactions for 1 second if true, e.g. reloading
         if self.waiting:
             space_end = pg.time.get_ticks() 
             if space_end - self.waiting >= self.waiting_speed: # 1 second waiter rn
                 print(f"{self.myname} - interactions enabled")
                 self.waiting = False
-        # more new testing, this time for zombies stalled by entrances  
-        self.am_i_stalled()  
+        # stalled stuff here when reworking it, for now is removed
 
 
 class Bullet(pg.sprite.Sprite):
-    bullet_count = 0 # count all bullets shot for stats
-    bullet_hit = 0 # track every hit
-
     def __init__(self, game, pos, dir):
         self.groups = game.all_sprites, game.bullets
         pg.sprite.Sprite.__init__(self, self.groups)
-        self.count_hits = [] # list of ids of zombies ive passed through, and therefore counted as gold/damage/stats, for not counting gold or hits for every split second a bullet has collided
+        # self.count_hits = [] # list of ids of zombies ive passed through, and therefore counted as gold/damage/stats, for not counting gold or hits for every split second a bullet has collided
         # here, in above, could really be starting implementation of extra gold, e.g. if multi hit x2 gold, x3 = x3 etc!
         self.game = game
         self.image = game.bullet_img
@@ -777,8 +866,7 @@ class Bullet(pg.sprite.Sprite):
             spread = uniform(-self.live_gun_spread, self.live_gun_spread) # bullet will come out at a random angle based on the spread, this should really update or be different for autoshoot but is fine for now
         self.vel = dir.rotate(spread) * BULLET_SPEED # our velocity is the direction vector (len 1 vector pointing in one direction) times by the bullet speed
         self.spawn_time = pg.time.get_ticks() # get our time when we spawn so we know when to delete ourself
-        Bullet.bullet_count += 1
-        self.myid = self.bullet_count
+        # self.myid = self.bullet_count
         self.is_crit = self.check_crit()
         # more new custom test stuff
         # self.hp = 30 # say going thru each zombie costs 10
@@ -808,42 +896,20 @@ class Bullet(pg.sprite.Sprite):
         self.rect.center = self.pos # update the rectangle to that new position too
         hit_zombie = pg.sprite.spritecollideany(self, self.game.mobs)
         if hit_zombie:
-            # print(f"[ACTION] => Bullet [ {self.myid} ] hit zombie {hit_zombie.myid}") #myname
-            # new crit test, not ideal as the way were doing collision rn i cant check the bullet just the zombie but its fine for now just playing around anyways, will do proper collisions soon 
-            if self.is_crit: # if this is a crit bullet, and you've hit a zombie, set the player damage to 100
-                # print("PLAYER DAMAGE = 100")
-                self.game.player.player_damage = 100
-                # but remember this is a temporary af hacky way so this will stay like that forever unless we put it back, we do that after the hit has been logged, if a 100 hit is logged, player_damage = 10, plus also if this bullet times out player damage = 10 # this will break af btw, e.g. bullets could get set to 200 or 300 etc is easy to fix but just saying dont forget lol
-            if hit_zombie.myid not in self.count_hits:
-                # print(f"Bullet {self.myid}, Zombie {hit_zombie.myid}, {self.count_hits = }")
-                # if the zombies id is not already been stored for this bullet, then append the id to the bullet quickly so it knows
-                self.count_hits.append(hit_zombie.myid)
-                base_gold = base_gold + (base_gold * 0.2) # before doing anything we set the gold, the gold is worth 20% more if its a crit, should be hardcoding btw but was by items n shit so chill 4 now
-                # if i passed through 1 person, basic gold
-                if len(self.count_hits) == 1: 
-                    base_gold *= 1 # temporary buff, difficulty, etc, here btw
-                    #print(f"[ +{base_gold} ] -> NICE SHOT")
-                    # if was crit etc
-                if len(self.count_hits) == 2: 
-                    base_gold *= 2
-                    # or (as in on random for sure) # DOUBLE PENETRATION, TRIPLE PENETRATION!
-                    # tf character voiceline... "ooo kinky... i like kinky"
-                    # x = randint(1,10)
-                    # print(f"[ +{base_gold} ] [ x2 ] BONUS! -> TWO ZEDS, ONE GUT") if x > 5 else print(f"[ x2 ] BONUS! -> DOUBLE PENETRATION")
-                if len(self.count_hits) == 3: 
-                    base_gold *= 3   
-                    #print(f"[ +{base_gold} ] [ x3 ] BONUS! -> ZOMBIE CENTIPEDE!")                 
+            if self.is_crit: # if this is a crit bullet, and you've hit a zombie, set the player damage to 100, # new crit test, not ideal as the way were doing collision rn i cant check the bullet just the zombie but its fine for now just playing around anyways, will do proper collisions soon 
+                self.game.player.player_damage = 100 # but remember this is a temporary af hacky way so this will stay like that forever unless we put it back, we do that after the hit has been logged, if a 100 hit is logged, player_damage = 10, plus also if this bullet times out player damage = 10 # this will break af btw, e.g. bullets could get set to 200 or 300 etc is easy to fix but just saying dont forget lol   
                 self.game.player.player_gold += base_gold
-                Bullet.bullet_hit += 1
-                #print(f"[ +{self.game.player.player_gold} ] Gold -> Make It Rain!")
-                #print(f"Bullet {self.myid} -> zombie entrants {self.count_hits}")
+                self.game.player.current_accuracy[0] += 1 # current_accuracy = [bullets_hit, bullets_missed]
+        # -- important --> this should contain bwalls and paywalls duh
         if pg.sprite.spritecollideany(self, self.game.walls):
-            self.kill()
+            self.kill() #  bullet is added to missed if it ran out of time or hit a wall
+            self.game.player.current_accuracy[1] += 1
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME: # do a meeseeks
             self.kill() # delete the bullet
+            self.game.player.current_accuracy[1] += 1 # bullet is added to missed if it ran out of time or hit a wall, current_accuracy = [bullets_hit, bullets_missed]
         
 
-class Wall(pg.sprite.Sprite):
+class Wall(pg.sprite.Sprite): # should do an InteractWall Class with even just is_near yanno (and then else valid for that)
     def __init__(self, game, x, y):
         self.groups = game.all_sprites, game.walls
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -855,8 +921,6 @@ class Wall(pg.sprite.Sprite):
         self.rect.x = x * TILESIZE
         self.rect.y = y * TILESIZE
 
-
-# [ todo! ] - so a InteractWall Class with even just is_near yanno (and then else valid for that)
 
 class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
     wall_ids = []
@@ -919,7 +983,6 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
         """ every time something interacts with me, run this (?) """
         # if box has 0 hp
         if self.hp_current == 0:
-            # [ testing! ]
             # then in here you want the hp x is interacting check from update
             #if self.hp_current < self.hp_max: # if this wall is full hp
             if is_near:
@@ -958,17 +1021,7 @@ class BreakableWall(pg.sprite.Sprite): # should be called barricades huh
                 self.image = self.game.break_wall_4_img           
 
     def is_near(self, x, y):
-        # [ todo-asap! ] - the reason it goes up by 2 is if touching 2 
-        # [ todo-asap! ] - means same could happen with 3 too 
-        # [ todo-asap! ] - so either take the amount touching into consideration 
-        # [ todo-asap! ] - or fix a proper way
-        # [ todo-asap! ] - actually tbf i think...
-        # [ todo-asap! ] - that taking how many are touching into account IS the proper way lol <<<<<< THIS 
-        # define vars that mean in future we could have like an action dist, even view dist maybe
-        very_very_close = 30 # means in tight spaces only one side or the other but changing the map now anyway so this likely never gets used but nice for reference
-        very_close = 50 # might not be agnostic of tilesize btw if changed from 64 that i think im using now
-        # close = 80 #, 50, 30 < for 32x32 pixel tilessize 
-        close = 180 # for 64 tilesize
+        close = 180 # for 64 tilesize # close = 80 #, 50, 30 < for 32x32 pixel tilessize 
         if not x:
             x = self.player.pos.x
         if not y:
@@ -1058,14 +1111,33 @@ class PayWall(pg.sprite.Sprite): # literally call it this in game too
                     self.print_once(f"Shared Our HP Commrade -> {a_wall.hp_current}, {self.hp_current}")
                     a_wall.hp_current = self.hp_current
 
-    # basically now in collide with walls at the top here
-    # all u wanna do is add a string parameter to say what group it is
-    # then pass in the group for set conditions
-    # then abstract out bwalls from that loop as now we're doing those checks twice for no reason
-    # then finish up the anims and the functionality stuff
-    # then design a lil map and test it and record it
-    # and continue with tut ig
 
+
+# do pause menu for three popup things idea
+
+
+
+
+# old mob, am_i_stalled implementation
+    """
+    def am_i_stalled(self):
+        for bwall in self.bwalls:
+            # if i, this zombie, am near a bwall 
+            if self.is_near(bwall.pos.x, bwall.pos.y):
+                if not self.stalled:
+                    # if stalled is false, start a timer with it
+                    self.stalled = pg.time.get_ticks()
+                else:
+                    # if i am stalled
+                    time_end = pg.time.get_ticks() 
+                    if time_end - self.stalled >= 6000:
+                        # if i have been touching this wall and not reset yet
+                        print(f"[{self.myname}] I'm Stalled, Change My Velocity -> {self.vel}") 
+                        random_rot_angle_adjust = randint(-50,50)
+                        self.vel = vec(-250, 0).rotate(-self.rot + random_rot_angle_adjust)
+                        self.look_at(bwall.rect.center)
+                        self.stalled = False
+                        """
 
 
 
@@ -1089,13 +1161,4 @@ class PayWall(pg.sprite.Sprite): # literally call it this in game too
                 print("Buying Reactivated")
                 self.waiting = False
     """
-
-# DO FAKER NAMES AND FINISH TUT PLS!
-
-
-
-# DO SHOOTING TUT 1ST
-# THEN TEST 4 HP WALLS
-# THEN THE HP TUT
-# THEN DO GOLD AND KILLSTREAKS!
 

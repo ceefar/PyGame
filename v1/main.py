@@ -11,6 +11,9 @@ from sprites import *
 from tilemap import *
 # temp test
 from sidebar import *
+# for profiling
+# from profilehooks import profile
+import cProfile as profile
 
 # HUD functions
 def draw_player_health(surf, x, y, pct): # surface, pos, pos, percentage of health
@@ -75,13 +78,55 @@ class Game:
         self.clout_streak_timer = 0
         self.clout_cooldown_timer = 0
         self.clout_wallet = 0
- 
+        # really just temp var for debugging tho might turn into like a setting tbf idk
+        self.want_zombie_names = True
+        # test to avoid loading fonts in update functions
+        # SILK BOLD
+        self.FONT_SILK_BOLD_10 = pg.font.Font("Silkscreen-Bold.ttf", 10) 
+        self.FONT_SILK_BOLD_12 = pg.font.Font("Silkscreen-Bold.ttf", 12) 
+        self.FONT_SILK_BOLD_14 = pg.font.Font("Silkscreen-Bold.ttf", 14) 
+        self.FONT_SILK_BOLD_18 = pg.font.Font("Silkscreen-Bold.ttf", 18) 
+        self.FONT_SILK_BOLD_20 = pg.font.Font("Silkscreen-Bold.ttf", 20) 
+        self.FONT_SILK_BOLD_24 = pg.font.Font("Silkscreen-Bold.ttf", 24) 
+        self.FONT_SILK_BOLD_44 = pg.font.Font("Silkscreen-Bold.ttf", 44) 
+        # SILK REGULAR
+        self.FONT_SILK_REGULAR_10 = pg.font.Font("Silkscreen-Regular.ttf", 10) 
+        self.FONT_SILK_REGULAR_12 = pg.font.Font("Silkscreen-Regular.ttf", 12) 
+        self.FONT_SILK_REGULAR_14 = pg.font.Font("Silkscreen-Regular.ttf", 14) 
+        self.FONT_SILK_REGULAR_18 = pg.font.Font("Silkscreen-Regular.ttf", 18) 
+        self.FONT_SILK_REGULAR_20 = pg.font.Font("Silkscreen-Regular.ttf", 20) 
+        self.FONT_SILK_REGULAR_24 = pg.font.Font("Silkscreen-Regular.ttf", 24) 
+        self.FONT_SILK_REGULAR_44 = pg.font.Font("Silkscreen-Regular.ttf", 44)  
+        # KAPPA
+        self.FONT_KAPPA_REGULAR_11 = pg.font.Font("Kappa_Regular.otf", 11) # Kappa_Regular KappaDisplay_ExtraBold.otf Kappa_Black.otf KappaDisplay_Regular.otf KappaDisplay_Bold.otf
+        self.FONT_KAPPADISPLAY_EXTRABOLD_12 = pg.font.Font("KappaDisplay_ExtraBold.otf", 12)
+        # [NEW!] rework/refactor 
+        self.all_bwall_positions = [] # all bwall x and y positions
+        self.zombies_distances_to_player = {}
+        self.zombies_distances_to_player_timer = 0
+
+    def update_zombies_distances_to_player(self, first_run = False): # every 10 seconds
+        if not self.zombies_distances_to_player_timer: # if not started the timer, start the timer
+            self.zombies_distances_to_player_timer = pg.time.get_ticks()
+        else: # if the timer IS running
+            check_timer = pg.time.get_ticks()
+            time_running = check_timer - self.zombies_distances_to_player_timer
+            # print(f"time running = {time_running}")
+            if time_running > 1000: # check if it is over 500 milliseconds
+                self.zombies_distances_to_player_timer = 0 # if it is, reset it
+                self.set_zombies_distances_to_player() # update the zombie distances
+                
+    def set_zombies_distances_to_player(self):
+        updated_distances = {}
+        for a_zombie in self.mobs:
+            updated_distances[a_zombie.myid] = (a_zombie.is_near(self.player.pos.x, self.player.pos.y, return_distance=True)) # get distance
+        self.zombies_distances_to_player = updated_distances
 
     def load_data(self):
         # location of where our game is running from, main.py
         game_folder = path.dirname(__file__)
         img_folder = path.join(game_folder, "img")
-        self.map = Map(path.join(game_folder, 'map2.txt'))
+        self.map = Map(path.join(game_folder, 'map.txt')) # map2_zombielag
         self.player_img = pg.image.load(path.join(img_folder, PLAYER_IMG)).convert_alpha()
         # scale up our new loaded wall image to the tilesize, if need to reuse functionality then make this a function or a class
         self.wall_img = pg.image.load(path.join(img_folder, WALL_IMG)).convert_alpha()
@@ -142,7 +187,10 @@ class Game:
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
-        self.paywalls = pg.sprite.Group()    
+        self.paywalls = pg.sprite.Group() 
+
+        self.walls_pos_collides = []
+        self.walls_y_collides = [] 
             
         def spawn_stuff_on_map():
             # first run = run only player first 
@@ -161,9 +209,16 @@ class Game:
                             if tile == "1":
                                 # place a wall at this column and row on the actual map, from the col and row on the tilemap
                                 Wall(self, col, row)
+                                # if not the edge walls, so...
+                                not_cols = [0, 63, 62, 61, 60, 59] # smh, dynamically pls
+                                not_rows = [0, 46, 45, 44, 43, 42, 41] # smh, dynamically pls
+                                if row not in not_rows: # top and bottom
+                                    if col not in not_cols:
+                                        self.walls_pos_collides.append((col, row)) if row not in self.walls_y_collides else 0
                             if tile == "B":
                                 # place a breakablewall test
                                 BreakableWall(self, col, row, self.player)  
+                                self.all_bwall_positions.append((col*TILESIZE, row*TILESIZE)) # append a tuple of the bwall x and y pos to this game object variable on initialisation only (as only needed once, they're static positions)
                             if tile == "M":
                                 # place a paywall
                                 PayWall(self, col, row, self.player)  
@@ -177,6 +232,10 @@ class Game:
                                 # spawn them at the col, row position on the map 
                                 self.player = Player(self, col, row)
         spawn_stuff_on_map()   
+        y_walls = [y for _, y in self.walls_pos_collides]
+        self.y_walls_unique = set([y for y in y_walls if y_walls.count(y) > 1]) # make a unique wall if theres more than one at this pos, then make this a set so its just the unique ones
+        print(f"{self.all_bwall_positions = }")
+        print(f"Just the Y position collisions = {self.y_walls_unique = }")
         self.map_mob_count = len(self.mobs) # how many are spawned at the start of the round                       
         self.camera = Camera(self.map.width, self.map.height)
 
@@ -198,6 +257,9 @@ class Game:
         self.all_sprites.update()
         # update the camera based on the position of the player
         self.camera.update(self.player) # any sprite you put in here the camera will follow, dope af!
+
+        # [NEW!] - rework/refactor
+        self.update_zombies_distances_to_player()
 
         # new test for clout rework
         if self.clout_cooldown_timer:
@@ -268,9 +330,6 @@ class Game:
                     print(self.clout_streak_timer)
             else:
                 print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
-        # test and temp af
-        # test_timer = pg.time.get_ticks() 
-        # if test_timer - self.player.clout_rating_base_timer > 5000: # if ur 5 second timer has ran out
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -279,49 +338,66 @@ class Game:
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
     def draw(self): # go through all the sprites and draw them on the screen
-        # temp
-        if Bullet.bullet_hit:
-            accuracy = (Bullet.bullet_hit / Bullet.bullet_count) * 100
-        else:
-            accuracy = 0
-        # temp, set the caption of the window to be any core debug things, framerate etc
-        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, ShotsHit: {Bullet.bullet_hit}, ShotsFired: {Bullet.bullet_count}, ShotAccuracy: {accuracy:.0f}%, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
+        # set the caption of the window to be any core debug things, framerate etc
+        pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
         # -- actual main draw stuff --
-        # actual draw stuff
-        self.screen.fill(BGCOLOR)
-        # self.screen.blit(self.test_bg_img, (0,0)) # the fake twitch bg test
-        want_grid = False
-        # for debugging -> draw the players rectangle, and hitbox
-        draw_rect = True
-        # -- draws player collider --
-        if draw_rect:
-            # pg.draw.rect(self.screen, WHITE, self.camera.apply(self.player), 2)
-            # wont draw hit rect which is weird af
-            pg.draw.rect(self.screen, WHITE, self.player.hit_rect, 5) 
-        # -- draw grid --
-        if want_grid:
-            self.draw_grid()
+        self.screen.fill(BGCOLOR)         # self.screen.blit(self.test_bg_img, (0,0)) # the fake twitch bg test
         # -- the main draw sprites loop --
         for sprite in self.all_sprites:
             # only do this draw for instances of the zombie mob
             if isinstance(sprite, Mob):
                 # personal custom zombie name display, note this isn't a sprite or part of the sprint (cause img size = bounds) but drawn ontop during the render so has layering considerations which is why the name is drawn on first, then the hp bar (?)
                 destination = self.camera.apply(sprite).copy()
+                destination_status = self.camera.apply(sprite).copy()
                 destination.move_ip(-10, TILESIZE/2)
-                self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
+                destination_status.move_ip(-20, -TILESIZE/2)
+                if self.want_zombie_names:
+                    self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
+                    self.screen.blit(sprite.draw_status(), destination_status) 
                 # actually clean draw health
                 sprite.draw_health()
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
         # -- nested func for rendering basic text which guna move to ui functs shortly --
         # literally is just here cause its used regularly while figuring things out so pointless moving it            
-        def render_to_basic_ui(text, x, y, color=None, font_size=12, want_font="silk_bold", alignment="center"):
+        def render_to_basic_ui(text, x, y, color=None, font_size=14, want_font="silk_regular", alignment="center"):
             # personal basic af test ui stuff
-            # fonts switch
-            if want_font == "silk_bold":
-                font = pg.font.Font("Silkscreen-Bold.ttf", font_size) # font = pg.font.SysFont("arial", 16) # create the font object
+            # fonts switch # 14, 24, 44, 20         
+
+            if want_font == "silk_bold": # dictionaries duhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+                if font_size == 12:
+                    font = self.FONT_SILK_BOLD_12
+                elif font_size == 10:
+                    font = self.FONT_SILK_BOLD_10
+                elif font_size == 14:
+                    font = self.FONT_SILK_BOLD_14 
+                elif font_size == 18:
+                    font = self.FONT_SILK_BOLD_18                   
+                elif font_size == 20:
+                    font = self.FONT_SILK_BOLD_20
+                elif font_size == 24:
+                    font = self.FONT_SILK_BOLD_24
+                elif font_size == 44:
+                    font = self.FONT_SILK_BOLD_44
+                else:
+                    font = self.FONT_SILK_BOLD_12
             elif want_font == "silk_regular":
-                font = pg.font.Font("Silkscreen-Regular.ttf", font_size)
+                if font_size == 12:
+                    font = self.FONT_SILK_REGULAR_12
+                elif font_size == 10:
+                    font = self.FONT_SILK_REGULAR_10
+                elif font_size == 14:
+                    font = self.FONT_SILK_REGULAR_14 
+                elif font_size == 18:
+                    font = self.FONT_SILK_REGULAR_18                   
+                elif font_size == 20:
+                    font = self.FONT_SILK_REGULAR_20
+                elif font_size == 24:
+                    font = self.FONT_SILK_REGULAR_24
+                elif font_size == 44:
+                    font = self.FONT_SILK_REGULAR_44
+                else:
+                    font = self.FONT_SILK_REGULAR_12
             # colours switch
             if color == "earnings":
                 text = font.render(f'{text}', False, GREEN, BLUEMIDNIGHT) # use the font object to render ur text 
@@ -344,11 +420,19 @@ class Game:
             self.screen.blit(text, textRect)
         bullets_remaining = self.player.return_clip_size() - self.player.clip_counter
         # -- ui text renders --
+        def calculate_accuracy(): # to move obvs
+            # take bullets fired and bullets missed, add them together for total bullets fired, then return the accuracy as a 
+            total_shots_fired = self.player.current_accuracy[0] + self.player.current_accuracy[1]
+            if total_shots_fired: # if theres atleast one shot so this is not zero, else ZeroDivErr
+                player_accuracy = (self.player.current_accuracy[0] / total_shots_fired) * 100
+                return(player_accuracy)
+            else:
+                return(0) # no shots fired yet
         # temp to do proper
         render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
         render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings")
         render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)}", x = 20, y = 110, color = "zombies") 
-        render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}", x = 20, y = 130, color = "weapon") 
+        render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}, Accuracy = {calculate_accuracy():.0f}% [ {self.player.current_accuracy[0]} / {self.player.current_accuracy[1]} ]", x = 20, y = 130, color = "weapon") 
         # -- draw player hp bar --
         # before final final flip
         draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
@@ -373,7 +457,7 @@ class Game:
                     flashme2 = False  
 
         if self.want_clout_ui:
-            # ---- draw player clout multiplier bar stuff ----
+            # ---- draw player clout multiplier bar stuff ---- 
             # -- the large clout rating letter + title --
             render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
             render_to_basic_ui(f"{self.player.get_display_clout_level()}", x = 1085, y = 530, font_size=44)
@@ -393,7 +477,7 @@ class Game:
                         render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
 
                     # -- semi large clout multiplier number  --
-                    render_to_basic_ui(f"x{self.clout_streak}", x = 1080, y = 600, font_size=24)
+                    render_to_basic_ui(f"x{self.clout_streak}", x = 1080, y = 600, font_size=24) 
 
                     
                     # note - remove all existing main wallet functionality now too!
@@ -449,6 +533,11 @@ class Game:
             self.sidebar.draw(self.screen) 
             self.sidebar_top.draw(self.sidebar.image)
             
+        # -- draws player collider and grid -- (player collider doesnt work tho?)
+        want_collider_n_grid = False
+        if want_collider_n_grid:
+            pg.draw.rect(self.screen, WHITE, self.player.hit_rect, 5) # for debugging -> draw the players rectangle, and hitbox
+            self.draw_grid()            
         # -- finally done, flip the display and render complete --
         pg.display.flip()
 
@@ -467,12 +556,27 @@ class Game:
     def show_go_screen(self):
         pass
 
-# create the game object
-g = Game()
-g.show_start_screen()
-while True:
-    g.new()
-    g.run()
-    g.show_go_screen()
+# @profile
+def main():
+    # create the game object
+    g = Game()
+    g.show_start_screen()
+    while True:
+        g.new()
+        g.run()
+        g.show_go_screen()
 
 
+if __name__ == "__main__":
+    want_stats = False
+    if want_stats:
+        profile.run('main()', 'restats')
+        import pstats
+        from pstats import SortKey
+        p = pstats.Stats('restats')
+        p.strip_dirs().sort_stats(-1).print_stats()
+        p.sort_stats(SortKey.TIME)
+        p.print_stats()
+    else:
+        main()
+    

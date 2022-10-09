@@ -196,18 +196,16 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
         return(color_picker[roll])
 
     def write_commenter_comment(self):
-        font = pg.font.Font("Kappa_Regular.otf", 11) # Kappa_Regular KappaDisplay_ExtraBold.otf Kappa_Black.otf KappaDisplay_Regular.otf KappaDisplay_Bold.otf
         # so far colour options are lime pink orange red blue purple
-        textsurface = font.render(self.commenter_comment, False, DARKGREY) # "text", antialias, color
+        textsurface = self.game.FONT_KAPPA_REGULAR_11.render(self.commenter_comment, False, DARKGREY) # "text", antialias, color
         textsurface = pg.transform.rotate(textsurface, 0) # if at this angle rotate my name
         return(textsurface)
 
     def write_commenter_username(self):
-        font = pg.font.Font("KappaDisplay_ExtraBold.otf", 12) # Kappa_Regular KappaDisplay_ExtraBold.otf Kappa_Black.otf KappaDisplay_Regular.otf KappaDisplay_Bold.otf
         # so far colour options are lime pink orange red blue purple
-        textsurface = font.render(self.commenter_username, False, self.commenter_color) # "text", antialias, color
+        textsurface = self.game.FONT_KAPPADISPLAY_EXTRABOLD_12.render(self.commenter_username, False, self.commenter_color) # "text", antialias, color
         textsurface = pg.transform.rotate(textsurface, 0) # if at this angle rotate my name
-        print(f"write_commenter_username: {self.myid} {self.commenter_username}, {self.commenter_color}")
+        # print(f"write_commenter_username: {self.myid} {self.commenter_username}, {self.commenter_color}")
         return(textsurface) 
 
     def select_bg(self):
