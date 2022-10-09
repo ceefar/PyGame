@@ -745,21 +745,38 @@ class Mob(pg.sprite.Sprite):
     # - looking at bwall
     # - and in very close distance of bwall, use actual distance check here as will then just work all positions + all sides bosh 
     # - if so
-    # - if bwall DOES have health left
-    #   - charge up, showing bar, 
-    #   - hit wall (change sprite? - even just to dull or red and use it for hit by bullet too)
-    #   - show wall lose health (consider making custom barracade, just 4 wood planks over a door frame with one less each time lovely) (in future can then have some short anim play while building that shows little transparent planks rising up in front of you to the wall ur targeting oooo)
-    #       - note this is just the image update thing, try to get this only happening on hit tho, not on check to save amount of computations (tho dont stress it if not tbf just get it done)
-    #   - knock zombie back
-    #   - zombie should just keep going back as once u enter bwall tracking u dont lose it, but confirm that still works
-    #   - then if it does that loop should continue until a wall has no hp
-    #   - then add if a wall has lost hp, infect near by walls, 
-    #   - probably just use positions og .game variable if the actual positions, 
-    #   - just find any that has ur x or y, if it does set it to ur hp
+    # - save this bwall as bwall ur looking at var or something, as well as its hp too
+    #   - if bwall DOES have health left
+    #       - charge up, showing bar, 
+    #       - hit wall (change sprite? - even just to dull or red and use it for hit by bullet too)
+    #       - show wall lose health (consider making custom barracade, just 4 wood planks over a door frame with one less each time lovely) (in future can then have some short anim play while building that shows little transparent planks rising up in front of you to the wall ur targeting oooo)
+    #           - note this is just the image update thing, try to get this only happening on hit tho, not on check to save amount of computations (tho dont stress it if not tbf just get it done)
+    #       - knock zombie back
+    #       - zombie should just keep going back as once u enter bwall tracking u dont lose it, but confirm that still works
+    #       - then if it does that loop should continue until a wall has no hp
+    #       - then add if a wall has lost hp, infect near by walls, 
+    #       - probably just use positions og .game variable if the actual positions, 
+    #       - just find any that has ur x or y, if it does set it to ur hp
     # - then that should be the final loop sorted
     # - the only remaining this to do is add,
-    # - if zombie literally at the place they are looking at in front of the y wall (will be slightly different for x remember)
-    
+    # - if that bwall you've been hitting is 0 hp (so we dont do this check when it has hp else is just being wasted over and over)
+    #   - if zombie literally in mad mad close distance of the place they are looking at in front of the y wall (will be slightly different for x remember)
+    #       - i.e. a range that you cant get to when a wall is blocking you, v easy to check in both y collision (horizontal wall) positions (well and both tbf but just doing y for now)
+    #   - then set to player, and that for now, should be the only condition to knock you out of the bwall loop
+    # - then that should literally be breaking and entering done
+    # - you test that by having multiple staggered walls with b walls in front of you and seeing if they break in and then keep going and break in again  
+    # -
+    # - if so, and no frame rate issues, you have a working game
+    # - add pause menu roll thing
+    # - add levels
+    #    - add increasing sight range thing too btw
+    # - improve the map
+    # - add start/end game leveling skill tree like survivor io
+    # - add improved ui
+    # - improved items, possible in game pause menu items or sumnt similar (somewhere on map you can go, idea of eye of the storm is good me thinks but meh that could also just be like the idea of round end, while new zombies are coming u can run to this bench and do items, again or even in game if ur smart at luring them around the map)
+    # - then probably start the newer version as will have a great idea of how to do everything i want in that!
+    #   - and when you start that ur just starting with single shooting mechanic thing, 
+    #   - then zombie spawning on map stuff infintely where you just have them 1 hit for now and see how many you can swap in comfortably when they are at their simplest!
 
 
     # to properly do this parameter for checking x or y btw
