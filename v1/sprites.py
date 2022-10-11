@@ -109,8 +109,9 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         self.closest_zombie = 0 # will be an object
         self.closest_zombie_timer = 0
         # companion sight 
-        self.companion_sight_range =1000 # was 300 but changed quickly, make me a constant when done but still playing with it so is fine for now
- 
+        self.companion_sight_range = 1000 # was 300 but changed quickly, make me a constant when done but still playing with it so is fine for now
+        # test concept - for being tethered to a position
+        self.move_here_distance = 1000
 
     def update(self): # herecompanionupdate - updates every frame
         # -- look at, every frame (likely needs refactor as assumed expensive) --
@@ -119,12 +120,16 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         self.image = pg.transform.rotate(self.game.my_turret_img, self.rot) # rotate the image 
         self.rect = self.image.get_rect() # update rect to be at this position 
         self.rect.center = self.pos # make sure we update our center rect also
-        # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
-        self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
-        self.acc += self.vel * -1
-        self.vel += self.acc * self.game.dt
-        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-        self.rect.center = self.pos
+        # -- test concept --
+        # -- for moving to a position --
+        # so we are basically just checking to see if we are there
+        if self.move_here_distance > 100: # if you are move than 100 meters away from where you are currently looking, move there
+            # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
+            self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
+            self.acc += self.vel * -1
+            self.vel += self.acc * self.game.dt
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.rect.center = self.pos
 
         # add if companion is locked to a target, dont change target until it dies!
         # then 
@@ -148,8 +153,6 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         # where they then move in that ring based on the position of the closest zombie bosh
         # - probably should have that they focus a zombie until it dies (updating this first now dw)
 
-
-
     def update_companion_look_at(self):
         """ functionality : companion will look at where the player is looking until it sees a zombie within its companion_sight_range """
         if self.game.mobs: # if all the zombies are dead dont do this, else do it
@@ -158,6 +161,7 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
             self.closest_zombie_pos = self.closest_zombie.pos
             # if the closest zombie is within ur sight range look at it, else look at the player
             if self.companion_sight_range >= closest_zombie_distance:
+                self.move_here_distance = self.get_distance(self.closest_zombie_pos.x, self.closest_zombie_pos.y) # print(f"COMPANION: is {self.move_here_distance} meters away from tracking position")
                 self.rot = (self.closest_zombie_pos - self.pos).angle_to(vec(1, 0)) # look at player, like zombies do
                 self.is_looking_at = "zombie" # set new looking at var
             elif closest_zombie_distance - self.companion_sight_range > 1000: # if the closest zombie is far away, look at ur bff the player

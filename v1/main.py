@@ -219,7 +219,7 @@ class Game:
                                         self.walls_pos_collides.append((col, row)) if row not in self.walls_y_collides else 0
                             if tile == "B":
                                 # place a breakablewall test
-                                this_wall = BreakableWall(self, col, row, self.player)  
+                                BreakableWall(self, col, row, self.player)  # this_wall = 
                                 self.all_bwall_positions.append((col*TILESIZE, row*TILESIZE)) # append a tuple of the bwall x and y pos to this game object variable on initialisation only (as only needed once, they're static positions)
                                 # self.all_bwall_objects.append(this_wall) # unused, should remove
                             if tile == "M":
