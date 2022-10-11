@@ -102,10 +102,11 @@ class Game:
         self.FONT_KAPPADISPLAY_EXTRABOLD_12 = pg.font.Font("KappaDisplay_ExtraBold.otf", 12)
         # [NEW!] rework/refactor 
         self.all_bwall_positions = [] # all bwall x and y positions
+        self.all_bwall_objects = [] # unused, should remove
         self.zombies_distances_to_player = {}
         self.zombies_distances_to_player_timer = 0
 
-    def update_zombies_distances_to_player(self, first_run = False): # every 10 seconds
+    def update_zombies_distances_to_player(self): # every 10 seconds
         if not self.zombies_distances_to_player_timer: # if not started the timer, start the timer
             self.zombies_distances_to_player_timer = pg.time.get_ticks()
         else: # if the timer IS running
@@ -188,6 +189,7 @@ class Game:
         self.bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.paywalls = pg.sprite.Group() 
+        self.companions = pg.sprite.Group()
 
         self.walls_pos_collides = []
         self.walls_y_collides = [] 
@@ -217,15 +219,18 @@ class Game:
                                         self.walls_pos_collides.append((col, row)) if row not in self.walls_y_collides else 0
                             if tile == "B":
                                 # place a breakablewall test
-                                BreakableWall(self, col, row, self.player)  
+                                this_wall = BreakableWall(self, col, row, self.player)  
                                 self.all_bwall_positions.append((col*TILESIZE, row*TILESIZE)) # append a tuple of the bwall x and y pos to this game object variable on initialisation only (as only needed once, they're static positions)
+                                # self.all_bwall_objects.append(this_wall) # unused, should remove
                             if tile == "M":
                                 # place a paywall
                                 PayWall(self, col, row, self.player)  
                         if run == 3:    
                             if tile == "Z":
                                 # place a breakablewall test
-                                Mob(self, col, row, self.breakablewalls)                       
+                                Mob(self, col, row, self.breakablewalls)
+                            if tile == "C":
+                                Companion(self, col, row)                       
                         if run == 1:
                             # if the tile is a P, this is the player
                             if tile == "P":
@@ -292,6 +297,10 @@ class Game:
         for hit in hits:
             # was previously constant global from settings as player_damage, now we need to set it for crits hence this, temp for now anywayas
             hit.health -= self.player.player_damage
+
+            # new test for sadge face status
+            # so now its been hit, start the hit by bullet timer, which automatically stops itself when it hits 2000 ms / 2 sec
+            hit.hit_by_bullet = pg.time.get_ticks()
             
             if self.player.player_damage >= 100: 
                 print("CRIT BAYBAYYYYY!")
@@ -349,15 +358,26 @@ class Game:
                 # personal custom zombie name display, note this isn't a sprite or part of the sprint (cause img size = bounds) but drawn ontop during the render so has layering considerations which is why the name is drawn on first, then the hp bar (?)
                 destination = self.camera.apply(sprite).copy()
                 destination_status = self.camera.apply(sprite).copy()
-                destination.move_ip(-10, TILESIZE/2)
+                destination_attack_bar = self.camera.apply(sprite).copy()
+                destination.move_ip(-10, TILESIZE/2) # in place btw
                 destination_status.move_ip(-20, -TILESIZE/2)
+                destination_attack_bar.move_ip(20, -TILESIZE/2)
                 if self.want_zombie_names:
                     self.screen.blit(sprite.draw_name(), destination) #self.camera.apply(sprite)) #.move(0, -TILESIZE / 2)) # .move moves it back half a tile behind us, depending on our rotation 
                     self.screen.blit(sprite.draw_status(), destination_status) 
                 # actually clean draw health
                 sprite.draw_health()
+                # if the mob is firin mah lazer (charging an attack) then show the chargebar, this number can go under 50 as part of a cooldown, so we dont show that either, or when its not charging bosh
+                if sprite.charging_attack > 0 and sprite.is_looking_at == "bwall":
+                    draw_a_chargebar(self.screen, destination_attack_bar.x, destination_attack_bar.y, sprite.charging_attack / 200, bar_width = 50, bar_height = 14)
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
+            # new companion test
+            if isinstance(sprite, Companion):
+                # print(sprite.rect)
+                self.screen.blit(sprite.image, self.camera.apply(sprite))  
+                
+
         # -- nested func for rendering basic text which guna move to ui functs shortly --
         # literally is just here cause its used regularly while figuring things out so pointless moving it            
         def render_to_basic_ui(text, x, y, color=None, font_size=14, want_font="silk_regular", alignment="center"):
