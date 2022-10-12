@@ -9,6 +9,12 @@ from math import hypot, ceil
 # for random numbers, uniform is real numbers between given range
 from random import randint, uniform
 
+def return_font_size(font="silk", weight="regular", size=32):
+    if font == "silk":
+        if weight == "regular":
+            return pg.font.Font("Silkscreen-Regular.ttf", size)
+    
+
 # make wall collisions func global as is useful for more stuff now
 # should also do the same with get dinstance tbf lol
 # need to refactor this so it actually works just with group lol
@@ -78,6 +84,15 @@ def collide_with_walls(sprite, group=False, dir=False, collision_type="standard"
                 sprite.vel.y = 0
                 sprite.hit_rect.centery = sprite.pos.y  
 
+def get_distance(self, x, y, want_distance=True, want_int=False, next_to=15): 
+        """ use hypotenus of the xy vectors to find out how close we are to the given vector pos, note is for 64 tilesize """
+        pythag_dist = hypot(self.pos.x-x, self.pos.y-y)
+        # by default return the actually distance (as a float btw)
+        if want_distance:
+            return int(pythag_dist) if want_int else pythag_dist # if want returned as int
+        # else if want_distance is false, will return true or false if is within the given next_to distance (defaults to 15, which is v small btw)
+        else:
+            return True if pythag_dist < next_to else False
 
 # ---- COMPANION NOTES ----
 # - if you then add the timer version you can use the new look at to have it update all if not looking at zombie, else every other frame
@@ -94,13 +109,16 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         self.image = game.my_turret_img
         self.rect = self.image.get_rect()
         self.pos = vec(x, y) * TILESIZE
-        self.rect.center = self.pos
+        # new - moved over, for collisions
+        self.hit_rect = COMPANION_HIT_RECT.copy() # NEED TO DO THIS COMPANION DIFFERENTLY! they all need their own unique hit rect so copy is needed
+        self.hit_rect.center = self.rect.center
+        # rotation
         self.rot = self.game.player.rot # starts looking at the player
         # give the companion movement
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         # make me a constant when done - temporary var for now
-        self.companion_move_speed = 50 # zombies 80, player 320, 200 is 120 off each
+        self.companion_move_speed = 85 # zombies 80, player 320, 200 is 120 off each
         # -- custom stuff --
         # for checking and potential stateness too ig
         self.is_looking_at = "bff"
@@ -109,9 +127,22 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         self.closest_zombie = 0 # will be an object
         self.closest_zombie_timer = 0
         # companion sight 
-        self.companion_sight_range = 1000 # was 300 but changed quickly, make me a constant when done but still playing with it so is fine for now
+        self.companion_sight_range = 500 # 300 temporary start value changed to 1000 for debuging, make me a constant when done but still playing with it so is fine for now
         # test concept - for being tethered to a position
         self.move_here_distance = 1000
+        # shooting
+        self.last_shot = 0
+        self.clip_counter = 0
+        self.bullet_damage = 5
+        # need to do this properly with weapons remember, see player class - note cards/items too coming shortly too
+        self.companion_fire_rate = 900
+        # health
+        self.hp_max = 2000
+        self.hp_current = self.hp_max
+        # very very super temp for testing knockback zombies on companion
+        self.companion_level = 2
+        # temp test for chit chat
+        self.companion_chit_chat_counter = 0
 
     def update(self): # herecompanionupdate - updates every frame
         # -- look at, every frame (likely needs refactor as assumed expensive) --
@@ -119,28 +150,183 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         # -- use updated rotation to update the image, rect, and center rect  --
         self.image = pg.transform.rotate(self.game.my_turret_img, self.rot) # rotate the image 
         self.rect = self.image.get_rect() # update rect to be at this position 
-        self.rect.center = self.pos # make sure we update our center rect also
-        # -- test concept --
+        #self.rect.center = self.pos # make sure we update our center rect also
         # -- for moving to a position --
-        # so we are basically just checking to see if we are there
-        if self.move_here_distance > 100: # if you are move than 100 meters away from where you are currently looking, move there
-            # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
-            self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
-            self.acc += self.vel * -1
-            self.vel += self.acc * self.game.dt
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            self.rect.center = self.pos
+        if self.is_looking_at == "zombie":
+            # so we are basically just checking to see if we are in a range of the closest zombie too us, if that range is XYZ or further we dont move else we move (tethered)
+            if self.move_here_distance > 250: # if you are move than 250 units away from where you are currently looking, move there (200 feels a biiit too close)
+                # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
+                self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
+                self.acc += self.vel * -1
+                self.vel += self.acc * self.game.dt
+                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+                self.rect.center = self.pos
+            elif self.move_here_distance < 100: # if the zombie is less than 100 units from the companion, it will move away from where it looking
+                # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
+                self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
+                self.acc += self.vel * -1
+                self.vel += self.acc * self.game.dt
+                self.pos -= self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2 # -= so in the opposite direction as the closest zombie is now too close
+                self.rect.center = self.pos
+                #################################################################
+                # will likely need sumnt like if surrounded btw else may crash? #
+                #################################################################   
+            # -- shoot --
+            self.fire_shot() # if ur looking at a zombie always shoot regardless of the rangle           
+        # else if looking at the player
+        elif self.is_looking_at == "bff":
+            # instead of checking our distance to the zombie check our distance to the player
+            self.move_here_distance = self.get_distance(self.game.player.pos.x, self.game.player.pos.y) 
+            if self.move_here_distance > 300: # if you are move than 300 units away from where you are currently looking, move there
+                # -- update where we are, first do acceleration based on rotation, so we are moving in the direction we are looking --
+                self.acc = vec(self.companion_move_speed, 0).rotate(-self.rot) # accelerate in the right direction
+                self.acc += self.vel * -1
+                self.vel += self.acc * self.game.dt
+                self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+                self.rect.center = self.pos
+        # -- wall collision  --
+        # take that rectangle at set it to where our previous rectangle was at
+        self.rect.center = self.pos
+        # use our rectangles x & y to the speed/pos to check for collisions 
+        self.hit_rect.centerx = self.pos.x
+        # now we know where the sprite should be set its rect center
+        self.hit_rect.centerx = self.pos.x
+        collide_with_walls(sprite=self, group=self.game.walls, dir="x")
+        collide_with_walls(sprite=self, dir="x", collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="x")
+        self.hit_rect.centery = self.pos.y
+        collide_with_walls(sprite=self, group=self.game.walls, dir="y")
+        collide_with_walls(sprite=self, dir="y", collision_type="breakable")
+        collide_with_walls(sprite=self, group=self.game.paywalls, dir="y")
+        # then set our regular rect to our hit rect, remember we primarily use the hit rect then set it to the regular rect at the end (the visual doesnt match the pixel precision)
+        self.rect.center = self.hit_rect.center  
+        # ---- temp test for collision issue ----
+        # if i hit a y wall so i have zero velocity in y direction, dont let me move back so the collision doesnt fuck itself
+        # - do this in collide walls with new collision_type
+        # -- then finally --
+        if self.hp_current <= 0: # if less than or equal to dead, kill me
+            print(f"OOF! Press F for Companion")
+            self.kill()
 
-        # add if companion is locked to a target, dont change target until it dies!
-        # then 
+    def draw_status(self, status="D:", color=BLUEMIDNIGHT, small=False):        
+        # then before we draw the name rotate it to where we want it to be, since we're doing it with blit in relation to the camera
+        if small:
+            self.name_textsurface = return_font_size(size=16).render(f"{status}", True, color) # (f"{self.myname} {self.health}", True, BLACK)  # "text", antialias, color
+        else:
+            self.name_textsurface = return_font_size().render(f"{status}", True, color) # (f"{self.myname} {self.health}", True, BLACK)  # "text", antialias, color
+        # e.g. this will rotate to face the player => pg.transform.rotate(textsurface, self.game.player.rot)
+        #if self.rot > -135 and self.rot < -45: # only do our rotation at certain angles based on the zombie
+        self.name_textsurface = pg.transform.rotate(self.name_textsurface, self.rot + 90) # if at this angle rotate my name
+        return self.name_textsurface 
+
+    def draw_health(self):
+        # if self.hp_max >= self.hp_current: # simple hp bar
+        #     col = GREEN
+        # elif self.hp_max >= self.hp_current: # greater than 30%
+        #     col = YELLOW
+        # else: # else is 30% or less
+        col = RED        
+        width = int(self.rect.width * self.hp_max / self.hp_current) # width of bar is just the width of this zombies rect time the percent of hp remaining  
+        print(f"DEBUG!: {width = } {self.rect.width = } {self.hp_max = } {self.hp_current = }")     
+        self.health_bar = pg.Rect(0, 0, width, 7)  # the location on the sprite image not on the screen, 7 is thickness        
+        pg.draw.rect(self.game.screen, col, self.health_bar) # draw that self.health_bar on top of our zombies rectangle in the given colour        
+
+    def companion_chit_chat(self):
+        # shouldnt happen when D: i.e. when companion is looking at a zombie (and low hp)
+        if self.companion_chit_chat_counter == 0:
+            self.companion_chit_chat_counter = pg.time.get_ticks()
+        check_timer = pg.time.get_ticks()
+        true_timer = check_timer - self.companion_chit_chat_counter
+        if true_timer > 0 and true_timer < 1500:
+            return(self.draw_status("This place...", BLACK, True))
+        elif true_timer >= 1_500 and true_timer < 4_000:
+            return(self.draw_status("it creeps me out", BLACK, True))
+        elif true_timer >= 4_000 and true_timer < 7_000:
+            return(self.draw_status("bro... seriously!", BLACK, True))
+        elif true_timer >= 7_000 and true_timer < 9_000:
+            return(self.draw_status("urghhh", BLACK, True))
+        elif true_timer >= 9_000 and true_timer < 11_000:
+            return(self.draw_status("fuck this man!", BLACK, True))
+        else:
+            return(self.draw_status("i hate it here", BLACK, True))
+
+    def companion_chit_chat_end_level(self, perc):
+        # shouldnt happen when D: i.e. when companion is looking at a zombie (and low hp)
+        perc = perc * 100
+        if perc < 50:
+            return(self.draw_status("I wanna go home", BLACK, True))      
+        else:      
+            return(self.draw_status("...Pfff, too easy", BLACK, True))   
+
+    # -- for shooting --
+    def fire_shot(self):
+        now = pg.time.get_ticks() # track the last time we shot 
+        # need to add bullet rate stuff here based on weapons for companion too now
+        # - these (the wepaons) should defo be classes
+        # - just make for the player
+        # - then the companions can just be like 20% or 50% of what the player does bosh
+        if now - self.last_shot > self.companion_fire_rate: # if now - self.last_shot > self.return_bullet_rate():
+            self.last_shot = now 
+            dir = vec(1,0).rotate(-self.rot)
+            pos = self.pos + BARREL_OFFSET.rotate(-self.rot) # rotated to match the players direction
+            Bullet(self.game, pos, dir, "companion")
+            self.clip_counter += 1 # add one to the clip counter which tracks which bullet in the clip we have just fired
+            # self.vel = vec(-20,0).rotate(-self.rot)        
+
+        # print(f"COMPANION: is looking at {self.is_looking_at}, DEBUG: move_here_dist = {self.move_here_distance}")
+
+        # heretodo # herenotes
         # what are we actually doing tho, doing that to a point near the player - will be easy enough dw
         # - so we want to...
-        #   - A. be tethered to the zombies
-        #   - B?. be tethered to a point near the player (ideally the player circle tho a pos, i.e. in front, would be fine for now)
-        #   - C. then be able to move to a particular spot and stay there
-        #   - D?. then maybe call to "form up", or maybe automatically do that if a zombie dies and ur not in range
+        #   [DONE] be tethered to the zombies 
+        #   [DONE] or be tethered to the player
+        #   [DONE] be able to shoot
+        #   [DONE] also see if you can easily change the companions size
+        #   [DONE] companion collide with walls
+        #   [DONE] make zombies go for companion too
+        #   [DONE] test companion level 2 knockback
+        #   [DONE] basic concept of companion chit chat
+        #
+        #   - DO. zombie spawn >>> [NEW TUT!]
+        #       - try dis quickly anyways, bug if long move on 100
+        #   - DO. gamble ui > [NEED EVENT TUT!]
+        #   - DO. dropping gold
+        #   - DO. companion respawn (idk how yet), and upgrading
+        #   - DO. items / cards
+        #   - DO. weapons
+        #   - DO. game levels
+        #   - DO. levelling up and menus
+        #   - DO. tiled
+        #   - DO. companion improvements
+        #           - improve and have hit scream out help (idea being ur the general their rookies, they're scared bitches dont lose them - can make this more of the game in future, like state = scared, fleeing, running, routing, etc)
+        #           - if hes offscreen bigger warning and arrow based on the colour of his hp bar
+        #
+        #   tomo 
+        #   - PERSONAL. various see phone, jobs
+        #   - DO. change companion bullet size, but no rush tho skip this for now 
+        #   - DO. make companion turn abit if hes being chased! <<<<<<<<<<<<<<<<<<< DIS
+        #   - FIX. if the zombie loses sight of me its roaming, that shouldnt happen it is locked on the companion
+        #   - FIX. zombies changing between companion and player needs work 
+        #   - THEN. i reckon just levels, items, random roll, etc (see phone)
+        #       - but consider below too
+        #
+        #   CONSIDER 
+        #   - MAYBE DO. be tethered to a point near the player, on button press (ideally the player circle tho a pos, i.e. in front, would be fine for now)
+        #   - MAYBE DO. then maybe call to "form up", or maybe automatically do that if a zombie dies and ur not in range
         # - ahhhhh looking_at is guna be huge here btw, nice if it is
+        # - once that stuff is done really should try to get to item stuff asap
+        # - really love the idea of like scared and fearless companion states btw, to do this easily could be about say its hp and zombies near it or sumnt
+        
 
+        # please have them talk to each other in bff mode if they're idleing
+        # - if player not moving
+        # - and companion is looking at player
+        # - have_a_chat()
+        # - where they just pass status style messages back and forth 
+        # - hehehe so cute 
+        # - this will basically trigger at the start too so have a sliiiight delay?
+
+        # also please give the companion a status too
 
         # with the staggered update thing so its not instant?
         # and also consider what to do in the initial state when is looking where the player is, maybe move with them? or just dont move (for now anyways)
@@ -167,9 +353,16 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
             elif closest_zombie_distance - self.companion_sight_range > 1000: # if the closest zombie is far away, look at ur bff the player
                 self.is_looking_at = "bff"
                 self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0)) # look at player, like zombies do
-            elif self.companion_sight_range < closest_zombie_distance: # else look at where player is
-                self.rot = self.game.player.rot # look at where actual player is looking, you have the same rotation as the player
-                self.is_looking_at = "with_player" # set new looking at var
+            else:
+                # else here changed from look where player is, to look at the player for now (its just temp)
+                # tho ig what you want is when hes at the player (based on distance)
+                # to be looking at where the player is
+                # this would be a basic form up mechanic
+                self.is_looking_at = "bff"
+                self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0)) # look at player, like zombies do
+            # elif self.companion_sight_range < closest_zombie_distance: # else look at where player is
+            #     self.rot = self.game.player.rot # look at where actual player is looking, you have the same rotation as the player
+            #     self.is_looking_at = "with_player" # set new looking at var
         else: # else, if there are no mobs left alive, look at ur bff the player, ig only should happen if all dead, may be some other edge cases tho idk yet so leaving for now
             self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0)) # look at player, like zombies do
             self.is_looking_at = "with_player"
@@ -206,7 +399,7 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
     #############################################################
     # GOOD OLD UPDATE WITH TIMER BUT JUST CBA TO COMPLETE IT RN #
     #############################################################
-    # def update(self): # herecompanionupdate
+    # def update(self):
     #     # -- look at, on timer --
     #     if self.closest_zombie_timer: # if it is running
     #         closest_check_timer = pg.time.get_ticks() # start a check timer 
@@ -406,7 +599,7 @@ class Player(pg.sprite.Sprite): #hereplayer
         closest = min(clout_ratings.keys(), key=lambda x: abs(x - self.clout_level))
         return(clout_ratings[closest])    
 
-    def get_keys(self): # hereplayerkeys
+    def get_keys(self): # herekeys #hereplayerkeys
         self.rot_speed = 0 # normally will be zero, works the same as velocity, hold it down one way increases that way
         self.vel = vec(0, 0) # define what our keys are going to do
         keys = pg.key.get_pressed() # see which keys are currently held down
@@ -752,7 +945,6 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
     
         if self.game.player.pos.y < self.pos.y: # you are above the player, so only look below you (not the full height of the screen)
             # self.random_place_to_look = (randint(1,WIDTH)*TILESIZE, randint(1,HEIGHT)*TILESIZE) # very very very temporary test
-            print(f"{self.myid}: 'I look down!'")
             self.random_place_to_look = (randint(1,WIDTH)*TILESIZE, randint(1,int(self.pos.x))*TILESIZE)
             ############################################################################################
             #                                                                                          #
@@ -761,8 +953,7 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
             ############################################################################################
         else:
             self.random_place_to_look = (randint(1,WIDTH)*TILESIZE, randint(HEIGHT, int(self.pos.x),)*TILESIZE) # if you are below the player, dont look below yourself
-            print(f"{self.myid}: 'I look up!'")
-        self.zombie_sight_range = randint(400,650)
+        self.zombie_sight_range = randint(500,700)
         self.is_looking_at_bwall = 0 # this will be a bwall object
         self.charging_attack = 0 # is a counter
         self.broken_in = False
@@ -868,38 +1059,6 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
             else:
                 return True if pythag_dist < next_to else False
 
-    # needs to be fixed proto
-    def break_barracade(self, bwall):
-        # print(f"Break Barracade? => {self.myid}: {self.myname} = {self.waiting}")
-        if not self.waiting:
-            # if the wall has hp and we can attack it then do it, basically dont interact with 0 hp walls at all
-            if bwall.hp_current > 0:
-                #print(f"Zombie {self.myid} hit wall #{bwall.myid}, going from {bwall.hp_current}hp to {bwall.hp_current - 1}hp\n - zombie {self.myid} interactions temporarily disabled")
-                # take down its hp, the action has now been confirmed so anything like animations and updates must happen now
-                bwall.hp_current -= 1
-                self.stalled = False # if you've done a hit you've stopped stalling, likewise if ur inside uve stopped stalling
-                # bounce to the opposite of where u are in relation to the wall when you make contact for an attack
-                # print(f"Bounce Me! -> id:{self.myid}, pos:{self.pos}, vel:{self.vel}, acc:{self.acc}, rot:{self.rot}")
-                
-                # be sure we have some speed, otherwise the bounce wont be noticeable 
-                if self.vel.x < 10 and self.vel.y < 10:  
-                    self.vel = vec(-100,0).rotate(-self.rot) # NEW TEST AF
-                elif self.vel.x > -10 and self.vel.x < 0 and self.vel.y > -10 and self.vel.y < 0:
-                    self.vel = vec(-100,0).rotate(-self.rot)
-                
-                #self.vel.y = -self.vel.y
-                self.acc.x -= (self.acc.x / 100) * 80
-                self.acc.y -= (self.acc.y / 100) * 80
-            
-                # then infect any touching walls
-                bwall.infect_walls()
-                # then pause any other interactions for this instance of mob for 1 second
-                self.waiting = pg.time.get_ticks()
-            # else go attack
-            else:
-                # really want some validation ur not stuck or sumnt here btw
-                pass
-
     def check_wall_distance_every_second(self): # completely unused
         if not self.check_dist_timer: # dont start it again if its already on (unsure how get_ticks works tbf, it may do this inherently idk)
             self.check_dist_timer = pg.time.get_ticks() 
@@ -936,7 +1095,12 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
         - if you were looking at the player and you collided with this wall, you are now finding the closest way in
         """
         # kinda hacky cope for now, saying if its player inside its like its own special new condition to kick you out of the loop, need to fix
-        if self.is_looking_at == "bwall":
+        if self.is_looking_at == "companion":
+            # provides a break condition for companion so that the zombies dont stop hunting the companion if you are out of the zombies sight range (as its not looking at you duh)
+            if self.game.companion.current_health < 0:
+                # they will actually go for you if you get closer too which is kewl
+                self.is_looking_at == "player"
+        elif self.is_looking_at == "bwall":
             self.breaking_and_entering() # print(f"{self.myid = }, {self.vel = }")
             # 
             #
@@ -959,6 +1123,9 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
             # i.e. if you've hit a wall after you were looking at the player, keep looking at the place past that wall (until we then destroy it >>>> and then implement that bosh)
         else:
             #print(f"{self.game.zombies_distances_to_player[self.myid] = }")
+            # WHEN YOU DIE HERE HAVE A TRY EXCEPT FOR TEMP FIX, THEN ACTUAL FIX
+            # LIKELY HAVE TO DO IT FOR LOTS OF ZOMBIES DISTANCES THINGS SO ACTUALLY JUST FIX THAT INSTEAD
+            # YOU IDIOT! :D
             if self.game.zombies_distances_to_player[self.myid] > self.zombie_sight_range:                
                 self.is_looking_at = "roaming"                
             else:# should 100% be looking at the player btw, so below if is pointless, however if the conditions deepen then will be necessary so leave it for now
@@ -1040,7 +1207,17 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
             self.acc = vec(MOB_SPEED, 0).rotate(-self.rot) # else if thiss zombo is not roaming, make it normal speed
 
             if self.is_looking_at == "player": # if we're looking at the player
-                self.look_at(self.game.player.rect.center)
+                # simple test check here to see if ur closer to the player or the companion, the look at the one ur closest too
+                companion_distance = get_distance(self, self.game.companion.pos.x, self.game.companion.pos.y)
+                player_distance = get_distance(self, self.game.player.pos.x, self.game.player.pos.y)
+                if player_distance <= companion_distance: # if player closer look at player
+                    self.look_at(self.game.player.rect.center)
+                else: # else if companion alive, look at companion
+                    if self.game.companion.hp_current > 0:  
+                        self.is_looking_at == "companion"
+                        self.look_at(self.game.companion.rect.center)
+                    else: # else look at the player, the companion is dead
+                        self.look_at(self.game.player.rect.center)
                 self.closest_bwall = [0,0] # ensure this isnt a true type value if we are looking at the player             
                 # until some condition like broken wall in front of me that is
                 
@@ -1112,12 +1289,17 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
 
 
 class Bullet(pg.sprite.Sprite): # herebullet
-    def __init__(self, game, pos, dir):
-        self.groups = game.all_sprites, game.bullets
-        pg.sprite.Sprite.__init__(self, self.groups)
+    def __init__(self, game, pos, dir, bullet_owner = "player"):
+        if bullet_owner == "player":
+            self.groups = game.all_sprites, game.bullets
+            pg.sprite.Sprite.__init__(self, self.groups)
+        elif bullet_owner == "companion":
+            self.groups = game.all_sprites, game.companion_bullets # game.bullets
+            pg.sprite.Sprite.__init__(self, self.groups)
         # self.count_hits = [] # list of ids of zombies ive passed through, and therefore counted as gold/damage/stats, for not counting gold or hits for every split second a bullet has collided
         # here, in above, could really be starting implementation of extra gold, e.g. if multi hit x2 gold, x3 = x3 etc!
         self.game = game
+        self.bullet_owner = bullet_owner
         self.image = game.bullet_img
         self.rect = self.image.get_rect()
         self.pos = vec(pos).copy() # position is the one we pass in, pass a copy so we dont update the players position with the bullet... which is fucking hilarious btw

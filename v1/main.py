@@ -36,6 +36,26 @@ def draw_player_health(surf, x, y, pct): # surface, pos, pos, percentage of heal
     pg.draw.rect(surf, col, fill_rect)
     pg.draw.rect(surf, DARKGREY, outline_rect, 2)
 
+def draw_companion_health(surf, x, y, pct): # surface, pos, pos, percentage of health
+    # incase we pass a negative, pin it at 0
+    if pct < 0:
+        pct = 0
+    BAR_LENGTH = 80
+    BAR_HEIGHT = 10
+    fill = pct * BAR_LENGTH
+    outline_rect = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pg.Rect(x, y, fill, BAR_HEIGHT)
+    # what colour
+    if pct >= 0.6:
+        col = GREEN
+    elif pct >= 0.3:
+        col = YELLOW
+    else:
+        col = RED
+    # then draw it on the surface we said, in the colour we said, using the fill_rect we've passed
+    pg.draw.rect(surf, col, fill_rect)
+    # pg.draw.rect(surf, DARKGREY, outline_rect, 1)
+
 # test af, needs a better name too
 def draw_a_chargebar(surf, x, y, pct, bar_width=100, bar_height=20): # surface, pos, pos, percentage of health
     # incase we pass a negative, pin it at 0
@@ -136,8 +156,9 @@ class Game:
         self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
         # new bullet img
         self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
-        # new custom test myturret img
+        # new - image for the Companion class
         self.my_turret_img = pg.image.load(path.join(img_folder, MY_TURRET_IMG)).convert_alpha()
+        self.my_turret_img = pg.transform.scale(self.my_turret_img, (int((TILESIZE / 10) * 5.5), int((TILESIZE / 10) * 5.5))) # reduced size
         # scale up our new loaded wall image to the tilesize, if need to reuse functionality then make this a function or a class
         self.paywall_img = pg.image.load(path.join(img_folder, PAY_WALL_IMG)).convert_alpha()
         self.paywall_img = pg.transform.scale(self.paywall_img, (TILESIZE, TILESIZE))        
@@ -187,6 +208,7 @@ class Game:
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
+        self.companion_bullets = pg.sprite.Group()
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.paywalls = pg.sprite.Group() 
         self.companions = pg.sprite.Group()
@@ -230,7 +252,7 @@ class Game:
                                 # place a breakablewall test
                                 Mob(self, col, row, self.breakablewalls)
                             if tile == "C":
-                                Companion(self, col, row)                       
+                                self.companion = Companion(self, col, row)                       
                         if run == 1:
                             # if the tile is a P, this is the player
                             if tile == "P":
@@ -276,7 +298,9 @@ class Game:
                 self.player.player_gold += self.clout_wallet
                 self.clout_wallet = 0
 
-        # mobs hit player
+        want_print_update = False
+
+        # -- when mobs hit player --
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits:
             self.player.health -= MOB_DAMAGE # we can have base damage and subclasses of mobs to get around this, plus then also stuff like armor so chill lol
@@ -286,18 +310,58 @@ class Game:
                 Comment.all_comments = [] # for now, wipe the comments if u die
                 self.playing = False 
         if hits:
-            print(f"[ {self.player.health}hp ] Player got Bitchslapped by {hits[0].myname}")
+            if want_print_update:
+                print(f"[ {self.player.health}hp ] Player got Bitchslapped by {hits[0].myname}")
             self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
             # new clout stuff
             if self.player.clout_rating_base_timer: # if the clout rating timer is running / active and we just got hit by a zombie
                 self.player.clout_rating_base_timer = False # the player got hit so turn off our timer
-          
-        # bullets hit mobs <= this type of implementation here is likely a good starting point for handling ui stuff like killstreaks i reckon
+
+        # -- using companion : when mobs hit the companion --
+        hits = pg.sprite.spritecollide(self.companion, self.mobs, False, collide_hit_rect)
+        for hit in hits:
+            self.companion.hp_current -= MOB_DAMAGE # we can have base damage and subclasses of mobs to get around this, plus then also stuff like armor so chill lol   
+            break # only get hit by 1 zombie at a time, should remove tho tbf ig? (were doing companion damage differently now tho)
+            # if self.companion.hp_current <= 0:
+                # game over man, game over
+                # pass # regen, probably not here anyways tbf
+
+        # -- using mobs : when companion hits the mobs --
+        if self.companion.companion_level > 1: # gives the companion a pushback mechanic, its kinda trash, but would be better if the companion moved tbf
+            hits = pg.sprite.groupcollide(self.mobs, self.companions, False, False)
+            for hit in hits:
+                print(f"SUPER NEAR PUSH BACK LVL 2 COMPANION PUSH BACK: {hit.is_near(self.companion.pos.x, self.companion.pos.y, return_distance=True)}m away")
+                if hit.is_near(self.companion.pos.x, self.companion.pos.y, return_distance=True) > 35: # 59 (and speed 85) @ 0,0,64,64 note is very dependent on the size of the companion hit rect and probably companion speed - you can get some very interesting results, this just only adds the zombies getting pushed back when they're in super close range of an attack, so that they do a bit less damage, force a bit less of an extreme turn from both the zombie and the companion, and means the companion can get away if closed in on but is then instantly surrounded which actually looks really kewl and very natural                    
+                    hit.vel += vec(10, 0).rotate(-self.companion.rot)
+                    self.companion.vel += vec(20,0).rotate(self.companion.rot)
+        # add mobs bounce back when hitting companion
+            
+        # -- temp test - do companion bullets first --
+        bullet_hits = pg.sprite.groupcollide(self.companion_bullets, self.mobs, True, False) # zombie stay, bullets go
+        for bullet_hit in bullet_hits:
+            # check if the bullet came from the player or the companion
+            print(f"HIT BULLET! FROM {bullet_hit.bullet_owner.title()} => [ {self.companion.bullet_damage} ] damage delt") 
+            for mob in self.mobs: # gtry a generator maybe?
+                if mob.rect.colliderect(bullet_hit.rect): # must be a better way to do this?!
+                    mob.health -= self.companion.bullet_damage
+                    mob.hit_by_bullet = pg.time.get_ticks()
+                    if mob.vel.x >= mob.vel.y:
+                        mob.vel.x /= 2 # slow by half if ur fastest direction
+                    else:
+                        mob.vel.y /= 2
+
+        # -- bullets hit mobs -- <= this type of implementation here is likely a good starting point for handling ui stuff like killstreaks i reckon
         hits = pg.sprite.groupcollide(self.mobs, self.bullets, False, True) # zombie stay, bullets go
         for hit in hits:
+            # check if the bullet came from the player or the companion
+            # if hit.bullet_owner == "player":
             # was previously constant global from settings as player_damage, now we need to set it for crits hence this, temp for now anywayas
             hit.health -= self.player.player_damage
-
+            # elif hit.bullet_owner == "companion":
+            #     hit.health -= self.companion.bullet_damage 
+            for bullet in self.bullets:
+                print(f"HIT BULLET! FROM {bullet.bullet_owner.title()} => [ {self.player.player_damage} ] damage delt")
+                
             # new test for sadge face status
             # so now its been hit, start the hit by bullet timer, which automatically stops itself when it hits 2000 ms / 2 sec
             hit.hit_by_bullet = pg.time.get_ticks()
@@ -312,10 +376,11 @@ class Game:
                 # make this bullet temporarily push the zombie back if its a crit
                 hit.vel = vec(-150,0)
             else:
-                hit.vel = vec(0,0)
+                hit.vel = vec(0,0) # ehhhh
                 # make this bullet temporarily slow the zombie a normal amount
-                hit.vel = vec(0,0)                
-            print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }") 
+                hit.vel = vec(0,0) # ehhhh
+            if want_print_update:
+                print(f"UPDATE - zombie {hit.myid} on {hit.health}hp, {self.player.player_damage = }") 
             # <==== zombie has died here ====================================================================================================               
             if hit.health <= 0:
                 # <==== zombie has died here ====================================================================================================
@@ -338,7 +403,8 @@ class Game:
                     self.clout_streak_timer = pg.time.get_ticks()
                     print(self.clout_streak_timer)
             else:
-                print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
+                if want_print_update:
+                    print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -372,10 +438,26 @@ class Game:
                     draw_a_chargebar(self.screen, destination_attack_bar.x, destination_attack_bar.y, sprite.charging_attack / 200, bar_width = 50, bar_height = 14)
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
-            # new companion test
+            # draw the companion
             if isinstance(sprite, Companion):
-                # print(sprite.rect)
-                self.screen.blit(sprite.image, self.camera.apply(sprite))  
+                self.screen.blit(sprite.image, self.camera.apply(sprite)) 
+                # test for companion hp bar
+                destination = self.camera.apply(sprite).copy()
+                destination.move_ip(TILESIZE/2, -20) # in place btw
+                draw_companion_health(self.screen, destination.x, destination.y, self.companion.hp_current / self.companion.hp_max) # 20, 45
+                destination_status = self.camera.apply(sprite).copy()
+                destination_status.move_ip(TILESIZE/6, 30) # in place btw
+                if sprite.hp_current < sprite.hp_max / 2 and sprite.is_looking_at == "zombie": # only print if looking at zombie but then dont print companion is over 50% hp
+                    self.screen.blit(sprite.draw_status(), destination_status) 
+                else: # only chit chat if ur defo not already showing something else in status
+                    # -- chit chat - if the player hasnt moved and nothing happening, i.e. idleing --
+                    chit_chat = True
+                    if chit_chat:
+                        if sprite.is_looking_at == "with_player":
+                            self.screen.blit(sprite.companion_chit_chat_end_level(sprite.hp_max / sprite.hp_current), destination_status) 
+                        elif sprite.is_looking_at == "bff":
+                            if self.player.vel == vec(0,0): 
+                                self.screen.blit(sprite.companion_chit_chat(), destination_status) 
                 
 
         # -- nested func for rendering basic text which guna move to ui functs shortly --

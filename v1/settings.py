@@ -146,3 +146,6 @@ SIDEBAR_COMMENT_1_BG_IMG = "comment_bg_1.png"
 SIDEBAR_COMMENT_2_BG_IMG = "comment_bg_2.png"
 SIDEBAR_COMMENT_3_BG_IMG = "comment_bg_3.png"
 SIDEBAR_COMMENT_4_BG_IMG = "comment_bg_4.png"
+
+# test companion stuff
+COMPANION_HIT_RECT = pg.Rect(0,0,40,40) # 64
