@@ -1,4 +1,5 @@
 import pstats
+from re import X
 import pygame as pg
 from settings import *
 from tilemap import collide_hit_rect
@@ -287,10 +288,15 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         #   [DONE] test companion level 2 knockback
         #   [DONE] basic concept of companion chit chat
         #
-        #   - DO. zombie spawn >>> [NEW TUT!]
-        #       - try dis quickly anyways, bug if long move on 100
         #   - DO. gamble ui > [NEED EVENT TUT!]
         #   - DO. dropping gold
+        #           - could try and find a quick tut for it tho actually
+        #           - tho do think this probably requires tiled tbf
+        #           - for hacky approach when one dies just print a random coin to the map in camera range bosh
+        #   - DO. zombie spawn >>> [NEW TUT!]
+        #           - try dis quickly anyways, bug if long move on 100
+        #   - FIX. the problem with the clout bonus wallet thing is that it just dies if you should have won it but all the zombies are dead
+        #           - should be an easy enough fix tbf
         #   - DO. companion respawn (idk how yet), and upgrading
         #   - DO. items / cards
         #   - DO. weapons
@@ -516,6 +522,7 @@ class Player(pg.sprite.Sprite): #hereplayer
         # new test
         self.is_interacting = False
         # new player gold implementation, could be a class var if ur lazy
+        # [ FOR GOLD ] 
         self.player_gold = 0
         self.player_prizemoney = 0 # some kinda idea of banking gold after a set amount of levels, maybe the amount banked also provides bonuses like bonus exp, extra unlocks (for hoarding and not spending etc)
         # note defo have more things that make u get paid for hampering urself
@@ -533,7 +540,7 @@ class Player(pg.sprite.Sprite): #hereplayer
         # new custom clout rating test stuff
         self.clout_rating_base_timer = False # this should *now* be the 5 second timer btw
         self.clout_level = 1 # base level 1- 50 for now me thinks
-        self.clout_cooldown_timer = False # this is the timer that start on kill
+        # self.clout_cooldown_timer = False # this is the timer that start on kill
         self.sub_clout_time = 0 # also activates on kill, i think this is what ur using to handle the actual temporary score that may or may not be achieved, as so will be the display var
 
         # new custom dash test stuff
@@ -549,6 +556,9 @@ class Player(pg.sprite.Sprite): #hereplayer
 
         # new test player stats stuff
         self.current_accuracy = [0,0] # amount hit, amount missed, then just add them both if u want totals 
+
+        # new for actual levelling, like classic level ups, in game level tho, not like character (overall? / evolution / << similar) level which should persist outside the in game levels (do that soon tho)
+        self.character_level = 1
 
     def set_player_weapon_id(self):
         # if the current weapon id isn't the list len (allow zeros btw)
@@ -613,21 +623,21 @@ class Player(pg.sprite.Sprite): #hereplayer
         if keys[pg.K_u]: # for twitch tho also is temp af
             if not self.toggle_wait: # <<<<<<<<<<<<<<<<<<<<<<<<<<< ffs make this a function or better still a class
                 # dont let us toggle 1 jillion times per second
-                self.game.want_clout_ui = False if self.game.want_clout_ui else True # flip it
+                self.game.want_clout_ui = not self.game.want_clout_ui # flip it
                 self.toggle_wait = pg.time.get_ticks() 
                 print(f"{self.game.want_clout_ui = }")
         # -- zombie names - for debugging mostly --
         if keys[pg.K_y]: # y for your name? nah idk its just in the middle of u for ui and t for twitch chat so made sense
             if not self.toggle_wait:
                 # dont let us toggle 1 jillion times per second
-                self.game.want_zombie_names = False if self.game.want_zombie_names else True # flip it
+                self.game.want_zombie_names = not self.game.want_zombie_names # flip it
                 self.toggle_wait = pg.time.get_ticks() 
                 print(f"{self.game.want_zombie_names = }")
         # -- twitch chat sidebar --
         if keys[pg.K_t]: # for twitch tho also is temp af
             if not self.toggle_wait:
                 # dont let us toggle 1 jillion times per second
-                self.game.want_twitch = False if self.game.want_twitch else True # flip it
+                self.game.want_twitch = not self.game.want_twitch # flip it
                 self.toggle_wait = pg.time.get_ticks() 
                 print(f"{self.game.want_twitch = }")
         # -- shooting --
@@ -1278,6 +1288,7 @@ class Mob(pg.sprite.Sprite): # heremob herezombies
         # if the zombie health ever less than zero, kill it, idk why this isnt first in update tho? <= test it defo 
         # note-tho! => tbf for things like waiting i get that but surely not last last atleast mid is best but idk (nah waiting doesnt matter as its self.waiting not player but confirm tbf)
         if self.health <= 0:
+            # self.game.screen.blit(self.game.splat_img, self.pos - vec(32, 32)) # half tile size, TILESIZE / 2
             self.kill()
         # end by updating waiting, bloc/cooldown main interactions for 1 second if true, e.g. reloading
         if self.waiting:
@@ -1343,7 +1354,10 @@ class Bullet(pg.sprite.Sprite): # herebullet
         if hit_zombie:
             if self.is_crit: # if this is a crit bullet, and you've hit a zombie, set the player damage to 100, # new crit test, not ideal as the way were doing collision rn i cant check the bullet just the zombie but its fine for now just playing around anyways, will do proper collisions soon 
                 self.game.player.player_damage = 100 # but remember this is a temporary af hacky way so this will stay like that forever unless we put it back, we do that after the hit has been logged, if a 100 hit is logged, player_damage = 10, plus also if this bullet times out player damage = 10 # this will break af btw, e.g. bullets could get set to 200 or 300 etc is easy to fix but just saying dont forget lol   
+                
+                # [ FOR GOLD ] self.game.paused = not self.game.paused
                 self.game.player.player_gold += base_gold
+
                 self.game.player.current_accuracy[0] += 1 # current_accuracy = [bullets_hit, bullets_missed]
         # -- important --> this should contain bwalls and paywalls duh
         if pg.sprite.spritecollideany(self, self.game.walls):
@@ -1366,6 +1380,24 @@ class Wall(pg.sprite.Sprite): # herewall
         self.y = y
         self.rect.x = x * TILESIZE
         self.rect.y = y * TILESIZE
+
+
+class Coin(pg.sprite.Sprite): # herecoin
+    # test af
+    def __init__(self, game, x, y):
+        self.groups = game.all_sprites, game.coins
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.gold_coin_img
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x * TILESIZE
+        self.rect.y = y * TILESIZE
+    
+    def update(self):
+        self.x = self.x
+        self.y = self.y
 
 
 class BreakableWall(pg.sprite.Sprite): # herebwall should be called barricades huh

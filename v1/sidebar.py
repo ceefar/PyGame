@@ -7,21 +7,6 @@ BACKGROUND_COLOR = (30, 40, 50)
 SIDEBAR_COMMENT_SIZE = (250, 40)
 
 
-# to do properly, and also when done move me to new module like tools or sumnt
-class Roll(object):
-    def __init__():
-        pass
-
-    def has_won_roll(range=100, chance=50):
-        if isinstance(range, list):
-            range = len(range) -1
-        roll = randint(1, range)
-        if roll > chance:
-            return(False)
-        else:
-            return(True)
-
-
 class SideBar(object):
     """ class for the HUD which is displayed on the right of the screen """
     def __init__(self, game):
@@ -41,7 +26,6 @@ class SideBar(object):
         surface.blit(self.image, (self.rect.x+offset, self.rect.y))
         #self.update()
         self.image.fill(WHITE)
-
 
 
 class SubsBar(object):
@@ -122,33 +106,12 @@ class Comment_Handler(object):
     def create_new_comment(self):
         new_comment = Comment(self.game, self.sidebar, self.offset)
 
-    def update_all_comments(self, surf):
-        # for i, comment in enumerate(Comment_Handler.all_comments):
-        #     comment.draw(surf, i)        
-        Comment.draw(Comment, surf)
-        if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
-            if len(Comment.all_comments) >= self.max_comments:
-                Comment_Handler.is_chat_maxed_out = True
-
-
-        # # check we even have a dictionary first, might not be any comments to check
-        # if Comment_Handler.all_comments:
-        #     # for the very first item in the list (we need to handle a max amount now we're adding this btw)
-        #     current_comment = list(Comment_Handler.all_comments.keys())[-1] # get the most recent item in the dictionary # len(Comment_Handler.all_comments) - 1
-        #     #print(f"Check is my {current_comment.myid} myYpos: {current_comment.pos.y:.0f} Greater Than whereIshouldBe: {50 * len(Comment_Handler.all_comments)}")
-        #     if current_comment.pos.y > 55 * len(Comment_Handler.all_comments): # hard code this to be the height of the most recent comment plus a small margin like + 5
-        #         self.is_spawn_on_cooldown = True # if the toppest one is not at the top, spawn comment is still on cooldown
-        #     else: # else if it has reached the top the cooldown is now off and we need to remove this object from the list (dict) for tracking
-        #         self.is_spawn_on_cooldown = False
-        #         # but we only want to remove it from the top if the list is greater than a max size
-        #         if len(Comment_Handler.all_comments) >= self.max_comments: # note if the list isnt max size we'll be using the list length as a multiplier to that 55 value (most recent comment height + 5 border)
-        #             print(f"TWITCH CHAT IS FULL!\nDeleting Comment {current_comment.myid}")
-        #             Comment_Handler.is_chat_maxed_out = True
-        #             # del Comment_Handler.all_comments[current_comment] # stop tracking this comment now that is it at the top
-        #             # if we dont do the del here it stops at max, which we want, as we want it to scroll through now
-        #     for comment in Comment_Handler.all_comments.keys():
-        #         comment.draw(surf) # move dem all on dis surface
-        #         self.update_comments_list(comment) # update the list of their y positions if they're all not moving
+    def update_all_comments(self, surf):    
+        if not self.game.paused:
+            Comment.draw(Comment, surf)
+            if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
+                if len(Comment.all_comments) >= self.max_comments:
+                    Comment_Handler.is_chat_maxed_out = True
 
 
 class Comment(object): # note have this be rough for now as im an idiot, twitch goes top to bottom, but dw at all for now will be hella refactors
@@ -235,25 +198,3 @@ class Comment(object): # note have this be rough for now as im an idiot, twitch 
                 self.vel = vec(0, 0) 
             self.pos += self.vel * self.game.dt
         # update the list stuff should go here
-
-
-# big note here, i think a part of the issue may be initialising everything for ui during the game
-# is it possible to like initialise everything except the actual writing first as templates complete and ready in memory
-# then just write then stuff and blit on init
-
-
-# real quick, if ur the bg with only 1 img on it, move the x pos over a bit (so minus from the existing number)
-# buyable and subscribers (basic af ui for it)
-# consider try moving the screen, could google it too tbf
-# then just pure leetcode
-# note, obvs have foobar open tomo init
-
-
-# (actually do leetcode first pls)
-# rn pls just do some bwalls then...
-# - find the question and solution i just did on that test in leetcode and write it up
-# - find the EXACT problems the Abu mentioned and writing the full solutions in IDE too
- 
-# then finish the tut
-
-# (subs, viewers | bullet count ui) <<<< done or not worth doing until refactor due to ui issues

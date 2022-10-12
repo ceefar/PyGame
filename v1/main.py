@@ -161,8 +161,14 @@ class Game:
         self.my_turret_img = pg.transform.scale(self.my_turret_img, (int((TILESIZE / 10) * 5.5), int((TILESIZE / 10) * 5.5))) # reduced size
         # scale up our new loaded wall image to the tilesize, if need to reuse functionality then make this a function or a class
         self.paywall_img = pg.image.load(path.join(img_folder, PAY_WALL_IMG)).convert_alpha()
-        self.paywall_img = pg.transform.scale(self.paywall_img, (TILESIZE, TILESIZE))        
-        
+        self.paywall_img = pg.transform.scale(self.paywall_img, (TILESIZE, TILESIZE))    
+        # splat image (/ body outline test)    
+        self.splat_img = pg.image.load(path.join(img_folder, PAY_WALL_IMG)).convert_alpha()
+        self.splat_img = pg.transform.scale(self.splat_img, (TILESIZE, TILESIZE)) 
+        # gold coin test
+        self.gold_coin_img = pg.image.load(path.join(img_folder, GOLD_COIN_IMG)).convert_alpha()
+        self.gold_coin_img = pg.transform.scale(self.gold_coin_img, (TILESIZE, TILESIZE)) 
+         
         # test img stuff
         self.break_wall_0_img = pg.image.load(path.join(img_folder, BREAK_WALL_0_IMG)).convert_alpha()
         self.break_wall_0_img = pg.transform.scale(self.break_wall_0_img, (TILESIZE, TILESIZE))
@@ -212,7 +218,12 @@ class Game:
         self.breakablewalls = pg.sprite.Group() # should be called barricades huh
         self.paywalls = pg.sprite.Group() 
         self.companions = pg.sprite.Group()
-
+        # very very temp test
+        self.coins = pg.sprite.Group()
+        # flags we can toggle
+        self.paused = False
+        self.chicken_dinner = False # winner winner, random spinner
+        # was temporary, should refactor tbf
         self.walls_pos_collides = []
         self.walls_y_collides = [] 
             
@@ -272,7 +283,8 @@ class Game:
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
-            self.update()
+            if not self.paused:
+                self.update()
             self.draw()
 
     def quit(self):
@@ -288,6 +300,7 @@ class Game:
         # [NEW!] - rework/refactor
         self.update_zombies_distances_to_player()
 
+        # FOR CLOUT WALLET - IMPORTANT, SOMETIMES THIS ISNT WORKING?
         # new test for clout rework
         if self.clout_cooldown_timer:
             check_time = pg.time.get_ticks()
@@ -390,6 +403,12 @@ class Game:
                 if self.clout_cooldown_timer == 0:
                     self.clout_streak += 1
 
+                # drop a coin test
+                # self.screen.blit()
+                
+                # temp test for player in game levelling 
+                self.level_handler()
+
                 # temp
                 BASE_KILL_GOLD = 100
                 # increase the clout wallet by the gold won for this kill, plus 10% of the increment var... also me this stuff its own function / class pls
@@ -405,6 +424,28 @@ class Game:
             else:
                 if want_print_update:
                     print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
+
+    def level_handler(self):
+        """ very very temporary initial test implementation of mechanic that handles the players current level, 
+        for now will just be based off gold since its easier, also ig should do companion too btw,
+        purely just learning the events mechanic rn, will improve this drastically in future
+        """
+        # currently it only runs this check when a zombie dies, actually isnt a bad idea tbf but should actually comfirm if that would work consistently lol
+        self.level_up = False
+        # level 1 > 2 ... obvs not a good implementation but is fine for now, idea have a class ig
+        if self.player.player_gold >= 10:
+            print(f"{self.player.player_gold}")
+            self.player.character_level = 2
+            self.chicken_dinner = pg.USEREVENT+1
+        # level 2 > 3
+        if self.player.player_gold >= 50:
+            print(f"{self.player.player_gold}")
+            self.player.character_level = 3
+            self.chicken_dinner = pg.USEREVENT+1
+        # timer to check for chicken dinner is necessary
+        if self.chicken_dinner: 
+            pg.time.set_timer(self.chicken_dinner, 100)
+            
 
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -436,8 +477,11 @@ class Game:
                 # if the mob is firin mah lazer (charging an attack) then show the chargebar, this number can go under 50 as part of a cooldown, so we dont show that either, or when its not charging bosh
                 if sprite.charging_attack > 0 and sprite.is_looking_at == "bwall":
                     draw_a_chargebar(self.screen, destination_attack_bar.x, destination_attack_bar.y, sprite.charging_attack / 200, bar_width = 50, bar_height = 14)
+                # gold coin test
+                # couldnt get it to work, shows up kinda on the blit but then disappears idk, will figure it out another time
             # take the camera and apply it to that sprite 
             self.screen.blit(sprite.image, self.camera.apply(sprite))  
+                
             # draw the companion
             if isinstance(sprite, Companion):
                 self.screen.blit(sprite.image, self.camera.apply(sprite)) 
@@ -533,7 +577,7 @@ class Game:
         # temp to do proper
         render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
         render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings")
-        render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)}", x = 20, y = 110, color = "zombies") 
+        render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)} of {self.map_mob_count}", x = 20, y = 110, color = "zombies") 
         render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}, Accuracy = {calculate_accuracy():.0f}% [ {self.player.current_accuracy[0]} / {self.player.current_accuracy[1]} ]", x = 20, y = 130, color = "weapon") 
         # -- draw player hp bar --
         # before final final flip
@@ -588,7 +632,10 @@ class Game:
                     # -- clout level multiplier charge bar --
                     # if self.clout_streak_timer > 0:
                     if self.clout_streak_timer:
-                        streak_check = pg.time.get_ticks()
+                        if not self.paused: # will just not show what the timer is on if the game is paused, as in shows empty but it will unpause where it should be dw
+                            streak_check = pg.time.get_ticks()
+                        else:
+                            streak_check = 0
                         streak_timer = (streak_check - self.clout_streak_timer) / 5000 # from 0 - 100% for the 5 second clout streak timer
                         # if the timer has hit 5000
                         if streak_check - self.clout_streak_timer > 5000: # << HARD CODE ME ASAP BAYBAYYYYY
@@ -598,7 +645,10 @@ class Game:
                             self.clout_streak = 0 # and reset the streak
                             # and also start the cooldown for this entire mechanic also
                             self.clout_cooldown_timer = pg.time.get_ticks()
+                        # draw the clout streak / level multiplier bar / meter
                         draw_a_chargebar(self.screen, 905, 635, streak_timer, bar_width=100, bar_height=25)
+                        # print(f"{self.clout_wallet = }")
+                        
             # else:
             # # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
             # want_celebrate = False
@@ -643,6 +693,7 @@ class Game:
         # -- finally done, flip the display and render complete --
         pg.display.flip()
 
+
     def events(self):
         # catch all events here
         for event in pg.event.get():
@@ -651,6 +702,13 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     self.quit()
+                if event.key == pg.K_p:
+                    self.paused = not self.paused
+            if event.type == self.chicken_dinner:
+                print(f"WINNER WINNER!\n-------[!! LEVEL [{self.player.character_level}] UP !!]--------\nCHICKEN DINNER!!!!\n")
+                self.paused = not self.paused
+                self.chicken_dinner = False # reset the random spinner
+
             
     def show_start_screen(self):
         pass

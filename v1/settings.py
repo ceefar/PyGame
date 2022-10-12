@@ -130,6 +130,12 @@ BREAK_WALL_HL_4B_IMG = "wallTestHL_4b.png"
 # pay wall test stuff
 PAY_WALL_IMG = "tileGreen_39.png"
 
+# gold test stuff
+GOLD_COIN_IMG = "gold_coin.png"
+
+# splat / outline test stuff
+SPLAT_IMG = "splat red.png"
+
 # new test stuff
 PLAYER_BLUR1_IMG = "manBlue_gun_blur1.png"
 PLAYER_BLUR3_IMG = "manBlue_gun_blur3.png"
