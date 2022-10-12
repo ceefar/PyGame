@@ -107,11 +107,10 @@ class Comment_Handler(object):
         new_comment = Comment(self.game, self.sidebar, self.offset)
 
     def update_all_comments(self, surf):    
-        if not self.game.paused:
-            Comment.draw(Comment, surf)
-            if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
-                if len(Comment.all_comments) >= self.max_comments:
-                    Comment_Handler.is_chat_maxed_out = True
+        Comment.draw(Comment, surf)
+        if not Comment_Handler.is_chat_maxed_out:   # dont check if true, and most of the time it will be true so is an improvement this way ?         
+            if len(Comment.all_comments) >= self.max_comments:
+                Comment_Handler.is_chat_maxed_out = True
 
 
 class Comment(object): # note have this be rough for now as im an idiot, twitch goes top to bottom, but dw at all for now will be hella refactors

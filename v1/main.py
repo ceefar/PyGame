@@ -11,9 +11,13 @@ from sprites import *
 from tilemap import *
 # temp test
 from sidebar import *
+# temp test
+from casino import *
 # for profiling
 # from profilehooks import profile
 import cProfile as profile
+
+from v1.casino import Casino_Roller
 
 # HUD functions
 def draw_player_health(surf, x, y, pct): # surface, pos, pos, percentage of health
@@ -125,6 +129,8 @@ class Game:
         self.all_bwall_objects = [] # unused, should remove
         self.zombies_distances_to_player = {}
         self.zombies_distances_to_player_timer = 0
+        # [NEW!] casino roller initial test
+        self.casino_roller = Casino_Roller(self) # create the new casino roller ui object
 
     def update_zombies_distances_to_player(self): # every 10 seconds
         if not self.zombies_distances_to_player_timer: # if not started the timer, start the timer
@@ -221,7 +227,7 @@ class Game:
         # very very temp test
         self.coins = pg.sprite.Group()
         # flags we can toggle
-        self.paused = False
+        # self.paused = False
         self.chicken_dinner = False # winner winner, random spinner
         # was temporary, should refactor tbf
         self.walls_pos_collides = []
@@ -283,7 +289,7 @@ class Game:
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
             self.events()
-            if not self.paused:
+            if not self.chicken_dinner: # or not self.chicken_dinner:
                 self.update()
             self.draw()
 
@@ -425,7 +431,7 @@ class Game:
                 if want_print_update:
                     print(f"[ {hit.health} to {hit.health - self.player.player_damage}hp ] - zombie {hit.myid} 'OOF' - player dealt [ {self.player.player_damage}hp ] damage ")
 
-    def level_handler(self):
+    def level_handler(self): # herelevelhandler #herelvlhandler
         """ very very temporary initial test implementation of mechanic that handles the players current level, 
         for now will just be based off gold since its easier, also ig should do companion too btw,
         purely just learning the events mechanic rn, will improve this drastically in future
@@ -438,11 +444,16 @@ class Game:
             self.player.character_level = 2
             self.chicken_dinner = pg.USEREVENT+1
         # level 2 > 3
-        if self.player.player_gold >= 50:
+        elif self.player.player_gold >= 30:
             print(f"{self.player.player_gold}")
             self.player.character_level = 3
             self.chicken_dinner = pg.USEREVENT+1
-        # timer to check for chicken dinner is necessary
+        # level 3 > 4
+        elif self.player.player_gold >= 100:
+            print(f"{self.player.player_gold}")
+            self.player.character_level = 4
+            self.chicken_dinner = pg.USEREVENT+1            
+        # timer to check for chicken dinner is necessary, but still should confirm other ways it can be done first before commiting to it tbf
         if self.chicken_dinner: 
             pg.time.set_timer(self.chicken_dinner, 100)
             
@@ -453,7 +464,10 @@ class Game:
         for y in range(0, HEIGHT, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (0, y), (WIDTH, y))
 
-    def draw(self): # go through all the sprites and draw them on the screen
+    def draw(self): # go through all the sprites and draw them on the screen'
+        # if self.chicken_dinner:
+        #         self.casino_roller.draw(self.screen)
+        # else:
         # set the caption of the window to be any core debug things, framerate etc
         pg.display.set_caption(f"FPS: {self.clock.get_fps():.2f}, RoundEarnings:{self.player.player_gold}, AutoShoot: {self.player.autoshoot}, Energy: {self.player.sprint_meter:.0f}, State: {self.player.state_state}-{self.player.state_moving}, Interacting: {self.player.is_interacting}, Player: {self.player.pos} / {self.player.vel} / {self.player.rot:.0f}, Gold: {self.player.player_gold}") # pos, vel, rot, sprint_meter, state_moving, state_state, is_interacting, player_gold
         # -- actual main draw stuff --
@@ -496,6 +510,8 @@ class Game:
                 else: # only chit chat if ur defo not already showing something else in status
                     # -- chit chat - if the player hasnt moved and nothing happening, i.e. idleing --
                     chit_chat = True
+                    if self.chicken_dinner:
+                        chit_chat = False
                     if chit_chat:
                         if sprite.is_looking_at == "with_player":
                             self.screen.blit(sprite.companion_chit_chat_end_level(sprite.hp_max / sprite.hp_current), destination_status) 
@@ -574,80 +590,86 @@ class Game:
                 return(player_accuracy)
             else:
                 return(0) # no shots fired yet
-        # temp to do proper
-        render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
-        render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings")
-        render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)} of {self.map_mob_count}", x = 20, y = 110, color = "zombies") 
-        render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}, Accuracy = {calculate_accuracy():.0f}% [ {self.player.current_accuracy[0]} / {self.player.current_accuracy[1]} ]", x = 20, y = 130, color = "weapon") 
-        # -- draw player hp bar --
-        # before final final flip
-        draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
-        # -- draw player reloading bar --
-        reload_end = pg.time.get_ticks() 
-        # if player is reloading
-        if self.player.is_reloading:
-            flashme = pg.time.get_ticks() 
-            flashme = int(f"{flashme}"[1])
-            if flashme % 2 != 0: # if the highest digit number is even on if not off, for flash                                                                          
-                render_to_basic_ui(f"Reloading!", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, ((reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())) # flashing?
-                flashme = False
-            # isnt actually subclout btw but reload
-            draw_a_chargebar(self.screen, (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2), (reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())   # self.screen.get_width() / 2, self.screen.get_height() /2,
-        else:
-            # if player is not reloading, check if u are low ammo, if so then flash it to player
-            if bullets_remaining < 10: # less than 20%
-                flashme2 = pg.time.get_ticks() 
-                flashme2 = int(f"{flashme2}"[1])
-                if flashme2 % 2 != 0: # if the highest digit number is even on if not off, for flash   
-                    render_to_basic_ui(f"Danger! Low Ammo", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, color = "weapon") 
-                    flashme2 = False  
-
-        if self.want_clout_ui:
-            # ---- draw player clout multiplier bar stuff ---- 
-            # -- the large clout rating letter + title --
-            render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
-            render_to_basic_ui(f"{self.player.get_display_clout_level()}", x = 1085, y = 530, font_size=44)
-            # if atleast 1 zombie is still alive 
-            if self.mobs: # Mob.get_my_hps():
-                if self.clout_streak >= 1 or self.clout_cooldown_timer > 0: # cooldown allows short the short window to display the results of the streak / bonus if u won it
-                    
-                    # -- the small potential winnings pot during clout level activation --
-                    render_to_basic_ui(f"${self.clout_wallet}", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
-                    
-                    # if on cooldown flash you win instead (tho not accurate need both cases am just confirming works fine)
-                    if self.clout_cooldown_timer > 0:
-                        # will just have some new bool if you've been hit that triggers you lose and then when the cooldown timer is turned off also turn that off too (or on whatever just the opposite)
-                        render_to_basic_ui(f"You Win!", x = 900, y = 600, want_font="silk_bold", font_size=20, color="green") # viewer boost / subscriber boost
-                    else:
-                        # -- for flashing going viral text, removed for now but add back pls, was banging -- ... >> make own function or decorator! <<   :o            
-                        render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
-
-                    # -- semi large clout multiplier number  --
-                    render_to_basic_ui(f"x{self.clout_streak}", x = 1080, y = 600, font_size=24) 
-
-                    
-                    # note - remove all existing main wallet functionality now too!
-
-
-                    # -- clout level multiplier charge bar --
-                    # if self.clout_streak_timer > 0:
-                    if self.clout_streak_timer:
-                        if not self.paused: # will just not show what the timer is on if the game is paused, as in shows empty but it will unpause where it should be dw
-                            streak_check = pg.time.get_ticks()
+        
+        
+        if not self.chicken_dinner:
+            # -- top right ui --
+            render_to_basic_ui(f"Weapon: {self.player.current_weapon.title()}", x = 20, y = 70, color = "weapon") 
+            render_to_basic_ui(f"Episode Earnings: ${self.player.player_gold}", x = 20, y = 90, color = "earnings")
+            render_to_basic_ui(f"Zombies Remaining: {len(self.mobs)} of {self.map_mob_count}", x = 20, y = 110, color = "zombies") 
+            render_to_basic_ui(f"Bullets Remaining: {bullets_remaining}, Accuracy = {calculate_accuracy():.0f}% [ {self.player.current_accuracy[0]} / {self.player.current_accuracy[1]} ]", x = 20, y = 130, color = "weapon") 
+            
+            # -- draw player hp bar --
+            # before final final flip
+            draw_player_health(self.screen, 20, 20, self.player.health / PLAYER_HEALTH)
+            
+            # -- draw player reloading bar --
+            reload_end = pg.time.get_ticks() 
+            # if player is reloading
+            if self.player.is_reloading:
+                flashme = pg.time.get_ticks() 
+                flashme = int(f"{flashme}"[1])
+                if flashme % 2 != 0: # if the highest digit number is even on if not off, for flash                                                                          
+                    render_to_basic_ui(f"Reloading!", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, ((reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())) # flashing?
+                    flashme = False
+                # isnt actually subclout btw but reload
+                draw_a_chargebar(self.screen, (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2), (reload_end - self.player.is_reloading) / self.player.return_gun_reload_speed())   # self.screen.get_width() / 2, self.screen.get_height() /2,
+            else:
+                # if player is not reloading, check if u are low ammo, if so then flash it to player
+                if bullets_remaining < 10: # less than 20%
+                    flashme2 = pg.time.get_ticks() 
+                    flashme2 = int(f"{flashme2}"[1])
+                    if flashme2 % 2 != 0: # if the highest digit number is even on if not off, for flash   
+                        render_to_basic_ui(f"Danger! Low Ammo", (self.screen.get_width()/2) + (TILESIZE/2), (self.screen.get_height()/2) + (TILESIZE/2) - 20, color = "weapon") 
+                        flashme2 = False  
+            
+        if not self.chicken_dinner:
+            if self.want_clout_ui:
+                # ---- draw player clout multiplier bar stuff ---- 
+                # -- the large clout rating letter + title --
+                render_to_basic_ui(f"Clout Rating: ", x = 950, y = 530, want_font="silk_regular", font_size=14) 
+                render_to_basic_ui(f"{self.player.get_display_clout_level()}", x = 1085, y = 530, font_size=44)
+                # if atleast 1 zombie is still alive 
+                if self.mobs: # Mob.get_my_hps():
+                    if self.clout_streak >= 1 or self.clout_cooldown_timer > 0: # cooldown allows short the short window to display the results of the streak / bonus if u won it
+                        
+                        # -- the small potential winnings pot during clout level activation --
+                        render_to_basic_ui(f"${self.clout_wallet}", x = 1078, y = 555, color="green", want_font="silk_regular", font_size=24, alignment="right") # viewer boost / subscriber boost
+                        
+                        # if on cooldown flash you win instead (tho not accurate need both cases am just confirming works fine)
+                        if self.clout_cooldown_timer > 0:
+                            # will just have some new bool if you've been hit that triggers you lose and then when the cooldown timer is turned off also turn that off too (or on whatever just the opposite)
+                            render_to_basic_ui(f"You Win!", x = 900, y = 600, want_font="silk_bold", font_size=20, color="green") # viewer boost / subscriber boost
                         else:
-                            streak_check = 0
-                        streak_timer = (streak_check - self.clout_streak_timer) / 5000 # from 0 - 100% for the 5 second clout streak timer
-                        # if the timer has hit 5000
-                        if streak_check - self.clout_streak_timer > 5000: # << HARD CODE ME ASAP BAYBAYYYYY
-                            # ig wanna check hasn't been hit or sumnt btw? nah as that will just kill the timers!
-                            self.clout_streak_timer = 0 # stop the timers
-                            streak_check = 0
-                            self.clout_streak = 0 # and reset the streak
-                            # and also start the cooldown for this entire mechanic also
-                            self.clout_cooldown_timer = pg.time.get_ticks()
-                        # draw the clout streak / level multiplier bar / meter
-                        draw_a_chargebar(self.screen, 905, 635, streak_timer, bar_width=100, bar_height=25)
-                        # print(f"{self.clout_wallet = }")
+                            # -- for flashing going viral text, removed for now but add back pls, was banging -- ... >> make own function or decorator! <<   :o            
+                            render_to_basic_ui(f"Going Viral? ", x = 900, y = 600, want_font="silk_regular", font_size=20) # viewer boost / subscriber boost
+
+                        # -- semi large clout multiplier number  --
+                        render_to_basic_ui(f"x{self.clout_streak}", x = 1080, y = 600, font_size=24) 
+
+                        
+                        # note - remove all existing main wallet functionality now too!
+
+
+                        # -- clout level multiplier charge bar --
+                        # if self.clout_streak_timer > 0:
+                        if self.clout_streak_timer: # dont show what the timer is on if the game is paused,
+                            if not self.chicken_dinner: # so it shows empty but it will unpause where it should be dw
+                                streak_check = pg.time.get_ticks()
+                            else:
+                                streak_check = 0
+                            streak_timer = (streak_check - self.clout_streak_timer) / 5000 # from 0 - 100% for the 5 second clout streak timer
+                            # if the timer has hit 5000
+                            if streak_check - self.clout_streak_timer > 5000: # << HARD CODE ME ASAP BAYBAYYYYY
+                                # ig wanna check hasn't been hit or sumnt btw? nah as that will just kill the timers!
+                                self.clout_streak_timer = 0 # stop the timers
+                                streak_check = 0
+                                self.clout_streak = 0 # and reset the streak
+                                # and also start the cooldown for this entire mechanic also
+                                self.clout_cooldown_timer = pg.time.get_ticks()
+                            # draw the clout streak / level multiplier bar / meter
+                            draw_a_chargebar(self.screen, 905, 635, streak_timer, bar_width=100, bar_height=25)
+                            # print(f"{self.clout_wallet = }")
                         
             # else:
             # # want_celebrate => stop the player, ideally make him spin around shooting, temp implementation anyways
@@ -659,55 +681,70 @@ class Game:
 
         # -- new test ui stuff --
         # handle (temp test) comment cooldown timer
-        cd_check = pg.time.get_ticks()
-        if self.twitch_chat.is_spawn_on_cooldown: # if the timer is running
-            if self.twitch_chat.is_chat_maxed_out:
-                self.twitch_chat.is_spawn_on_cooldown = True # dont draw if its maxed out (for now anyway, as we can handle a different way ooo)
-            elif cd_check - self.twitch_chat.is_spawn_on_cooldown > 2000: # every 2 sec, # elif so if above is true we can skip this
-                self.twitch_chat.is_spawn_on_cooldown = False
+        if not self.chicken_dinner:
+            cd_check = pg.time.get_ticks()
+            if self.twitch_chat.is_spawn_on_cooldown: # if the timer is running
+                if self.twitch_chat.is_chat_maxed_out:
+                    self.twitch_chat.is_spawn_on_cooldown = True # dont draw if its maxed out (for now anyway, as we can handle a different way ooo)
+                elif cd_check - self.twitch_chat.is_spawn_on_cooldown > 2000: # every 2 sec, # elif so if above is true we can skip this
+                    self.twitch_chat.is_spawn_on_cooldown = False
 
         # draw the sidebar
         if self.want_twitch:
-                
-            # twitch chat
-            # new subs bar
-            self.subsbar.draw(self.screen)
-            # want above subs bar behind the side bar so render it first
-            if not self.twitch_chat.is_spawn_on_cooldown:
-                # if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
-                    # if not self.player.waiting:
-                        roll = randint(1,6) 
-                        if roll == 2: # this is effectively spawn rate now, if u make this a funct and just give it a percent chance! bosh
-                            self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
-                            self.twitch_chat.is_spawn_on_cooldown = pg.time.get_ticks()
-            self.twitch_chat.update_all_comments(self.sidebar.image)
-            self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
-            self.sidebar.draw(self.screen) 
-            self.sidebar_top.draw(self.sidebar.image)
+            # if paused dont render the on screen ui stuff
+            if not self.chicken_dinner:
+                # twitch chat
+                # new subs bar
+                self.subsbar.draw(self.screen)
+                # want above subs bar behind the side bar so render it first
+                if not self.twitch_chat.is_spawn_on_cooldown:
+                    # if not self.twitch_chat.is_chat_maxed_out: # temp af so we dont keep printing them when its full for now, since not implementing scrolling all yet 
+                        # if not self.player.waiting:
+                            roll = randint(1,6) 
+                            if roll == 2: # this is effectively spawn rate now, if u make this a funct and just give it a percent chance! bosh
+                                self.twitch_chat.create_new_comment() # note we're drawing to the sidebar not the screen, also means we can slide it in and out an no penalty too
+                                self.twitch_chat.is_spawn_on_cooldown = pg.time.get_ticks()
+                self.twitch_chat.update_all_comments(self.sidebar.image)
+                self.sidebar_bottom.draw(self.sidebar.image) # drawn on top of sidebar
+                self.sidebar.draw(self.screen)
+                self.sidebar_top.draw(self.sidebar.image)
             
         # -- draws player collider and grid -- (player collider doesnt work tho?)
         want_collider_n_grid = False
         if want_collider_n_grid:
             pg.draw.rect(self.screen, WHITE, self.player.hit_rect, 5) # for debugging -> draw the players rectangle, and hitbox
-            self.draw_grid()            
+            self.draw_grid()  
+
+        # make this its own function pls ffs
+        # -- new winner winner chicken dinner casino spinner --  
+        if self.chicken_dinner: # if paused on the chicken dinner event
+            # self.casino_roller.update()
+            self.casino_roller.draw(self.screen) # draw the casino roller
+
         # -- finally done, flip the display and render complete --
         pg.display.flip()
 
-
-    def events(self):
+           
+    def events(self): # hereevents
         # catch all events here
         for event in pg.event.get():
+            # ---- core game button press events ----
             if event.type == pg.QUIT:
                 self.quit()
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     self.quit()
-                if event.key == pg.K_p:
-                    self.paused = not self.paused
+                # if in chicken dinner, end it - but btw, it should first skip, then on second press it should end
+                if event.key == pg.K_c:
+                    if self.chicken_dinner == True:
+                        self.chicken_dinner = False
+            # ---- handling custom events ----
+            # once we have [ is_started ], it will go here as it may as well 
             if event.type == self.chicken_dinner:
                 print(f"WINNER WINNER!\n-------[!! LEVEL [{self.player.character_level}] UP !!]--------\nCHICKEN DINNER!!!!\n")
-                self.paused = not self.paused
-                self.chicken_dinner = False # reset the random spinner
+                self.chicken_dinner = True
+                Comment.all_comments = [] # temp for now but because the positions of comments jib out after this pause, just wipe them for now
+                
 
             
     def show_start_screen(self):

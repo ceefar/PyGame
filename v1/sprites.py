@@ -289,6 +289,7 @@ class Companion(pg.sprite.Sprite): # herecompanion new af test - for soliders / 
         #   [DONE] basic concept of companion chit chat
         #
         #   - DO. gamble ui > [NEED EVENT TUT!]
+        #       - 100% a tut for this, if i can finish the day with this basically working im happy, can do job stuff and other personal stuff tomo then bosh
         #   - DO. dropping gold
         #           - could try and find a quick tut for it tho actually
         #           - tho do think this probably requires tiled tbf
@@ -614,7 +615,7 @@ class Player(pg.sprite.Sprite): #hereplayer
         self.vel = vec(0, 0) # define what our keys are going to do
         keys = pg.key.get_pressed() # see which keys are currently held down
         # -------- dev keys stuff - might integrate tho --------
-        if keys[pg.K_p]:
+        if keys[pg.K_m]:
             if not self.toggle_wait: # its lazy but its the autoshoot toggle so its not guna get used enough to matter rn chill
                 self.set_player_weapon_id()
                 self.toggle_wait = pg.time.get_ticks()
@@ -1355,7 +1356,7 @@ class Bullet(pg.sprite.Sprite): # herebullet
             if self.is_crit: # if this is a crit bullet, and you've hit a zombie, set the player damage to 100, # new crit test, not ideal as the way were doing collision rn i cant check the bullet just the zombie but its fine for now just playing around anyways, will do proper collisions soon 
                 self.game.player.player_damage = 100 # but remember this is a temporary af hacky way so this will stay like that forever unless we put it back, we do that after the hit has been logged, if a 100 hit is logged, player_damage = 10, plus also if this bullet times out player damage = 10 # this will break af btw, e.g. bullets could get set to 200 or 300 etc is easy to fix but just saying dont forget lol   
                 
-                # [ FOR GOLD ] self.game.paused = not self.game.paused
+                # [ FOR GOLD ] 
                 self.game.player.player_gold += base_gold
 
                 self.game.player.current_accuracy[0] += 1 # current_accuracy = [bullets_hit, bullets_missed]
