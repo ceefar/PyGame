@@ -131,6 +131,11 @@ class Game:
         self.zombies_distances_to_player_timer = 0
         # [NEW!] casino roller initial test
         self.casino_roller = Casino_Roller(self) # create the new casino roller ui object
+        self.initial_pause = 0           
+        self.roller_timer = 0 # thing these above 2 need to be deleted, obvs remove and test what they do first
+        self.chicken_dinner_timer = 0
+        self.chicken_dinner_roll = randint(2000,3000)
+        self.chicken_dinner_reel_result = []
 
     def update_zombies_distances_to_player(self): # every 10 seconds
         if not self.zombies_distances_to_player_timer: # if not started the timer, start the timer
@@ -210,6 +215,11 @@ class Game:
         self.comment_img_2 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_2_BG_IMG)).convert_alpha() 
         self.comment_img_3 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_3_BG_IMG)).convert_alpha() 
         self.comment_img_4 = pg.image.load(path.join(img_folder, SIDEBAR_COMMENT_4_BG_IMG)).convert_alpha() 
+
+        # casino
+        self.casino_gold_img_1 = pg.image.load(path.join(img_folder, CASINO_GOLD_INGOTS_IMG)).convert_alpha()
+        self.casino_gold_img_2 = pg.image.load(path.join(img_folder, CASINO_GOLD_IMG)).convert_alpha()
+        self.casino_gold_img_3 = pg.image.load(path.join(img_folder, CASINO_GOLD_TREASURE_IMG)).convert_alpha()
         
         # self.player_blur3_img = pg.image.load(path.join(img_folder, PLAYER_BLUR3_IMG)).convert_alpha()
         # self.player_injury_img = pg.image.load(path.join(img_folder, PLAYER_INJURY1_IMG)).convert_alpha()
@@ -225,7 +235,7 @@ class Game:
         self.paywalls = pg.sprite.Group() 
         self.companions = pg.sprite.Group()
         # very very temp test
-        self.coins = pg.sprite.Group()
+        self.casino = pg.sprite.Group()
         # flags we can toggle
         # self.paused = False
         self.chicken_dinner = False # winner winner, random spinner
@@ -718,8 +728,37 @@ class Game:
         # make this its own function pls ffs
         # -- new winner winner chicken dinner casino spinner --  
         if self.chicken_dinner: # if paused on the chicken dinner event
-            # self.casino_roller.update()
+            #
+            #####################################################################################
+            #
+            #
+            # rn this is only scrolling the top 3
+            # ultimately i get it
+            # but this is such a poor implementation its pointless continuing it
+            # imo this should be rewritten
+            # then the entire thing should be written ground up by first finishing the tutorials
+            #
+            # when you come back if you wanna continue
+            # imo just rewrite
+            # for one strip
+            # completely from scratch
+            # and imo just a premade strip first
+            # as realised the movement is what u need to do first entirely by itself
+            # ffs clown, see sidebar 
+            # note like whole thing with this at the end was, need to start it with the strip at the top
+            # just showing the bottom card
+            # then scroll it to the bottom
+            # then move it to the top
+            # want velocity and acceleration 100%
+            # that means imo just use sprites! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,,
+            #
+            #
+            ####################################################################################
+            #
             self.casino_roller.draw(self.screen) # draw the casino roller
+            
+
+            
 
         # -- finally done, flip the display and render complete --
         pg.display.flip()
@@ -743,6 +782,7 @@ class Game:
             if event.type == self.chicken_dinner:
                 print(f"WINNER WINNER!\n-------[!! LEVEL [{self.player.character_level}] UP !!]--------\nCHICKEN DINNER!!!!\n")
                 self.chicken_dinner = True
+                self.chicken_dinner_timer = pg.time.get_ticks()
                 Comment.all_comments = [] # temp for now but because the positions of comments jib out after this pause, just wipe them for now
                 
 

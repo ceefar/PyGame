@@ -155,3 +155,8 @@ SIDEBAR_COMMENT_4_BG_IMG = "comment_bg_4.png"
 
 # test companion stuff
 COMPANION_HIT_RECT = pg.Rect(0,0,40,40) # 64
+
+# casino test suff
+CASINO_GOLD_INGOTS_IMG = "ingots.png"
+CASINO_GOLD_IMG = "gold.png"
+CASINO_GOLD_TREASURE_IMG = "treasure.png"
