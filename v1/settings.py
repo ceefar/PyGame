@@ -67,7 +67,7 @@ GUN_KICKBACK = 200 # -velocity back after each shot
 GUN_SPREAD = 4 # the range of how many degrees left or right of straight the bullet can travel
 
 # Damage settings
-BULLET_DAMAGE = 10
+BULLET_DAMAGE = 150 # 150
 
 # NEW Custom Weapon settings
 # like bullet but since these are my own custom and not really bullet appropriate we're doing this, tho may v likely change
@@ -76,7 +76,7 @@ PISTOL_ACCURACY = 95 # actually want these to be ranges? or something to convert
 PISTOL_CRIT_RATE = 15 # the crit number is just an improvement thats added to the 1 - 100 random int check, so adding 10 crit chance literally remove 10 of 100 numbers from the range to check against
 PISTOL_KICKBACK = 200
 PISTOL_SPREAD = 20
-PISTOL_DAMAGE = 25
+PISTOL_DAMAGE = 50 # 25
 PISTOL_BULLET_SPEED = 500
 PISTOL_BULLET_RATE = 280
 PISTOL_BULLET_LIFETIME = 100
@@ -86,10 +86,10 @@ PISTOL_RELOAD_SPEED = 400 # ms
 # NEW Custom Multi-Weapon settings 
 UZI_SIGHT = 220
 UZI_ACCURACY = 70
-UZI_CRIT_RATE = 4
+UZI_CRIT_RATE = 50 # 4
 UZI_KICKBACK = 250
 UZI_SPREAD = 15
-UZI_DAMAGE = 10
+UZI_DAMAGE = 150 # 10
 UZI_BULLET_SPEED = 800
 UZI_BULLET_RATE = 140
 UZI_BULLET_LIFETIME = 80

@@ -130,9 +130,7 @@ class Game:
         self.zombies_distances_to_player = {}
         self.zombies_distances_to_player_timer = 0
         # [NEW!] casino roller initial test
-        self.casino_roller = Casino_Roller(self) # create the new casino roller ui object
-        self.initial_pause = 0           
-        self.roller_timer = 0 # thing these above 2 need to be deleted, obvs remove and test what they do first
+        self.casino_roller = Casino_Roller(self) # create the new casino roller ui object       
         self.chicken_dinner_timer = 0
         self.chicken_dinner_roll = randint(2000,3000)
         self.chicken_dinner_reel_result = []
@@ -285,7 +283,7 @@ class Game:
                             if tile == "P":
                                 # spawn them at the col, row position on the map 
                                 self.player = Player(self, col, row)
-        spawn_stuff_on_map()   
+        spawn_stuff_on_map()
         y_walls = [y for _, y in self.walls_pos_collides]
         self.y_walls_unique = set([y for y in y_walls if y_walls.count(y) > 1]) # make a unique wall if theres more than one at this pos, then make this a set so its just the unique ones
         print(f"{self.all_bwall_positions = }")
@@ -447,9 +445,9 @@ class Game:
         purely just learning the events mechanic rn, will improve this drastically in future
         """
         # currently it only runs this check when a zombie dies, actually isnt a bad idea tbf but should actually comfirm if that would work consistently lol
-        self.level_up = False
+        self.level_up = False # even used? idk  
         # level 1 > 2 ... obvs not a good implementation but is fine for now, idea have a class ig
-        if self.player.player_gold >= 10:
+        if self.player.player_gold >= 0:
             print(f"{self.player.player_gold}")
             self.player.character_level = 2
             self.chicken_dinner = pg.USEREVENT+1
@@ -749,13 +747,16 @@ class Game:
             # just showing the bottom card
             # then scroll it to the bottom
             # then move it to the top
-            # want velocity and acceleration 100%
+            # want velocity and acceleration 100%                               
             # that means imo just use sprites! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,,
             #
             #
             ####################################################################################
-            #
+            #    
+            self.casino_roller.update() # update the casino roller         
             self.casino_roller.draw(self.screen) # draw the casino roller
+              
+            
             
 
             
