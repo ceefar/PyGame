@@ -1,0 +1,3 @@
+# FOR ZOMBIE HEALTH UI BAR <= love this btw
+# could draw to a new surf instead and then blit that btw
+# that new surf could also be attached to the zombies position but just be a transparent bar above them for ui
