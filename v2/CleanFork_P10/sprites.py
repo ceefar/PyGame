@@ -6,9 +6,136 @@ from tilemap import collide_hit_rect
 from math import hypot 
 vec = pg.math.Vector2
 
+# some handy fonts
+# FONT_DAYDREAM_22, FONT_UPHEAVTT_22, FONT_KA1_22, FONT_KAPPA_BLACK_22, FONT_MEMESBRUH_22
+
 ###########################################
 # ---- stuff for its own module asap ---- #
 ###########################################
+
+# -- unit HUD functions --
+
+# 100% want this stuff to be in a unit parent class
+def draw_unit_level(self): # [CUSTOM]
+    if isinstance(self, Mob):
+        # if sprite is zombie mob
+        BOX_SIZE = 28  
+        x, y = self.pos.x, self.pos.y 
+        in_place_move = ((int(TILESIZE/2) - 30) + int(TILESIZE/2), -int(TILESIZE/2) - 6 - 10)
+        in_place_move_text = ((BOX_SIZE/2 - 6), 1)
+        self.level_textsurface = self.game.FONT_SILK_REGULAR_18.render(f"{self.power_level}", True, WHITE) # "text", antialias, color
+    else:
+        # else is player sprite
+        BOX_SIZE = 34
+        x, y = self.pos.x, self.pos.y
+        in_place_move = ((int(TILESIZE/2) - 45) + int(TILESIZE/2) - 6, -int(TILESIZE/2) - 11 - 10 - 6)
+        in_place_move_text = ((BOX_SIZE/2 - 7), 1)
+        # not properly implemented but leaving the skeleton so when its needed, if 2 digit number in level box we need to resize the box and the font and reposition too
+        if self.power_level >= 10:
+            self.level_textsurface = self.game.FONT_SILK_REGULAR_18.render(f"{self.power_level}", True, WHITE) # "text", antialias, color
+        else:
+            self.level_textsurface = self.game.FONT_SILK_REGULAR_22.render(f"{self.power_level}", True, WHITE) # "text", antialias, color
+    # note this should be slightly bigger than the unit health bar size btw so when hardcoding do this properly, aka dynamic from it
+    level_box_fill = pg.Rect(x, y, BOX_SIZE, BOX_SIZE)
+    level_box_outline_rect = pg.Rect(x, y, BOX_SIZE, BOX_SIZE)
+    # before we draw it apply the camera to it, the move ip does nothing but left incase in future we wanna reposition the bars, use move ip instead
+    level_box_fill = self.game.camera.apply_to_rect(level_box_fill).copy()
+    level_box_outline_rect = self.game.camera.apply_to_rect(level_box_outline_rect).copy()
+    # then move it by anything else
+    level_box_fill.move_ip(in_place_move) 
+    level_box_outline_rect.move_ip(in_place_move) 
+    # then draw to screen
+    pg.draw.rect(self.game.screen, BLUEMIDNIGHT, level_box_fill)
+    pg.draw.rect(self.game.screen, DARKGREY, level_box_outline_rect, 3)
+    # finally draw the actual number representing this unit/zombies level in that box
+    destination = pg.Rect(x, y, 300, 100) # a temporary rect to store the x, y positions we want to be at, so we can adjust it for the camera
+    destination = self.game.camera.apply_to_rect(destination).copy()
+    destination.move_ip(in_place_move) # move the text to the bg box position
+    destination.move_ip(in_place_move_text) # then do an additional nudge to centralise the text
+    self.game.screen.blit(self.level_textsurface, destination)
+
+# add a char limit to this once implementing statuses
+def draw_unit_status(self): # [CUSTOM]
+    x, y = self.pos.x, self.pos.y # refactored to take the same x and y and just change the in place move coordinates, note positions are in relation to the surface obvs
+    if isinstance(self, Mob):
+        # if sprite is zombie mob  
+        in_place_move = (int(TILESIZE/2) + int(TILESIZE/2) + 2, -int(TILESIZE/2) - 10 - 30)
+    else:
+        # else is player sprite
+        in_place_move = int(TILESIZE/2) + 20, -int(TILESIZE) - 10 # (int(TILESIZE/2) + int(TILESIZE/2) + 2, -int(TILESIZE/2) - 10 - 30)
+    # set the status to be a string with commas if it is a list, else its just the given string
+    status = self.my_status if isinstance(self.my_status, str) else ", ".join(self.my_status)
+    self.name_textsurface = self.game.FONT_SILK_REGULAR_10.render(f"{status}", True, RED) # "text", antialias, color
+    test_rect = pg.Rect(x, y, 300, 100) # a temporary rect to store the x, y positions we want to be at, so we can adjust it for the camera
+    destination = self.game.camera.apply_to_rect(test_rect).copy()
+    destination.move_ip(in_place_move) # better way to handle moving things btw donkey!, also btw, ip = in place
+    self.game.screen.blit(self.name_textsurface, destination)
+
+def draw_unit_health(self): # [CUSTOM]
+    # define the unit type at the start for any changes in ui we may add to player, mob, companion, obstacle, item, npc, etc
+    if isinstance(self, Mob):
+        # if sprite is zombie mob  
+        x, y = self.pos.x + int(TILESIZE/2) + int(TILESIZE/2), self.pos.y - int(TILESIZE/2) - 10 # positions in relation to the surface
+        unit_type = "mob"
+        BAR_LENGTH = 100
+        BAR_HEIGHT = 16 # 20
+    else:
+        # else is player sprite
+        x, y = self.pos.x, self.pos.y + 20 # slightly different, should really be refactored, wouldnt be that long tbf
+        unit_type = "player"
+        BAR_LENGTH = 140
+        BAR_HEIGHT = 18 # 20
+    # for strips between bars, serves to indicate a block/chunk of hp and ** not ** relative to the bar length
+    BAR_HP_SEGMENT = 50
+    BAR_SEGMENT_COUNT = self.max_health / BAR_HP_SEGMENT
+    SEGMENT_LENGTH = BAR_LENGTH / BAR_SEGMENT_COUNT # set the x segments even based on the BAR_SEGMENT_HP e.g. 50, 100, 150 for 175 hp
+    # in cases when we pass a negative, pin it at 0 so it doesnt go under
+    if self.current_health < 0:
+        self.current_health = 0
+    # calculate the percentage of hp remaining and convert it based on the bar size
+    health_remaining_percent = self.current_health / self.max_health
+    fill = BAR_LENGTH * health_remaining_percent
+    # define the inner and outer rect objects that will be drawn
+    outline_rect = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pg.Rect(x, y, fill, BAR_HEIGHT)
+    # what colour
+    if health_remaining_percent >= 0.6:
+        col = GREEN
+    elif health_remaining_percent >= 0.3:
+        col = YELLOW
+    else:
+        col = RED
+    # again before drawing, ensure we move these bars based on the cameras position too
+    fill_rect = self.game.camera.apply_to_rect(fill_rect).copy()
+    outline_rect = self.game.camera.apply_to_rect(outline_rect).copy()
+    if unit_type == "player":
+        fill_rect.move_ip(int(TILESIZE/2) + 20, -int(TILESIZE))
+        outline_rect.move_ip(int(TILESIZE/2) + 20, -int(TILESIZE))
+    # first draw the outline and inner rect on the surface we said, in the colour we said, using the fill_rect we've passed
+    pg.draw.rect(self.game.screen, col, fill_rect)
+    pg.draw.rect(self.game.screen, DARKGREY, outline_rect, 2)
+    # then loop to draw the segments, which are stubby split indicator bars between to show blocks/chunks of hp 
+    for i in range(int(BAR_SEGMENT_COUNT)):
+        if not int(SEGMENT_LENGTH * (i+1)) >= ((BAR_LENGTH / 100) * 95): # if the segment would be placed at the very end of the bar (5% buffer to the end), due to border and small width placing it outside the outline rect, either move it down slightly, or just dont place it (latter for now)
+            # for segment bar height have longer/shorter for 50s and 100s
+            if i % 2 == 0:
+                segment_height = 2
+            else:
+                segment_height = 1.5
+            # it is even, so make it longer
+            segment_rect = pg.Rect(x + (SEGMENT_LENGTH * (i+1)), y, 2, (BAR_HEIGHT / segment_height)) # for width -> 2 = thin, 1 = waffer thin, 4 = pretty chunky 
+            # again before drawing, ensure we move these bars based on the cameras position too
+            segment_rect = self.game.camera.apply_to_rect(segment_rect).copy()   
+            if unit_type == "player":
+                segment_rect.move_ip(int(TILESIZE/2) + 20, -int(TILESIZE))        
+            pg.draw.rect(self.game.screen, DARKGREY, segment_rect, 2)                   
+    # for debuggy
+    want_debuggy = False
+    if want_debuggy:
+        print(f"{self.myname.title()} : hp blocks = {BAR_SEGMENT_COUNT}, {self.current_health}hp of {self.max_health = }hp remaining")
+        print(f"{i+1 = }, {(i+1) * SEGMENT_LENGTH = }, {BAR_SEGMENT_COUNT = }, {int(BAR_SEGMENT_COUNT) = }")
+
+# -- general sprite functions --
 
 def round_to_base(x, base=5): # [CUSTOM]
     """ defaults to 5 """
@@ -43,56 +170,6 @@ def collide_with_walls(sprite, group, dir):
 ###########################################
 
 
-class Player(pg.sprite.Sprite):
-    def __init__(self, game, x, y):
-        self.groups = game.all_sprites
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.image = game.player_img
-        self.rect = self.image.get_rect()
-        self.hit_rect = PLAYER_HIT_RECT
-        self.hit_rect.center = self.rect.center
-        self.vel = vec(0, 0)
-        self.pos = vec(x, y) * TILESIZE
-        self.rot = 0
-        self.last_shot = 0
-        self.current_health = PLAYER_HEALTH
-
-    def get_keys(self):
-        self.rot_speed = 0
-        self.vel = vec(0, 0)
-        keys = pg.key.get_pressed()
-        if keys[pg.K_LEFT] or keys[pg.K_a]:
-            self.rot_speed = PLAYER_ROT_SPEED
-        if keys[pg.K_RIGHT] or keys[pg.K_d]:
-            self.rot_speed = -PLAYER_ROT_SPEED
-        if keys[pg.K_UP] or keys[pg.K_w]:
-            self.vel = vec(PLAYER_SPEED, 0).rotate(-self.rot)
-        if keys[pg.K_DOWN] or keys[pg.K_s]:
-            self.vel = vec(-PLAYER_SPEED / 2, 0).rotate(-self.rot)
-        if keys[pg.K_SPACE]:
-            now = pg.time.get_ticks()
-            if now - self.last_shot > BULLET_RATE:
-                self.last_shot = now
-                dir = vec(1, 0).rotate(-self.rot)
-                pos = self.pos + BARREL_OFFSET.rotate(-self.rot)
-                Bullet(self.game, pos, dir)
-                self.vel = vec(-KICKBACK, 0).rotate(-self.rot)
-
-    def update(self):
-        self.get_keys()
-        self.rot = (self.rot + self.rot_speed * self.game.dt) % 360
-        self.image = pg.transform.rotate(self.game.player_img, self.rot)
-        self.rect = self.image.get_rect()
-        self.rect.center = self.pos
-        self.pos += self.vel * self.game.dt
-        self.hit_rect.centerx = self.pos.x
-        collide_with_walls(self, self.game.walls, 'x')
-        self.hit_rect.centery = self.pos.y
-        collide_with_walls(self, self.game.walls, 'y')
-        self.rect.center = self.hit_rect.center
-
-
 class Mob(pg.sprite.Sprite): # heremob herezombie
     zombie_counter = 1 # class var for ids
 
@@ -121,8 +198,9 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         self.myid = Mob.zombie_counter
         Mob.zombie_counter += 1
         self.my_status = self.get_status()
-        # new for boolean on hit idea, rn testing for chargebar tho
+        # new for booleans on hit idea
         self.attack_timer = 0
+        self.landed_attack = False # so its only 1 hit and not time colliding
         # debuggy init values
         print(f"{self.myname}: {self.max_hp_amount = }, {self.min_hp_amount = }, {self.max_health = }, LVL={self.power_level}")
 
@@ -175,36 +253,6 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         random_hp = randint(self.min_hp_amount, self.max_hp_amount)
         return random_hp if random_hp >= self.min_hp_amount * 1.2 else self.min_hp_amount # if not more than a 50% increase, set it to the min/floor value to give game difficuly more consistency 
 
-    # HUD functions
-    def draw_unit_level(self): # [CUSTOM]
-        BOX_SIZE = 28 # current box size = 20, note this should be slightly bigger than the unit health bar size btw so when hardcoding do this properly, aka dynamic from it
-        x, y = (self.pos.x + int(TILESIZE/2) - 30) + int(TILESIZE/2), self.pos.y - int(TILESIZE/2) - 6 - 10 # scoot back and up a tad from the unit health display to be centralised
-        level_box_fill = pg.Rect(x, y, BOX_SIZE, BOX_SIZE)
-        level_box_outline_rect = pg.Rect(x, y, BOX_SIZE, BOX_SIZE)
-        # before we draw it apply the camera to it, the move ip does nothing but left incase in future we wanna reposition the bars, use move ip instead
-        level_box_fill = self.game.camera.apply_to_rect(level_box_fill).copy()
-        level_box_fill.move_ip(0, 0) # (-10, TILESIZE/2) # better way to handle moving things btw donkey!, also btw, ip = in place
-        level_box_outline_rect = self.game.camera.apply_to_rect(level_box_outline_rect).copy()
-        level_box_outline_rect.move_ip(0, 0) # better way to handle moving things btw donkey!, also btw, ip = in place
-        pg.draw.rect(self.game.screen, BLUEMIDNIGHT, level_box_fill)
-        pg.draw.rect(self.game.screen, DARKGREY, level_box_outline_rect, 3)
-        # finally draw the actual number representing this unit/zombies level in that box
-        self.level_textsurface = self.game.FONT_SILK_REGULAR_18.render(f"{self.power_level}", True, WHITE) # "text", antialias, color
-        temp_rect = pg.Rect(x, y, 300, 100) # a temporary rect to store the x, y positions we want to be at, so we can adjust it for the camera
-        destination = self.game.camera.apply_to_rect(temp_rect).copy()
-        destination.move_ip(BOX_SIZE/2 - 7, 1)
-        self.game.screen.blit(self.level_textsurface, destination)
-
-    # add a char limit to this once implementing statuses
-    def draw_unit_status(self): # [CUSTOM]
-        status = self.my_status if isinstance(self.my_status, str) else ", ".join(self.my_status)
-        self.name_textsurface = self.game.FONT_SILK_REGULAR_10.render(f"{status}", True, RED) # "text", antialias, color
-        x, y = self.pos.x + int(TILESIZE/2) + int(TILESIZE/2), self.pos.y - int(TILESIZE/2) - 10
-        test_rect = pg.Rect(x, y, 300, 100) # a temporary rect to store the x, y positions we want to be at, so we can adjust it for the camera
-        destination = self.game.camera.apply_to_rect(test_rect).copy()
-        destination.move_ip(2, -30) # better way to handle moving things btw donkey!, also btw, ip = in place
-        self.game.screen.blit(self.name_textsurface, destination)
-
     def draw_unit_action_chargebar(self, pct=97):
         BAR_LENGTH = 97
         BAR_HEIGHT = 4 # 20
@@ -213,10 +261,10 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
             pct = BAR_LENGTH
         chargebar = pg.Rect(x, y, pct, BAR_HEIGHT)
         chargebar = self.game.camera.apply_to_rect(chargebar).copy()
-        chargebar.move_ip(2,17) # (-10, TILESIZE/2) # better way to handle moving things btw donkey!, also btw, ip = in place
+        chargebar.move_ip(1,17) # (-10, TILESIZE/2) # better way to handle moving things btw donkey!, also btw, ip = in place
         chargebar_background = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
         chargebar_background = self.game.camera.apply_to_rect(chargebar_background).copy()
-        chargebar_background.move_ip(2,17) # (-10, TILESIZE/2) # better way to handle moving things btw donkey!, also btw, ip = in place
+        chargebar_background.move_ip(1,17) # (-10, TILESIZE/2) # better way to handle moving things btw donkey!, also btw, ip = in place
         pg.draw.rect(self.game.screen, GREY, chargebar_background)
         pg.draw.rect(self.game.screen, ORANGE, chargebar)
 
@@ -227,58 +275,6 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         destination = self.game.camera.apply_to_rect(test_rect).copy()
         destination.move_ip(2, -20) # better way to handle moving things btw donkey!, also btw, ip = in place
         self.game.screen.blit(self.name_textsurface, destination)
-
-    def draw_unit_health(self): # [CUSTOM]
-        # basic bar setup for mob character
-        BAR_LENGTH = 100
-        BAR_HEIGHT = 16 # 20
-        # for strips between bars, serves to indicate a block/chunk of hp and ** not ** relative to the bar length
-        BAR_HP_SEGMENT = 50
-        BAR_SEGMENT_COUNT = self.max_health / BAR_HP_SEGMENT
-        SEGMENT_LENGTH = BAR_LENGTH / BAR_SEGMENT_COUNT # set the x segments even based on the BAR_SEGMENT_HP e.g. 50, 100, 150 for 175 hp
-        # positions in relation to the surface
-        x, y = self.pos.x + int(TILESIZE/2) + int(TILESIZE/2), self.pos.y - int(TILESIZE/2) - 10 # half a tile to the right, and up by a tad
-        # in cases when we pass a negative, pin it at 0 so it doesnt go under
-        if self.current_health < 0:
-            self.current_health = 0
-        # calculate the percentage of hp remaining and convert it based on the bar size
-        health_remaining_percent = self.current_health / self.max_health
-        fill = BAR_LENGTH * health_remaining_percent
-        # define the inner and outer rect objects that will be drawn
-        outline_rect = pg.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
-        fill_rect = pg.Rect(x, y, fill, BAR_HEIGHT)
-        # what colour
-        if health_remaining_percent >= 0.6:
-            col = GREEN
-        elif health_remaining_percent >= 0.3:
-            col = YELLOW
-        else:
-            col = RED
-        # again before drawing, ensure we move these bars based on the cameras position too
-        fill_rect = self.game.camera.apply_to_rect(fill_rect).copy()
-        outline_rect = self.game.camera.apply_to_rect(outline_rect).copy()
-        # first draw the outline and inner rect on the surface we said, in the colour we said, using the fill_rect we've passed
-        pg.draw.rect(self.game.screen, col, fill_rect)
-        pg.draw.rect(self.game.screen, DARKGREY, outline_rect, 2)
-        # then loop to draw the segments, which are stubby split indicator bars between to show blocks/chunks of hp 
-        for i in range(int(BAR_SEGMENT_COUNT)):
-            if not int(SEGMENT_LENGTH * (i+1)) >= ((BAR_LENGTH / 100) * 95): # if the segment would be placed at the very end of the bar (5% buffer to the end), due to border and small width placing it outside the outline rect, either move it down slightly, or just dont place it (latter for now)
-                # ------------ THIS DOESNT WORK AND IDK WHY BUT JUST MOVING ON FOR NOW :( ------------ #
-                # for segment bar height have longer/shorter for 50s and 100s
-                if i+1 % 2 == 0:
-                    segment_height = 4
-                else:
-                    segment_height = 2
-                # it is even, so make it longer
-                segment_rect = pg.Rect(x + (SEGMENT_LENGTH * (i+1)), y, 2, (BAR_HEIGHT / segment_height)) # for width -> 2 = thin, 1 = waffer thin, 4 = pretty chunky 
-                # again before drawing, ensure we move these bars based on the cameras position too
-                segment_rect = self.game.camera.apply_to_rect(segment_rect).copy()                    
-                pg.draw.rect(self.game.screen, DARKGREY, segment_rect, 2)                   
-        # for debuggy
-        want_debuggy = False
-        if want_debuggy:
-            print(f"{self.myname.title()} : hp blocks = {BAR_SEGMENT_COUNT}, {self.current_health}hp of {self.max_health = }hp remaining")
-            print(f"{i+1 = }, {(i+1) * SEGMENT_LENGTH = }, {BAR_SEGMENT_COUNT = }, {int(BAR_SEGMENT_COUNT) = }")
        
     def draw_name(self): # [DEPRECIATED] [CUSTOM]
         """ og way, draws the image underneath the zombie with some light regard to its rotation """

@@ -4,6 +4,7 @@ from os import path
 from settings import *
 from sprites import *
 from tilemap import *
+from player import Player
 
 
 # HUD functions
@@ -36,22 +37,37 @@ class Game:
         game_folder = path.dirname(__file__)
         img_folder = path.join(game_folder, 'img')
         self.map = Map(path.join(game_folder, 'map3.txt'))
-        self.player_img = pg.image.load(path.join(img_folder, PLAYER_IMG)).convert_alpha()
+        self.player_img = pg.image.load(path.join(img_folder, PLAYER_IMG)).convert_alpha() 
         self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
         self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
         self.wall_img = pg.image.load(path.join(img_folder, WALL_IMG)).convert_alpha()
         self.wall_img = pg.transform.scale(self.wall_img, (TILESIZE, TILESIZE))
+        # test images
+        self.lego_img = pg.image.load(path.join(img_folder, LEGO_IMG)).convert_alpha()
         # load fonts
         # choices
         # ka1.ttf # Silkscreen-Regular.ttf # upheavtt.ttf # Daydream.ttf # superstar_memesbruh03.ttf # Kappa_ (various)
+        # silkscreen
         self.FONT_SILK_REGULAR_10 = pg.font.Font("Silkscreen-Regular.ttf", 10) # more here than needed to test, remove those unused when ui is finalised 
         self.FONT_SILK_REGULAR_12 = pg.font.Font("Silkscreen-Regular.ttf", 12)
         self.FONT_SILK_REGULAR_14 = pg.font.Font("Silkscreen-Regular.ttf", 14)
         self.FONT_SILK_REGULAR_16 = pg.font.Font("Silkscreen-Regular.ttf", 16)
         self.FONT_SILK_REGULAR_18 = pg.font.Font("Silkscreen-Regular.ttf", 18)
-        self.MEMESBRUH_32 = pg.font.Font("superstar_memesbruh03.ttf", 32) 
-        self.MEMESBRUH_36 = pg.font.Font("superstar_memesbruh03.ttf", 36) 
-        self.MEMESBRUH_44 = pg.font.Font("superstar_memesbruh03.ttf", 44)
+        self.FONT_SILK_REGULAR_22 = pg.font.Font("Silkscreen-Regular.ttf", 22)
+        self.FONT_SILK_REGULAR_24 = pg.font.Font("Silkscreen-Regular.ttf", 24)
+        # memesbruh
+        self.FONT_MEMESBRUH_22 = pg.font.Font("superstar_memesbruh03.ttf", 22) 
+        self.MEMESBRUH_32 = pg.font.Font("superstar_memesbruh03.ttf", 32) # rename these, they need FONT_
+        self.MEMESBRUH_36 = pg.font.Font("superstar_memesbruh03.ttf", 36) # rename these, they need FONT_
+        self.MEMESBRUH_44 = pg.font.Font("superstar_memesbruh03.ttf", 44) # rename these, they need FONT_
+        # kappa
+        self.FONT_KAPPA_BLACK_22 = pg.font.Font("Kappa_Black.otf", 22)
+        # upheavtt
+        self.FONT_UPHEAVTT_22 = pg.font.Font("upheavtt.ttf", 22)
+        # ka1
+        self.FONT_KA1_22 = pg.font.Font("ka1.ttf", 22)
+        # daydream
+        self.FONT_DAYDREAM_22 = pg.font.Font("Daydream.ttf", 22)
         # new test concept for drawing damage numbers on screen
         self.damage_numbers_positions_list = []
         self.damage_numbers_pos_timers_list = []
@@ -92,11 +108,10 @@ class Game:
         self.camera.update(self.player)
         # -- mobs hit player --
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
-        for hit in hits:
-            self.player.current_health -= MOB_DAMAGE
-            hit.vel = vec(0, 0)
-            if self.player.current_health <= 0:
-                self.playing = False
+        for hit in hits: # player has been "hit" by this zombie by colliding with it
+            # trigger the bool for this zombie that will do all the necessary action during the update
+            hit.landed_attack = True
+            
         if hits:
             self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
         # -- for test implementation of damage numbers display, needs to be above bullets hit mobs otherwise the mobs may die before printing the number --
@@ -113,6 +128,17 @@ class Game:
             hit.current_health -= self.randomised_bullet_damage
             hit.vel = vec(0, 0)
 
+    def zombie_hit_player(self, sprite):
+        # deal damage to the player
+        self.player.current_health -= MOB_DAMAGE
+        # move back the zombie that landed the hit
+        sprite.vel = vec(0, 0)
+        # reset the chargebar for the zombie that landed the hit
+        sprite.landed_attack = False
+        # if the player gets hit and has no hp they end the game
+        if self.player.current_health <= 0:
+            self.playing = False
+    
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (x, 0), (x, HEIGHT))
@@ -124,17 +150,22 @@ class Game:
         self.screen.fill(BGCOLOR)
         # self.draw_grid()
         for sprite in self.all_sprites:
-            # zombie mob sprites
+            # -- zombie mob sprites --
             if isinstance(sprite, Mob):
                 # draw unit health with hp block segments
-                sprite.draw_unit_health() # previously, sprite.draw_health()
+                draw_unit_health(sprite) # previously, sprite.draw_unit_health() before that, sprite.draw_health()
+                # draw the unit status
+                draw_unit_status(sprite)
                 # draw level box with level number
-                sprite.draw_unit_level()
+                draw_unit_level(sprite)
                 # draw the units name stationary within the health and level bounds, note - is different from OG draw_name which drew the name directly underneath with some rotation considerations
                 sprite.draw_unit_name()
-                # draw the unit status
-                sprite.draw_unit_status()
-                # draw the unit action chargebar, only activating charging an attack when the player is close
+                # draw the unit action chargebar, only activating charging an attack when the player is close (make this a function btw)
+                # - check the zombie distance to the player
+                # - if its close start its timer for its hit,
+                # - if it loses range reset the timer, 
+                # - if it stays in range keep timing
+                # - then hit and perform hit actions and reset
                 distance_to_player = how_near(sprite, self.player.pos.x, self.player.pos.y)
                 if distance_to_player < 150:
                     # if zombie is close and theres no timer start the timer
@@ -144,12 +175,34 @@ class Game:
                     else:
                         check_timer = pg.time.get_ticks()
                         true_timer = check_timer - sprite.attack_timer
-                        # if its on and over 2000 reset it
-                        if true_timer >= 1500:
+                        # if its on and over 1.5s reset it
+                        if true_timer >= 2500:
+                            self.zombie_hit_player(sprite)
                             sprite.attack_timer = 0
                         sprite.draw_unit_action_chargebar((true_timer / 1500) * 97)
                 else:
                     sprite.draw_unit_action_chargebar(0)
+                    # -- player sprite --
+            if isinstance(sprite, Player):  
+                if self.mobs:      
+                    sprite.draw_player_name()  
+                    draw_unit_health(sprite)                                   
+                    draw_unit_status(sprite)
+                    draw_unit_level(sprite)
+                    # new reload & super chargebar test implementation
+                    if not sprite.reload_chargebar:
+                        sprite.reload_chargebar = pg.time.get_ticks()
+                    # else if the zombie is close and the timer is running      
+                    else:
+                        check_timer = pg.time.get_ticks()
+                        true_timer = check_timer - sprite.reload_chargebar
+                        # if its on and over 2000 reset it
+                        if true_timer >= 1500:
+                            sprite.reload_chargebar = 0
+                        sprite.draw_player_chargebar((true_timer / 1500) * 136) # multiplied by bar length
+                # -- new test for conversations --
+                else: # else if not self.mobs:
+                    sprite.draw_unit_conversation('"pfff... too easy"') 
             # blit the sprite to the screen
             self.screen.blit(sprite.image, self.camera.apply(sprite))
         # -- for test implementation of displaying damage numbers --
@@ -181,7 +234,7 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     self.quit()
-
+        
     def show_start_screen(self):
         pass
 
