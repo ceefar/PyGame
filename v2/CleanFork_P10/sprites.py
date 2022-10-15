@@ -201,6 +201,10 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         # new for booleans on hit idea
         self.attack_timer = 0
         self.landed_attack = False # so its only 1 hit and not time colliding
+        # new damage update for boolean hits and hit types
+        self.my_damage = 20 # will be adding this properly shortly
+        self.my_knockback = 15 # and this too, smaller knockback if proximity hit, bigger if charged
+        self.hit_charge_up_time = 1000 # basically how long it takes to fill the bar, we want to be able to make this faster after a proximity hit but not a swipe
         # debuggy init values
         print(f"{self.myname}: {self.max_hp_amount = }, {self.min_hp_amount = }, {self.max_health = }, LVL={self.power_level}")
 

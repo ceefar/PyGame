@@ -110,10 +110,7 @@ class Game:
         hits = pg.sprite.spritecollide(self.player, self.mobs, False, collide_hit_rect)
         for hit in hits: # player has been "hit" by this zombie by colliding with it
             # trigger the bool for this zombie that will do all the necessary action during the update
-            hit.landed_attack = True
-            
-        if hits:
-            self.player.pos += vec(MOB_KNOCKBACK, 0).rotate(-hits[0].rot)
+            hit.landed_attack = True    
         # -- for test implementation of damage numbers display, needs to be above bullets hit mobs otherwise the mobs may die before printing the number --
         # -- bullets hit mobs --
         hits = pg.sprite.groupcollide(self.bullets, self.mobs, False, False)
@@ -127,10 +124,23 @@ class Game:
             self.randomised_bullet_damage = int((BULLET_DAMAGE / 100) * randint(80, 120))# regardless of what the damage will be give it a 80 - 100% range
             hit.current_health -= self.randomised_bullet_damage
             hit.vel = vec(0, 0)
-
-    def zombie_hit_player(self, sprite):
-        # deal damage to the player
-        self.player.current_health -= MOB_DAMAGE
+    
+    # idea => maybe a charge attack could slow you or sumnt similar, still fling u back tho obvs
+    def zombie_hit_player(self, sprite, hit_type):
+        """ do all actions required after the player is hit by a zombie
+            - hit_type: `str` , 'charge' and 'proximity' """
+        # deal damage to the player based on the type of hit, notably if you get fully surrounded since collisions between player and zombies arent on, they can kill you super quick in a corner, kinda like tho but can be altered or removed if necessary
+        if hit_type == "proximity": # if you deal damage because ur super close do less
+            self.player.current_health -= sprite.my_damage 
+            knockback = sprite.my_knockback
+        else: # else charge hit
+            self.player.current_health -= 100 # temp for now, if you charged up a hit, do a thats a lotta damage
+            knockback = sprite.my_knockback * 2 # double the knockback to push player further for a charged hit
+            # test => rotate the player a bit, within a random range, after a charge shot, bit of a random test so can be commented out or removed
+            randtest = randint(-40,40) # randtest *= -1 if sprite.rot >= 0 else 0
+            self.player.rot += randtest
+        # move the player back in the opposite direction rotation of the zombie that just hit him
+        self.player.pos += vec(knockback, 0).rotate(-sprite.rot)
         # move back the zombie that landed the hit
         sprite.vel = vec(0, 0)
         # reset the chargebar for the zombie that landed the hit
@@ -138,6 +148,8 @@ class Game:
         # if the player gets hit and has no hp they end the game
         if self.player.current_health <= 0:
             self.playing = False
+        # reset the hit timer
+        sprite.attack_timer = 0
     
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
@@ -147,7 +159,7 @@ class Game:
 
     def draw(self):
         pg.display.set_caption("{:.2f}".format(self.clock.get_fps()))
-        self.screen.fill(BGCOLOR)
+        self.screen.fill(BGCOLOR)        
         # self.draw_grid()
         for sprite in self.all_sprites:
             # -- zombie mob sprites --
@@ -160,26 +172,36 @@ class Game:
                 draw_unit_level(sprite)
                 # draw the units name stationary within the health and level bounds, note - is different from OG draw_name which drew the name directly underneath with some rotation considerations
                 sprite.draw_unit_name()
+                # -- for handling charge and proximity hits --
+                # -- charge hits are like crits and happen if a zombie stays close for too long and is in 1.5x hit range --
+                # -- should put all this stuff in the function btw --
                 # draw the unit action chargebar, only activating charging an attack when the player is close (make this a function btw)
-                # - check the zombie distance to the player
-                # - if its close start its timer for its hit,
-                # - if it loses range reset the timer, 
-                # - if it stays in range keep timing
-                # - then hit and perform hit actions and reset
+                # basically is (without the proximity stuff) => check the zombie distance to the player, if its close start its timer for its hit, if it loses range reset the timer, if it stays in range keep timing, then hit and perform hit actions and reset
                 distance_to_player = how_near(sprite, self.player.pos.x, self.player.pos.y)
-                if distance_to_player < 150:
+                # two ways this zombie will attack, either being super close, or being semi close and charging an attack, almost like a swipe
+                # we could also make this do different damage too ooo
+                # if will hit the player by being super duper close to the player, and reset the 'attack' chargebar
+                if distance_to_player < 60:
+                    self.zombie_hit_player(sprite, "proximity")
+                    print(f"{sprite.myid}: 'PROXIMITY' [{sprite.my_damage}] HIT PLAYER, hp remaining = {self.player.current_health}")           # print(f"{position = }") 
+                    sprite.hit_charge_up_time = 800 # faster hit charge after a proximity hit
+                # show this zombies 'attack' chargebar based on its distance to the player, at a certain range this timer starts, at the end it will hit
+                if distance_to_player < 250:
                     # if zombie is close and theres no timer start the timer
                     if not sprite.attack_timer:
                         sprite.attack_timer = pg.time.get_ticks()
                     # else if the zombie is close and the timer is running      
                     else:
                         check_timer = pg.time.get_ticks()
-                        true_timer = check_timer - sprite.attack_timer
-                        # if its on and over 1.5s reset it
-                        if true_timer >= 2500:
-                            self.zombie_hit_player(sprite)
-                            sprite.attack_timer = 0
-                        sprite.draw_unit_action_chargebar((true_timer / 1500) * 97)
+                        true_timer = check_timer - sprite.attack_timer # print(f"{true_timer = }")
+                        # if its on and over 1.5s, hit the player, which does all the stuff and resets the timer
+                        if true_timer >= sprite.hit_charge_up_time:
+                            # we still want this hit to have a range tho, not at any within 250px
+                            if distance_to_player < 80:
+                                self.zombie_hit_player(sprite, "charge")
+                                print(f"{sprite.myid}: 'CHARGE ATTACK' [100] HIT PLAYER, hp remaining = {self.player.current_health}")
+                        sprite.draw_unit_action_chargebar((true_timer / sprite.hit_charge_up_time) * 97)
+
                 else:
                     sprite.draw_unit_action_chargebar(0)
                     # -- player sprite --
@@ -197,6 +219,7 @@ class Game:
                         check_timer = pg.time.get_ticks()
                         true_timer = check_timer - sprite.reload_chargebar
                         # if its on and over 2000 reset it
+                        
                         if true_timer >= 1500:
                             sprite.reload_chargebar = 0
                         sprite.draw_player_chargebar((true_timer / 1500) * 136) # multiplied by bar length

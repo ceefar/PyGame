@@ -71,8 +71,7 @@ MOB_IMG = 'zombie1_hold.png'
 MOB_SPEED = 150
 MOB_HIT_RECT = pg.Rect(0, 0, 30, 30)
 MOB_HEALTH = 100
-MOB_DAMAGE = 100 # 10
-MOB_KNOCKBACK = 40 # 20
+MOB_KNOCKBACK = 20 
 
 
 # New Custom Settings
