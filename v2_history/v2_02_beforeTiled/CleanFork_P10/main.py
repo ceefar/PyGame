@@ -35,12 +35,8 @@ class Game:
 
     def load_data(self):
         game_folder = path.dirname(__file__)
-        img_folder = path.join(game_folder, 'img') # where we are saving our img (png) files
-        map_folder = path.join(game_folder, 'Tiled') # where we are saving our tmx files
-        self.map = TiledMap(path.join(map_folder, 'level2.tmx')) # load the new tiled map
-        self.map_img = self.map.make_map() # make a surface for the Tiled map
-        self.map_rect = self.map_img.get_rect() # and grab rect so we can locate on the screen where to draw it
-        # self.map = Map(path.join(game_folder, 'map3.txt')) < old map loading code
+        img_folder = path.join(game_folder, 'img')
+        self.map = Map(path.join(game_folder, 'map3.txt'))
         self.player_img = pg.image.load(path.join(img_folder, PLAYER_IMG)).convert_alpha() 
         self.bullet_img = pg.image.load(path.join(img_folder, BULLET_IMG)).convert_alpha()
         self.mob_img = pg.image.load(path.join(img_folder, MOB_IMG)).convert_alpha()
@@ -103,27 +99,15 @@ class Game:
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
-        # code for new Tiled setup
-        # go through the objects we defined in our objects layer in our Tiled map and add in the obstacles
-        for tile_object in self.map.tmxdata.objects: # dictionary of properties for each value
-            if tile_object.name == "player":
-                self.player = Player(self, tile_object.x, tile_object.y)
-            if tile_object.name == "zombie":
-                Mob(self, tile_object.x, tile_object.y)
-            if tile_object.name == "wall":
-                Obstacle(self, tile_object.x, tile_object.y, tile_object.width, tile_object.height)
-        # old map code
-        # for row, tiles in enumerate(self.map.data):
-        #     for col, tile in enumerate(tiles):
-        #         if tile == '1':
-        #             Wall(self, col, row)
-        #         if tile == 'M':
-        #             Mob(self, col, row)
-        #         if tile == 'P':
-        #             self.player = Player(self, col, row)
+        for row, tiles in enumerate(self.map.data):
+            for col, tile in enumerate(tiles):
+                if tile == '1':
+                    Wall(self, col, row)
+                if tile == 'M':
+                    Mob(self, col, row)
+                if tile == 'P':
+                    self.player = Player(self, col, row)
         self.camera = Camera(self.map.width, self.map.height)
-        # for drawing collisions
-        self.draw_debug = False
 
     def run(self):
         # game loop - set self.playing = False to end the game
@@ -198,8 +182,7 @@ class Game:
 
     def draw(self):
         pg.display.set_caption("{:.2f}".format(self.clock.get_fps()))
-        # self.screen.fill(BGCOLOR) # fill background (before Tiled) 
-        self.screen.blit(self.map_img, self.camera.apply_to_rect(self.map_rect))
+        self.screen.fill(BGCOLOR)        
         # self.draw_grid()
         for sprite in self.all_sprites:
             # -- zombie mob sprites --
@@ -320,14 +303,7 @@ class Game:
                     else:
                         sprite.draw_unit_conversation('"i wanna go home"') 
             # blit the sprite to the screen
-            self.screen.blit(sprite.image, self.camera.apply(sprite)) 
-            # -- debug for collisions n tings --
-            if self.draw_debug:
-                pg.draw.rect(self.screen, MAGENTA, self.camera.apply_to_rect(sprite.hit_rect), 1)
-        # -- debug for collisions n tings --
-        if self.draw_debug:
-            for wall in self.walls:
-                pg.draw.rect(self.screen, SKYBLUE, self.camera.apply_to_rect(wall.rect), 1)
+            self.screen.blit(sprite.image, self.camera.apply(sprite))
         # -- for test implementation of displaying damage numbers --
         if self.damage_numbers_positions_list:
             for position in self.damage_numbers_positions_list:
@@ -382,8 +358,6 @@ class Game:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     self.quit()
-                if event.key == pg.K_h:
-                    self.draw_debug = not self.draw_debug
             if event.type == pg.KEYUP:
                 if event.key == pg.K_m:
                     # basic cooldown implementation to change weapons

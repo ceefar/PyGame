@@ -54,7 +54,7 @@ class Player(pg.sprite.Sprite): # hereplayer
         self.hit_rect = PLAYER_HIT_RECT
         self.hit_rect.center = self.rect.center
         self.vel = vec(0, 0)
-        self.pos = vec(x, y)
+        self.pos = vec(x, y) * TILESIZE
         self.rot = 0
         self.last_shot = 0
         # new custom variables

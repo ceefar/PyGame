@@ -181,7 +181,7 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         self.rect = self.image.get_rect()
         self.hit_rect = MOB_HIT_RECT.copy()
         self.hit_rect.center = self.rect.center
-        self.pos = vec(x, y)
+        self.pos = vec(x, y) * TILESIZE
         self.vel = vec(0, 0)
         self.acc = vec(0, 0)
         self.rect.center = self.pos
@@ -301,7 +301,6 @@ class Bullet(pg.sprite.Sprite): # herebullet
         self.rect = self.image.get_rect()
         self.pos = vec(pos)
         self.rect.center = pos
-        self.hit_rect = self.rect
         spread = uniform(-GUN_SPREAD, GUN_SPREAD)
         self.vel = dir.rotate(spread) * BULLET_SPEED
         self.spawn_time = pg.time.get_ticks()
@@ -316,19 +315,6 @@ class Bullet(pg.sprite.Sprite): # herebullet
             self.kill()
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME:
             self.kill()           
-
-
-class Obstacle(pg.sprite.Sprite): # herewall # hereobstacle
-    def __init__(self, game, x, y, w, h):
-        self.groups = game.walls # not even in all sprites as its not drawn just invisibly sits on top of obstacles
-        pg.sprite.Sprite.__init__(self, self.groups)
-        self.game = game
-        self.image = game.wall_img
-        self.rect = pg.Rect(x,y,w,h)
-        self.x = x
-        self.y = y
-        self.rect.x = x 
-        self.rect.y = y # we just get the pixel/grid pos back so its fine
 
 
 class Wall(pg.sprite.Sprite): # herewall
