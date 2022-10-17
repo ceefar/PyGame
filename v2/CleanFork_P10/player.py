@@ -46,11 +46,13 @@ def collide_with_walls(sprite, group, dir):
 
 class Player(pg.sprite.Sprite): # hereplayer
     def __init__(self, game, x, y):
+        self._layer = PLAYER_LAYER # do this before you call the sprite init so its sets the layer
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = game.player_img
         self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
         self.hit_rect = PLAYER_HIT_RECT
         self.hit_rect.center = self.rect.center
         self.vel = vec(0, 0)
@@ -164,6 +166,7 @@ class Player(pg.sprite.Sprite): # hereplayer
                     dir = vec(1, 0).rotate(-self.rot)
                     pos = self.pos + BARREL_OFFSET.rotate(-self.rot)
                     Bullet(self.game, pos, dir)
+                    MuzzleFlash(self.game, pos)
                     self.vel = vec(-KICKBACK, 0).rotate(-self.rot)
                     self.bullets_remaining_in_clip -= 1 
 

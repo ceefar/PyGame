@@ -1,0 +1,13 @@
+reduced accuracy when moving
+improved when standing still
+as part of player state 
+
+when grouped up, i.e. x amount pushing on each other,
+have these zombies only display their hp bar nothing else 
+
+
+
+
+
+note
+- should look into node state machine afterwards

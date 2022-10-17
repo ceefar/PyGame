@@ -1,5 +1,5 @@
 import pygame as pg
-from random import uniform, randint
+from random import uniform, randint, choice
 from settings import *
 from tilemap import collide_hit_rect
 # New
@@ -174,11 +174,13 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
     zombie_counter = 1 # class var for ids
 
     def __init__(self, game, x, y):
+        self._layer = MOB_LAYER
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = game.mob_img
         self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
         self.hit_rect = MOB_HIT_RECT.copy()
         self.hit_rect.center = self.rect.center
         self.pos = vec(x, y)
@@ -186,6 +188,7 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         self.acc = vec(0, 0)
         self.rect.center = self.pos
         self.rot = 0
+        self.speed = choice(MOB_SPEEDS)
         # new custom variables
         self.myname = self.get_first_name()
         self.power_level = self.set_power_level()
@@ -205,6 +208,8 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         self.my_damage = 15 # will be adding this properly shortly
         self.my_knockback = 15 # and this too, smaller knockback if proximity hit, bigger if charged
         self.hit_charge_up_time = 1000 # basically how long it takes to fill the bar, we want to be able to make this faster after a proximity hit but not a swipe
+        # new for ui updates based on unit clumping
+        self.is_clumped = False
         # debuggy init values
         print(f"{self.myname}: {self.max_hp_amount = }, {self.min_hp_amount = }, {self.max_health = }, LVL={self.power_level}")
 
@@ -222,12 +227,39 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
         # guna do properly shortly, for now just a random range is fine say 1 - 5
         return randint(1,5) # ideally would be like 1 - 2/3/4 but idk how incremental we are guna get with it and what the max is yet so dw
 
+    def avoid_mobs(self):
+        # loop thru all the mobs and get the arrows/vectors for how we push away from any other zombie close to us
+        for mob in self.game.mobs:
+            # not the current mob we're on tho, ignore that apart from setting its 'is clumped' var
+            dist = self.pos - mob.pos # the arrow pointing from mob were on to the one we wanna move away from
+            # print(f"{self.myid}. {self.myname}: {dist.length() = } -> avoid? {0 < dist.length() < AVOID_RADIUS} -> [{self.game.mobs}]")
+            # use avoid radius to tweek how the mobs group up
+            if 0 < dist.length() < AVOID_RADIUS: # if 2 mobs on top of each other theyre dist will be zero so consider this also 
+                self.acc += dist.normalize() # add the distance normalised to our acceleration (to make it a length of 1)
+                mob.is_clumped = True
+            # -- new test --
+            # if you are close to another zombie but not clumping, so say double avoid range
+            elif 0 < dist.length() < AVOID_RADIUS * 3:
+                # flag this mob so we dont display all of the ui stuff for it, just its hp bar
+                mob.is_clumped = True
+            # else ur +3x the avoid rad so should be chill for full ui as ur not clumped
+            else:
+                mob.is_clumped = False
+            # -- CRIT FOR FIXING IS CLUMPED --
+            # - you really just need to know who ur around as one always has theirs on lol
+
     def update(self):
         self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0))
         self.image = pg.transform.rotate(self.game.mob_img, self.rot)
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
-        self.acc = vec(MOB_SPEED, 0).rotate(-self.rot)
+        # self.acc = vec(MOB_SPEED, 0).rotate(-self.rot)
+        self.acc = vec(1, 0).rotate(-self.rot) # now acc just a single unit vector (no mob speed)
+        self.avoid_mobs() 
+        self.acc.scale_to_length(self.speed) # then scale our final direction acceleration to whatever speed it should be (as the vectors were normalised to 1 before)
+        # new - might move tbf
+        # check if clumped, if so toggle this so we can update the units ui bar
+        print(f"{self.myid}. {self.myname} : {self.is_clumped = }")
         self.acc += self.vel * -1
         self.vel += self.acc * self.game.dt
         self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
@@ -240,13 +272,9 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
             self.kill()
 
     def get_status(self): # [CUSTOM]
-        # kinda just as temp af rn so can randomise the status just to see how the display will look at certain char widths, not intended to be planned implementation of statuses
-        list_of_statuses = ["Roaming", "Hunting"]
-        roll = randint(0,2)
-        if roll == 2:
-            return list_of_statuses
-        else:
-            return list_of_statuses[roll]
+        # just as temp af rn so can randomise the status just to see how the display will look at certain char widths, not intended to be planned implementation of statuses
+        list_of_statuses = ["Roaming", "Hunting",f"{self.speed}kph", f"{self.speed}mph"]
+        return choice(list_of_statuses)
 
     def get_first_name(self): # [CUSTOM]
         list_of_names = ["Zob", "Zenjamin", "Zames", "Zohn", "Zichard", "Zhomas", "Zhristopher", "Zaniel", "Znthony"]
@@ -294,6 +322,7 @@ class Bullet(pg.sprite.Sprite): # herebullet
     bullet_counter = 1
 
     def __init__(self, game, pos, dir):
+        self._layer = BULLET_LAYER
         self.groups = game.all_sprites, game.bullets
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -317,6 +346,25 @@ class Bullet(pg.sprite.Sprite): # herebullet
         if pg.time.get_ticks() - self.spawn_time > BULLET_LIFETIME:
             self.kill()           
 
+class MuzzleFlash(pg.sprite.Sprite): # heremuzzleflash # hereflash
+    def __init__(self, game, pos):
+        self._layer = EFFECTS_LAYER
+        self.groups = game.all_sprites 
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        size = randint(20,50)
+        self.image =pg.transform.scale(choice(game.gun_flashes), (size, size)) # scale it to a random size
+        self.rect = self.image.get_rect()
+        self.pos = pos 
+        self.rect.center = pos
+        self.spawn_time = pg.time.get_ticks()
+
+    def update(self):
+        # has it been long enough to despawn
+        check_time = pg.time.get_ticks()
+        if check_time - self.spawn_time > FLASH_DURATION:
+            self.kill()
+
 
 class Obstacle(pg.sprite.Sprite): # herewall # hereobstacle
     def __init__(self, game, x, y, w, h):
@@ -333,6 +381,7 @@ class Obstacle(pg.sprite.Sprite): # herewall # hereobstacle
 
 class Wall(pg.sprite.Sprite): # herewall
     def __init__(self, game, x, y):
+        self._layer = WALL_LAYER
         self.groups = game.all_sprites, game.walls
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game

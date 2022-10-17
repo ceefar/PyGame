@@ -57,6 +57,10 @@ class Game:
         self.gun_uzi_nulled_img = pg.transform.scale(self.gun_uzi_nulled_img, (84, 40))
         # test images
         self.lego_img = pg.image.load(path.join(img_folder, LEGO_IMG)).convert_alpha()
+        # fx images
+        self.gun_flashes = []
+        for img in MUZZLE_FLASHES:
+            self.gun_flashes.append(pg.image.load(path.join(img_folder, img)).convert_alpha())
         # load fonts
         # choices
         # ka1.ttf # Silkscreen-Regular.ttf # upheavtt.ttf # Daydream.ttf # superstar_memesbruh03.ttf # Kappa_ (various)
@@ -90,6 +94,8 @@ class Game:
         self.FONT_OLDSTAMPER_36 = pg.font.Font("old_stamper.ttf", 28)
         # take cover
         self.FONT_TAKECOVER_22 = pg.font.Font("Take cover.ttf", 22)
+        # i pixel u
+        self.FONT_IPIXELU_22 = pg.font.Font("I-pixel-u.ttf", 22)
         # new test concept for drawing damage numbers on screen
         self.damage_numbers_positions_list = []
         self.damage_numbers_pos_timers_list = []
@@ -99,7 +105,8 @@ class Game:
 
     def new(self):
         # initialize all variables and do all the setup for a new game
-        self.all_sprites = pg.sprite.Group()
+        # self.all_sprites = pg.sprite.Group()
+        self.all_sprites = pg.sprite.LayeredUpdates()
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
@@ -206,12 +213,17 @@ class Game:
             if isinstance(sprite, Mob):
                 # draw unit health with hp block segments
                 draw_unit_health(sprite) # previously, sprite.draw_unit_health() before that, sprite.draw_health()
+                # -- new clumped stuff btw --
+                # but not if ur clumped                
                 # draw the unit status
-                draw_unit_status(sprite)
+                if not sprite.is_clumped:
+                    draw_unit_status(sprite)
                 # draw level box with level number
-                draw_unit_level(sprite)
+                if not sprite.is_clumped:
+                    draw_unit_level(sprite)
                 # draw the units name stationary within the health and level bounds, note - is different from OG draw_name which drew the name directly underneath with some rotation considerations
-                sprite.draw_unit_name()
+                if not sprite.is_clumped:
+                    sprite.draw_unit_name()
                 # -- for handling charge and proximity hits --
                 # -- charge hits are like crits and happen if a zombie stays close for too long and is in 1.5x hit range --
                 # -- should put all this stuff in the function btw --
@@ -280,7 +292,8 @@ class Game:
                         # print the charge attack chargebar as we are in range and the timer is running
                         # - note there is no cooldown yet but do want to add that too 
                         # - maybe hack it by doing if zombie is over a certain speed lol, would work tho imo
-                        sprite.draw_unit_action_chargebar((true_timer / sprite.hit_charge_up_time) * 97)
+                        if not sprite.is_clumped:
+                            sprite.draw_unit_action_chargebar((true_timer / sprite.hit_charge_up_time) * 97)
                 # else ur further than 250 away
                 else:
                     # so ur not close enough to show a charging chargebar, hence the 0
@@ -322,8 +335,15 @@ class Game:
             # blit the sprite to the screen
             self.screen.blit(sprite.image, self.camera.apply(sprite)) 
             # -- debug for collisions n tings --
-            if self.draw_debug:
-                pg.draw.rect(self.screen, MAGENTA, self.camera.apply_to_rect(sprite.hit_rect), 1)
+            if not isinstance(sprite, Mob): # want to draw the mobs debug rect based on their clumping state 
+                if self.draw_debug:
+                    pg.draw.rect(self.screen, MAGENTA, self.camera.apply_to_rect(sprite.hit_rect), 1)
+            else:
+                if self.draw_debug:
+                    if sprite.is_clumped:
+                        pg.draw.rect(self.screen, YELLOW, self.camera.apply_to_rect(sprite.hit_rect), 3)
+                    else:
+                        pg.draw.rect(self.screen, MAGENTA, self.camera.apply_to_rect(sprite.hit_rect), 1)
         # -- debug for collisions n tings --
         if self.draw_debug:
             for wall in self.walls:
@@ -406,7 +426,7 @@ class Game:
 
     # ---- new custom functions ----
 
-    def draw_player_reloading(self): # [CUSTOM]
+    def draw_player_reloading(self): # [CUSTOM] # FONT_SILK_REGULAR_22 # FONT_IPIXELU_22 < cute font tbf
         self.reloading_text_surf = self.FONT_SILK_REGULAR_22.render(f"RELOADING", True, WHITE) # "text", antialias, color # FONT_SILK_REGULAR_14 # FONT_ARMYRUST_22
         self.reloading_text_surf_bg = self.FONT_SILK_REGULAR_22.render(f"RELOADING", True, BLACK)
         x, y = self.player.pos.x, self.player.pos.y

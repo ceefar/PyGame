@@ -68,11 +68,22 @@ BULLET_DAMAGE = 50
 
 # Mob settings
 MOB_IMG = 'zombie1_hold.png'
-MOB_SPEED = 150
+MOB_SPEEDS = [150, 110, 170, 120, 90, 140, 160]
 MOB_HIT_RECT = pg.Rect(0, 0, 30, 30)
 MOB_HEALTH = 100
 MOB_KNOCKBACK = 20 
+AVOID_RADIUS = 50
 
+# Effects
+MUZZLE_FLASHES = ['whitePuff15.png', 'whitePuff16.png', 'whitePuff17.png', 'whitePuff18.png']
+FLASH_DURATION = 40
+
+# Layers
+WALL_LAYER = 1
+PLAYER_LAYER = 2
+BULLET_LAYER = 3
+MOB_LAYER = 2
+EFFECTS_LAYER = 4 # dust fog smoke MuzzleFlash etc
 
 # -- New Custom Settings --
 LEGO_IMG = "lego_head.png"
