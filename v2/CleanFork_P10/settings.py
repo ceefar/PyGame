@@ -84,6 +84,11 @@ PLAYER_LAYER = 2
 BULLET_LAYER = 3
 MOB_LAYER = 2
 EFFECTS_LAYER = 4 # dust fog smoke MuzzleFlash etc
+ITEMS_LAYER = 1
+
+# Items
+ITEM_IMAGES = {"health": "health_pack.png"}
+
 
 # -- New Custom Settings --
 LEGO_IMG = "lego_head.png"

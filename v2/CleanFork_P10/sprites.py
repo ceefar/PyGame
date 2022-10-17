@@ -239,7 +239,10 @@ class Mob(pg.sprite.Sprite): # heremob herezombie
                 mob.is_clumped = True
             # -- new test --
             # if you are close to another zombie but not clumping, so say double avoid range
-            elif 0 < dist.length() < AVOID_RADIUS * 3:
+            elif 0 < dist.length() < AVOID_RADIUS * 2.5:
+                # -- note --
+                # for this also use self.game.mobs to check how many are near by, 2 or 3 idm showing slight overlap on this few names, but more it becomes too much
+                # -- end note -- 
                 # flag this mob so we dont display all of the ui stuff for it, just its hp bar
                 mob.is_clumped = True
             # else ur +3x the avoid rad so should be chill for full ui as ur not clumped
@@ -366,7 +369,7 @@ class MuzzleFlash(pg.sprite.Sprite): # heremuzzleflash # hereflash
             self.kill()
 
 
-class Obstacle(pg.sprite.Sprite): # herewall # hereobstacle
+class Obstacle(pg.sprite.Sprite): # herewalls # hereobstacles
     def __init__(self, game, x, y, w, h):
         self.groups = game.walls # not even in all sprites as its not drawn just invisibly sits on top of obstacles
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -377,6 +380,22 @@ class Obstacle(pg.sprite.Sprite): # herewall # hereobstacle
         self.y = y
         self.rect.x = x 
         self.rect.y = y # we just get the pixel/grid pos back so its fine
+
+
+# generic parent class for item
+class Item(pg.sprite.Sprite): # hereitems
+    def __init__(self, game, pos, type):
+        self._layer = ITEMS_LAYER
+        self.groups = game.all_sprites 
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = game.item_images[type]
+        self.rect = self.image.get_rect()
+        self.type = type
+        self.rect.center = pos
+
+
+
 
 
 class Wall(pg.sprite.Sprite): # herewall

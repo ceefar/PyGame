@@ -1,3 +1,5 @@
+see todo btw
+
 reduced accuracy when moving
 improved when standing still
 as part of player state 
@@ -5,9 +7,26 @@ as part of player state
 when grouped up, i.e. x amount pushing on each other,
 have these zombies only display their hp bar nothing else 
 
+you need lol style square level bar around ur level number btw (already written but is key)
+- this is the kinda thing id also want as part of some on sceen ui for likely than not tbf
 
 
 
+todo
+- move over sprites n zombies n ting
+- add gold like health bosh
+- OMGOMG, for random spinner when you hit a level it just puts a slots spinner over u
+    - instead of ur bar and it spins and then you win it bosh
+    - note after you need lol style square level bar around ur level number btw
+    - this would be so sick and easy to do and really just call that the whole mechanic
+    - well like pretty much all of it or the main part of it
+    - for this mvp for github project 
+        - (as wanna go back to DE then return to a new godot or pygame project after)
+    - remember da fluffy potato and aim more for polish in a few aspects than hella content
+    - especially for this as a first pygame game dev project ffs duhhhh
+    
+
+- design zombies basic 2.5d just to see! 
 
 note
 - should look into node state machine afterwards
