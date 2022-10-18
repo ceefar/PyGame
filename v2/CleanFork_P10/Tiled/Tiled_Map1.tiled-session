@@ -33,8 +33,8 @@
             "scale": 0.5,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 348,
-                "y": 511
+                "x": 1598,
+                "y": 957
             }
         },
         "level2.tmx#spritesheet_tiles": {
@@ -44,8 +44,8 @@
             "scale": 0.32478124999999997,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1601.077648417204,
-                "y": 960.6465890503225
+                "x": 1597.9986529394787,
+                "y": 959.1070913114597
             }
         },
         "level2_mobs.tmx#spritesheet_tiles": {
