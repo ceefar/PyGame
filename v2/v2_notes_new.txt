@@ -1,3 +1,16 @@
+RNRN
+- finish tut
+- do event functionality for on player level up which is based on a set amount of gold which will be easy tbf
+- intersperse with porting over stuff (lots ik but particularly mean the ui sprite stuff first)
+
+
+# see phone
+# level up
+# bar stopping
+
+
+
+
 see todo here btw
 
 also see phone btw, banging new v2 notes
