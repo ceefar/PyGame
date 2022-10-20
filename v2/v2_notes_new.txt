@@ -16,24 +16,36 @@ RNRN
 - various below stuff in asap
 - do new version n ting (obvs hella notes here to check first )
 
-
+KEWL IDEA 
+its a gameshow so 
+you also get odds of suriving the next X time, if u do u win the odds vs ur gamble!
+so sick
+then plus also could be tied to the level up i.e. could be when it triggers the menu
 
 ASAP 
 - note some things could be done when starting new version and actually probs better to do then due to messy codebase / need for new version anyways
 - also note some things are done 
 -------------------------------------------
-- add traps or similar 100%
+[WANT TO HAVE]
+- finish tut first pls is like 20 mins ffs
 - 3 card / skilltree ui stuff
-- some kinda basic broken leg ui, as an icon should be fine tbf!
-- melee attack, does knockback, needs good timing
-    - need to take into consideration the zombies range, ours needs to be slightly higher
-    - this attack should still have a short cooldown and can be done with any weapon, its an elbow hit / gun butt
-- proper change weapon system
-    - want shotgun as ammo but isnt showing in weapons now so fix dat (dw about ammo until new version)
+
+
+[NICE TO HAVE - I.E => PROBABLY DO BEFORE START FINAL BUT DONT NEED TO DO OR EVEN ADD TBF]
+- add traps or similar 100%
+    - press button
+    - perform action chargebar and animation (no anim rn tho, just change img if anything)
+    - trap is placed like items
+    - then can do loads of sick upgrade stuff for this 
 - selfie ting
     - see below in game needs
     - could refund health too
+    - similar mechanic to above traps so will be easy to roll out all 3 of these tonight / tomo
 - idea of glory kills til like doom too tbf
+- proper change weapon system
+    - want shotgun as ammo but isnt showing in weapons now so fix dat (dw about ammo until new version)
+    - dont need to do this here tbf
+    - just remember to do as ammo when doing final version
 - start/stop sign on floor tiles and other easy custom tiles e.g. trees from this guys stuff
     - https://gamedeveloperstudio.itch.io/top-down-city-mega-pack
 - custom event stuff
@@ -42,6 +54,16 @@ ASAP
     - remember might be putting this on zombies instead
         - note other considerations were for having level up points on the map, and having AQKJ10 etc on zombies for bonus gold also
     - should test anyways
+
+[THINK ALLOW TBF?]
+- melee attack, does knockback, needs good timing
+    - need to really think for this and redo a tut portion that will be most similar to what i want at the same time
+        - print lots of rects lol, see commented out attempt
+    - need to take into consideration the zombies range, ours needs to be slightly higher
+    - this attack should still have a short cooldown and can be done with any weapon, its an elbow hit / gun butt
+
+[PART DONE FROM ABOVE]
+- some kinda basic broken leg ui, as an icon should be fine tbf! [PART DONE]
 - 180 button needs work 
     - i.e if press button and holding forward u should now be moving back
     - dw about this for now is fine as is
@@ -161,3 +183,20 @@ cant unlock all?
 
 ALSO
 # gold coin sprite
+
+
+
+
+CONSIDER
+- as per gmtk, economies (i mean so much tbf amazing video)
+- breakable weapons and/or weapon quality
+- tutorial where you play and on floor text tells u things
+- as much do and not text as possible 
+
+SOME GENERAL GMTK THINGS
+- have the game comment on the choices you make
+- some kinda mission or whatever where if u take too long the person is just dead when u arrive
+- the idea of invisible, but tracked, choices, is so kewl
+
+
+its top down, think gta chinatown!
