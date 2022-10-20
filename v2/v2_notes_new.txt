@@ -1,47 +1,163 @@
-RNRN
+
+N0TES
+- have removed change weapon disbaled when zombies are near, will likely add back at a much closer range (this must be super clear to the player if so) 
+- have reduced change weapon cd from 3 sec to 1 sec
+- moving should reduce accuracy
+- standing still should have improved accuracy (important for broken leg stuff)
+
+
+
+RNRN 
 - finish tut
-- do event functionality for on player level up which is based on a set amount of gold which will be easy tbf
-- intersperse with porting over stuff (lots ik but particularly mean the ui sprite stuff first)
-
-
-# see phone
-# level up
-# bar stopping
-
-
-
-
-see todo here btw
-
-also see phone btw, banging new v2 notes
-
-reduced accuracy when moving
-improved when standing still
-as part of player state 
-
-when grouped up, i.e. x amount pushing on each other,
-have these zombies only display their hp bar nothing else 
-
-you need lol style square level bar around ur level number btw (already written but is key)
-- this is the kinda thing id also want as part of some on sceen ui for likely than not tbf
+- quickly do image and basic implementation of selfie
+- fork gui repo to check it out
+- do 3x cards + skilltree test
+- do traps or similar 100%
+- various below stuff in asap
+- do new version n ting (obvs hella notes here to check first )
 
 
 
-todo
-- move over sprites n zombies n ting
-- add gold like health bosh
-- OMGOMG, for random spinner when you hit a level it just puts a slots spinner over u
-    - instead of ur bar and it spins and then you win it bosh
-    - note after you need lol style square level bar around ur level number btw
-    - this would be so sick and easy to do and really just call that the whole mechanic
-    - well like pretty much all of it or the main part of it
-    - for this mvp for github project 
-        - (as wanna go back to DE then return to a new godot or pygame project after)
-    - remember da fluffy potato and aim more for polish in a few aspects than hella content
-    - especially for this as a first pygame game dev project ffs duhhhh
-    
+ASAP 
+- note some things could be done when starting new version and actually probs better to do then due to messy codebase / need for new version anyways
+- also note some things are done 
+-------------------------------------------
+- add traps or similar 100%
+- 3 card / skilltree ui stuff
+- some kinda basic broken leg ui, as an icon should be fine tbf!
+- melee attack, does knockback, needs good timing
+    - need to take into consideration the zombies range, ours needs to be slightly higher
+    - this attack should still have a short cooldown and can be done with any weapon, its an elbow hit / gun butt
+- proper change weapon system
+    - want shotgun as ammo but isnt showing in weapons now so fix dat (dw about ammo until new version)
+- selfie ting
+    - see below in game needs
+    - could refund health too
+- idea of glory kills til like doom too tbf
+- start/stop sign on floor tiles and other easy custom tiles e.g. trees from this guys stuff
+    - https://gamedeveloperstudio.itch.io/top-down-city-mega-pack
+- custom event stuff
+    - various, see below
+- casino blocking zombies fix
+    - remember might be putting this on zombies instead
+        - note other considerations were for having level up points on the map, and having AQKJ10 etc on zombies for bonus gold also
+    - should test anyways
+- 180 button needs work 
+    - i.e if press button and holding forward u should now be moving back
+    - dw about this for now is fine as is
+- manual reloading duh
+    - worked by adding 1 bool to R button, gg4dat
+    - evidence codebase is messy but well designed
+- reduce or remove change weapon wait stuff
 
-- design zombies basic 2.5d just to see! 
+
+
+GAME NEEDS
+- neeeeds 180 quick turn
+    - ngl 100 add take a selfie
+        - multiplier for the more zombies "in shot"
+            - consider trying to actually do this with pillow.similar based on what its the sight range lmao, would be kewl 
+        - obvs u stand still while taking
+        - would have some anim and flash too
+            - the flash will alert near by zombies too (maybe offscreen whatevs)
+- proper change weapon system
+- more things to do, doesnt have to be loads but needs to feel like a game
+    - feel like looting and crafting is enough with 1 / 2 / 3 rotating objective types
+- intro idea ting!
+- objectives
+- tutorial style things for first time things
+    - e.g. zombies that are close to you will land charge attacks that do more damage
+    - when you take more damage you drastically increase your risk of sustaining a serious injury
+    - if you break a leg your movement will be seriously impacted
+    - your special weapon may run out of ammo
+    - you can find x at y
+    - you can make blah with blah at blah
+    - you can get health at blah
+    - you can get a companion at blah
+
+
+HUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGE
+to do menus pls not only consider tut/s but
+find legit (good, clean) examples, will make it so much easier!
+
+ONCE TUT DONE
+final version with high polish
+javascript react front end project next
+    - then maybe mobile app in google one 
+    - plus actually start doing alls job applications 
+        - looking mostly for apprenticeship and jnr roles
+
+then probably godot
+
+LEGIT
+# finish tutorial
+# do the advanced tuts, e.g. dykstras etc
+# - fuck all point doing the port stuff until you've done all important tuts imo 
+# new version and start porting over functionalities and completely finishing them before continuing
+# - will actually be hella easy this way dw
+
+
+TOD0
+# working custom events for leveling and casino 
+# add basic zombies on screen ui info
+# update gamble idea to on zombie thing on phone
+# 3 cards x skilltree thing
+# ui and menus 
+# port stuff in a new version when ready to start finalising
+# audio
+
+
+# gold coin sprite
+
+
+GENERAL THINGS TODO
+
+# why wasnt tweening working
+# - complete the tut on blank fork to check wassup
+
+# reels thing
+# - aka move/blit the casino ui to the screen if it blocks zombies
+
+# events
+# - do event functionality for on player level up which is based on a set amount of gold which will be easy tbf
+
+# add borders code to damage numbers
+# - for new version, too much to untangle
+
+# reduced accuracy when moving
+# - improved when standing still
+# - as part of player state 
+
+# you need lol style square level bar around ur level number btw (already written but is key)
+# - this is the kinda thing id also want as part of some on sceen ui for likely than not tbf
+
+# add uzi unlocked text and image
+# - do like current reloading tbf, use the same funct too bosh
+
+# reloading (?)
+
+
+PART DONE
+- procedural zombie spawning
+- basic grouping
+- current weapon name text
 
 note
 - should look into node state machine afterwards
+
+
+
+YEAH SO NO CAP RN DO THE 3X MENU TING AND SKILL TREES
+TOMO WE 100% FINISH THIS TUT (and start maps and graphics n tings oooo)
+
+SKILLTREES
+maybe bonus level points are also on the map 
+(could be only on the map, possibly procedural too could be interesting anyways)
+
+freeze enemies (only if can find something that makes sense? - lol really... no)
+
+cant unlock all?
+
+
+ALSO
+# gold coin sprite
