@@ -2,19 +2,26 @@
 N0TES
 - have removed change weapon disbaled when zombies are near, will likely add back at a much closer range (this must be super clear to the player if so) 
 - have reduced change weapon cd from 3 sec to 1 sec
-- moving should reduce accuracy
+- moving player should reduce your accuracy
 - standing still should have improved accuracy (important for broken leg stuff)
+- skipped proper flash, probs should just remove or just have like muzzleflash duh
 
 
 
 RNRN 
-- finish tut
-- quickly do image and basic implementation of selfie
+
+- spinner
+    - with working functionality
+- do flash with the yellow, tho quite a bit more alpha
+    - and a muzzleflash img style ting by the phone, BOSH!
 - fork gui repo to check it out
 - do 3x cards + skilltree test
 - do traps or similar 100%
+- atleast test pillow for dynamic based on zombie count and possibly like quadrant of the map or sumnt
+    - if u wanted it to be hella simple just have it like an achievement where u gotta take 1 in each quadrant asnd it gives u sumnt special (obvs then just 4 unique images too)
 - various below stuff in asap
-- do new version n ting (obvs hella notes here to check first )
+- quickly do image and basic implementation of selfie
+- do new version n ting (obvs hella notes here to check first)
 
 KEWL IDEA 
 its a gameshow so 
