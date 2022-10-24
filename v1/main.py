@@ -5,9 +5,9 @@ from os import path
 from settings import *
 from sprites import *
 from tilemap import *
-# temp test
+# new
 from sidebar import *
-# temp test
+# new
 from casino import *
 # for profiling
 # from profilehooks import profile
