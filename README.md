@@ -10,7 +10,7 @@ Please note that lots of functionality is missing or not shown in the below scre
 *(please excuse low image quality, this repo is massively temporary, I just wanted to lay down something quick for now)*  
 
 **Pathfinder, Pathfinder, Find Me A Path**     
-Currently in development, implementation of advanced algorithms & data structures - Present Version shows Graph/Nodes & BFS (Breadth First Search) working as expected with zombie path rendered to screen for debugging     
+Currently in development, implementation of advanced algorithms & data structures - Version in the image showing BFS (Breadth First Search) & Graph/Nodes working as expected, plus zombie path being rendered to screen for debugging     
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/pathfinding2.png" width="800">   
 
 **Winner Winner ~~Chicken~~ Zombie Dinner**    
