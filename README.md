@@ -14,7 +14,7 @@ Currently in development, implementation of advanced algorithms & data structure
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/pathfinding2.png" width="800">   
 
 **Winner Winner ~~Chicken~~ Zombie Dinner**    
-Casino roller triggers on player level up, granting items or bonuses if the reels land on a winner, this level up gambling mechanic will be a large part of the game loop. We can also see the initial implementation of character conversations here too (for Companion functionality which will be ported from an alt version)  
+Casino roller triggers on player level up, granting items or bonuses if the reels land on a winner, this level up gambling mechanic will be a large part of the game loop. We can also see the initial implementation of character conversations here too
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/casinoAndConvo2.png" width="800">  
     
 **Day & Night (wut wut)**  
@@ -23,16 +23,15 @@ Implementation of a basic day and night cycle... and yes that is a kid cudi refe
 
 **There's A Bug Here Somewhere... I Can Feel It**     
 Effectively coding collisions can be tough, particularly in pygame, handy debug mode helps by drawing hitboxes and constraints for all sprites on screen. I'm considering moving to pixel perfect collisions at some point in the future, for now these are just basic sprite collisions.    
-*Please note title is just a joke, project is surprisingly error free, ofcourse except for currently ongoing work on pathfinding, previous versions are incredibly stable*  
+*Please note title is just a joke, project is surprisingly error free and incredibly stable except for ongoing pathfinding work*  
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/debugmode1.png" width="800">    
     
 **Clumping, Basic Pathfinding, UI's, Efficiencies**  
-Added avoid radius where zombies inside the radius of another will 'push' slightly in the opposite direction (vector in -dir), can also see some basic pathfinding, level and hp UI, and effeciencies for notable amount of enemies on screen.  
-*(Pygame is really just a wrapper around SDL, which runs off the CPU not the GPU so it can be taxing)*   
+Added avoid radius where zombies inside the radius of another will 'push' slightly in the opposite direction, can also see some basic pathfinding, level and hp UI, and effeciencies for notable amount of enemies on screen (Pygame runs off the CPU so it can get taxing)
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/clumping.png" width="800">   
      
 **Say Cheese**  
-For fun selfie functionaliity, grants player temporary bonus gold/stats, note that the lego man polaroid is because the player sprite will be a lego character, have done a basic animated custom sprite already but don't use animations (except for basic item tweening) during development, also I intend to make the image generation somewhat dynamic in future  
+For fun selfie functionaliity, grants player temporary bonus gold/stats, note that the lego man polaroid is because the player sprite will be a lego character, have done a basic animated custom sprite already but don't use animations (except for basic item tweening) during development. Dynamic image gen coming at some point.
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/selfie1.png" width="800">  
 <img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/selfie2.png" width="800">  
 
