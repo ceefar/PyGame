@@ -9,14 +9,14 @@ Check out the small image showcase below for a preview of the improved UI and up
 Please note that lots of functionality is missing or not shown in the below screenshots which are taken from test versions, as such UI and final v2 functionality has improved substantially on what is being previewed below :D   
 *(please excuse low image quality, this repo is massively temporary, I just wanted to lay down something quick for now)*  
 
-**Pathfinder, Pathfinder, Find Me A Path**    
-Currently in development, implementation of advanced algorithms & data structures - Present Version shows Graph/Nodes & BFS (Breadth First Search) working as expected with zombie path rendered to screen for debugging   
-<img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/pathfinding2.png" width="800">  
-
+**Pathfinder, Pathfinder, Find Me A Path**     
+Currently in development, implementation of advanced algorithms & data structures - Present Version shows Graph/Nodes & BFS (Breadth First Search) working as expected with zombie path rendered to screen for debugging     
+<img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/pathfinding2.png" width="800">   
+  
 **There's A Bug Here Somewhere... I Can Feel It**    
 Effectively coding collisions can be tough, particularly in pygame, handy debug mode helps by drawing hitboxes and constraints for all sprites on screen. I'm considering moving to pixel perfect collisions at some point in the future, for now these are just basic sprite collisions.   
-*Pls note title is a joke, project is surprisingly error free, ofcourse except for currently ongoing work, previous versions are incredibly stable*
-<img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/pathfinding2.png" width="800">  
+*Please note title is just a joke, project is surprisingly error free, ofcourse except for currently ongoing work on pathfinding, previous versions are incredibly stable*
+<img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/debugmode1.png" width="800">  
 
 **Winner Winner ~~Chicken~~ Zombie Dinner**    
 Casino roller triggers on player level up, granting items or bonuses if the reels land on a winner, this level up gambling mechanic will be a large part of the game loop. We can also see the initial implementation of character conversations here too (for Companion functionality which will be ported from an alt version)  
