@@ -1,0 +1,209 @@
+
+N0TES
+- have removed change weapon disbaled when zombies are near, will likely add back at a much closer range (this must be super clear to the player if so) 
+- have reduced change weapon cd from 3 sec to 1 sec
+- moving player should reduce your accuracy
+- standing still should have improved accuracy (important for broken leg stuff)
+- skipped proper flash, probs should just remove or just have like muzzleflash duh
+
+
+
+RNRN 
+
+- spinner
+    - with working functionality
+- do flash with the yellow, tho quite a bit more alpha
+    - and a muzzleflash img style ting by the phone, BOSH!
+- fork gui repo to check it out
+- do 3x cards + skilltree test
+- do traps or similar 100%
+- atleast test pillow for dynamic based on zombie count and possibly like quadrant of the map or sumnt
+    - if u wanted it to be hella simple just have it like an achievement where u gotta take 1 in each quadrant asnd it gives u sumnt special (obvs then just 4 unique images too)
+- various below stuff in asap
+- quickly do image and basic implementation of selfie
+- do new version n ting (obvs hella notes here to check first)
+
+KEWL IDEA 
+its a gameshow so 
+you also get odds of suriving the next X time, if u do u win the odds vs ur gamble!
+so sick
+then plus also could be tied to the level up i.e. could be when it triggers the menu
+
+ASAP 
+- note some things could be done when starting new version and actually probs better to do then due to messy codebase / need for new version anyways
+- also note some things are done 
+-------------------------------------------
+[WANT TO HAVE]
+- finish tut first pls is like 20 mins ffs
+- 3 card / skilltree ui stuff
+
+
+[NICE TO HAVE - I.E => PROBABLY DO BEFORE START FINAL BUT DONT NEED TO DO OR EVEN ADD TBF]
+- add traps or similar 100%
+    - press button
+    - perform action chargebar and animation (no anim rn tho, just change img if anything)
+    - trap is placed like items
+    - then can do loads of sick upgrade stuff for this 
+- selfie ting
+    - see below in game needs
+    - could refund health too
+    - similar mechanic to above traps so will be easy to roll out all 3 of these tonight / tomo
+- idea of glory kills til like doom too tbf
+- proper change weapon system
+    - want shotgun as ammo but isnt showing in weapons now so fix dat (dw about ammo until new version)
+    - dont need to do this here tbf
+    - just remember to do as ammo when doing final version
+- start/stop sign on floor tiles and other easy custom tiles e.g. trees from this guys stuff
+    - https://gamedeveloperstudio.itch.io/top-down-city-mega-pack
+- custom event stuff
+    - various, see below
+- casino blocking zombies fix
+    - remember might be putting this on zombies instead
+        - note other considerations were for having level up points on the map, and having AQKJ10 etc on zombies for bonus gold also
+    - should test anyways
+
+[THINK ALLOW TBF?]
+- melee attack, does knockback, needs good timing
+    - need to really think for this and redo a tut portion that will be most similar to what i want at the same time
+        - print lots of rects lol, see commented out attempt
+    - need to take into consideration the zombies range, ours needs to be slightly higher
+    - this attack should still have a short cooldown and can be done with any weapon, its an elbow hit / gun butt
+
+[PART DONE FROM ABOVE]
+- some kinda basic broken leg ui, as an icon should be fine tbf! [PART DONE]
+- 180 button needs work 
+    - i.e if press button and holding forward u should now be moving back
+    - dw about this for now is fine as is
+- manual reloading duh
+    - worked by adding 1 bool to R button, gg4dat
+    - evidence codebase is messy but well designed
+- reduce or remove change weapon wait stuff
+
+
+
+GAME NEEDS
+- neeeeds 180 quick turn
+    - ngl 100 add take a selfie
+        - multiplier for the more zombies "in shot"
+            - consider trying to actually do this with pillow.similar based on what its the sight range lmao, would be kewl 
+        - obvs u stand still while taking
+        - would have some anim and flash too
+            - the flash will alert near by zombies too (maybe offscreen whatevs)
+- proper change weapon system
+- more things to do, doesnt have to be loads but needs to feel like a game
+    - feel like looting and crafting is enough with 1 / 2 / 3 rotating objective types
+- intro idea ting!
+- objectives
+- tutorial style things for first time things
+    - e.g. zombies that are close to you will land charge attacks that do more damage
+    - when you take more damage you drastically increase your risk of sustaining a serious injury
+    - if you break a leg your movement will be seriously impacted
+    - your special weapon may run out of ammo
+    - you can find x at y
+    - you can make blah with blah at blah
+    - you can get health at blah
+    - you can get a companion at blah
+
+
+HUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUGE
+to do menus pls not only consider tut/s but
+find legit (good, clean) examples, will make it so much easier!
+
+ONCE TUT DONE
+final version with high polish
+javascript react front end project next
+    - then maybe mobile app in google one 
+    - plus actually start doing alls job applications 
+        - looking mostly for apprenticeship and jnr roles
+
+then probably godot
+
+LEGIT
+# finish tutorial
+# do the advanced tuts, e.g. dykstras etc
+# - fuck all point doing the port stuff until you've done all important tuts imo 
+# new version and start porting over functionalities and completely finishing them before continuing
+# - will actually be hella easy this way dw
+
+
+TOD0
+# working custom events for leveling and casino 
+# add basic zombies on screen ui info
+# update gamble idea to on zombie thing on phone
+# 3 cards x skilltree thing
+# ui and menus 
+# port stuff in a new version when ready to start finalising
+# audio
+
+
+# gold coin sprite
+
+
+GENERAL THINGS TODO
+
+# why wasnt tweening working
+# - complete the tut on blank fork to check wassup
+
+# reels thing
+# - aka move/blit the casino ui to the screen if it blocks zombies
+
+# events
+# - do event functionality for on player level up which is based on a set amount of gold which will be easy tbf
+
+# add borders code to damage numbers
+# - for new version, too much to untangle
+
+# reduced accuracy when moving
+# - improved when standing still
+# - as part of player state 
+
+# you need lol style square level bar around ur level number btw (already written but is key)
+# - this is the kinda thing id also want as part of some on sceen ui for likely than not tbf
+
+# add uzi unlocked text and image
+# - do like current reloading tbf, use the same funct too bosh
+
+# reloading (?)
+
+
+PART DONE
+- procedural zombie spawning
+- basic grouping
+- current weapon name text
+
+note
+- should look into node state machine afterwards
+
+
+
+YEAH SO NO CAP RN DO THE 3X MENU TING AND SKILL TREES
+TOMO WE 100% FINISH THIS TUT (and start maps and graphics n tings oooo)
+
+SKILLTREES
+maybe bonus level points are also on the map 
+(could be only on the map, possibly procedural too could be interesting anyways)
+
+freeze enemies (only if can find something that makes sense? - lol really... no)
+
+cant unlock all?
+
+
+ALSO
+# gold coin sprite
+
+
+
+
+CONSIDER
+- as per gmtk, economies (i mean so much tbf amazing video)
+- breakable weapons and/or weapon quality
+- tutorial where you play and on floor text tells u things
+- as much do and not text as possible 
+
+SOME GENERAL GMTK THINGS
+- have the game comment on the choices you make
+- some kinda mission or whatever where if u take too long the person is just dead when u arrive
+- the idea of invisible, but tracked, choices, is so kewl
+
+
+its top down, think gta chinatown!

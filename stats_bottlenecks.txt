@@ -1,0 +1,20 @@
+
+Fri Oct  7 21:47:17 2022    restats
+
+         42026505 function calls (42016876 primitive calls) in 49.590 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     2563    9.613    0.004    9.613    0.004 {method 'tick' of 'Clock' objects}
+  1185448    6.844    0.000    6.844    0.000 {method 'blit' of 'pygame.Surface' objects}
+ 16109769    6.168    0.000    8.485    0.000 tilemap.py:14(collide_hit_rect)
+     2562    5.811    0.002    5.811    0.002 {built-in method pygame.display.flip}
+   132128    3.566    0.000   12.051    0.000 sprite.py:1702(<listcomp>)
+ 18291686    2.599    0.000    2.599    0.000 {method 'colliderect' of 'pygame.Rect' objects}
+     7686    2.463    0.000    2.463    0.000 {method 'fill' of 'pygame.Surface' objects}
+     2562    1.941    0.001   20.785    0.008 main.py:303(draw)
+    37543    0.936    0.000    0.936    0.000 {built-in method pygame.transform.rotate}
+   185214    0.912    0.000    0.912    0.000 sprite.py:365(sprites)
+  1065173    0.718    0.000    1.035    0.000 tilemap.py:37(apply)
+    17475    0.701    0.000   13.363    0.001 sprites.py:679(update)

@@ -1,0 +1,8 @@
+Duplicate Line Up   : Shift + Alt + Up
+Duplicate Line Down : Shift + Alt + Down
+
+Alt [Hold] : Multiple Cursors
+
+Search For Regex Pattern : Ctrl + F -> Alt + R
+Search & Match Case : Ctrl + F -> Alt + C
+Search & Match Whole Words : Ctrl + F -> Alt + W

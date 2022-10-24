@@ -1,0 +1,15 @@
+
+
+FOR ZOMBIE HEALTH UI BAR
+------------------------
+- should draw to a new surf instead and then blit that btw
+- actually should just have a new class for this, that has the surf and then you blit to that classes image than blit the class img with the unit i.e. player, companion, zombie, bwall, etc
+- that new surf could also be attached to the zombies position but just be a transparent bar above them for ui
+
+
+
+ART STYLE
+---------
+- chunky borders
+- outlines where possible 
+- persona 5 x survivor.io x eternal return
