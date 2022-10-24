@@ -15,11 +15,11 @@
             "expandedObjectLayers": [
                 5
             ],
-            "scale": 0.25,
+            "scale": 0.5,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 1208,
-                "y": 888
+                "x": 1098,
+                "y": 736
             }
         },
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/level2.tmx#spritesheet_tiles": {
@@ -93,7 +93,7 @@
                 5
             ],
             "scale": 0.33,
-            "selectedLayer": 0,
+            "selectedLayer": 4,
             "viewCenter": {
                 "x": 1860.6060606060605,
                 "y": 678.7878787878788
@@ -134,12 +134,12 @@
     "project": "Tiled_Map1.tiled-project",
     "recentFiles": [
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/level2.tmx",
+        "level2.tmx",
         "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/level2.tmx",
         "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/redcar1.tsx",
         "level2_mobs.tmx",
         "level1.tmx",
         "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/level2BACKUP.tmx",
-        "level2.tmx",
         "tiled1.tmx",
         "Kenney Topdown Pack.tsx"
     ],

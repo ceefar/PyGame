@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="30" tilewidth="64" tileheight="64" infinite="0" nextlayerid="6" nextobjectid="138">
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="50" height="30" tilewidth="64" tileheight="64" infinite="0" nextlayerid="6" nextobjectid="148">
  <tileset firstgid="1" name="spritesheet_tiles" tilewidth="64" tileheight="64" spacing="10" tilecount="540" columns="27">
   <image source="../img/spritesheet_tiles.png" width="1988" height="1470"/>
  </tileset>
@@ -148,7 +148,7 @@
   <object id="91" name="wall" x="400" y="400" width="32" height="32"/>
   <object id="93" name="wall" x="400" y="528" width="32" height="32"/>
   <object id="94" name="wall" x="448" y="640" width="64" height="384"/>
-  <object id="95" name="zombie" x="816" y="240" width="32" height="32"/>
+  <object id="95" name="zombie" x="1600" y="800" width="32" height="32"/>
   <object id="96" name="wall" x="512" y="960" width="896" height="64"/>
   <object id="98" name="wall" x="1344" y="384" width="64" height="576"/>
   <object id="99" name="wall" x="1024" y="640" width="320" height="64"/>
@@ -181,5 +181,15 @@
   <object id="131" name="wall" x="1568" y="544" width="64" height="64"/>
   <object id="136" name="health" x="208" y="336" width="32" height="32"/>
   <object id="137" name="zombie" x="1104" y="528" width="32" height="32"/>
+  <object id="138" name="zombie" x="1680" y="752" width="32" height="32"/>
+  <object id="139" name="zombie" x="1792" y="832" width="32" height="32"/>
+  <object id="140" name="zombie" x="1696" y="896" width="32" height="32"/>
+  <object id="141" name="zombie" x="1808" y="720" width="32" height="32"/>
+  <object id="142" name="zombie" x="1744" y="592" width="32" height="32"/>
+  <object id="143" name="zombie" x="1520" y="928" width="32" height="32"/>
+  <object id="144" name="zombie" x="1840" y="976" width="32" height="32"/>
+  <object id="145" name="zombie" x="1888" y="816" width="32" height="32"/>
+  <object id="146" name="zombie" x="1920" y="688" width="32" height="32"/>
+  <object id="147" name="zombie" x="1568" y="672" width="32" height="32"/>
  </objectgroup>
 </map>
