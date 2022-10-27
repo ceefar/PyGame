@@ -8,6 +8,10 @@ Check out the small image showcase below for a preview of the improved UI and up
 ### Notable Features  
 Please note that lots of functionality is missing or not shown in the below screenshots which are taken from test versions, as such UI and final v2 functionality has improved substantially on what is being previewed below :D   
 *(please excuse low image quality, this repo is massively temporary, I just wanted to lay down something quick for now)*  
+  
+**NEW - Custom Sprites, Animations & Environment Graphics**  
+Brought a bit of unique flavour to this project by adding in some custom graphics and animations in the Lego style, certainly needs some improvements in terms of visual clarity but am very happy with the style impact overall.  
+<img src="https://github.com/ceefar/PyGame/blob/master/RepoImages/customSpritesUpdate.png" width="800">  
 
 **Pathfinder, Pathfinder, Find Me A Path**     
 Currently in development, implementation of advanced algorithms & data structures - Version in the image showing BFS (Breadth First Search) & Graph/Nodes working as expected, plus zombie path being rendered to screen for debugging     
