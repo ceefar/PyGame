@@ -11,15 +11,75 @@
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/Kenney Topdown.tsx": {
             "scaleInDock": 1
         },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTest1.tsx": {
+            "scaleInDock": 0.33,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Grass_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Grass_2_Dull.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Lino_1_Dull.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Tiling_1_Dull.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_2.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_2_Dull.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_Corner_Seg_Dull_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_Seg_Dull_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_2_Dull.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_2_Dull_Improved.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/Lego_Wood.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/lego_grass_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/lego_grass_v2_1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/level2.tmx": {
             "expandedObjectLayers": [
                 5
             ],
             "scale": 0.5,
-            "selectedLayer": 4,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 916,
-                "y": 790
+                "x": 1182,
+                "y": 658
             }
         },
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/level2.tmx#spritesheet_tiles": {
@@ -122,7 +182,8 @@
             }
         }
     },
-    "last.imagePath": "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/img",
+    "last.externalTilesetPath": "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled",
+    "last.imagePath": "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/img",
     "map.height": 30,
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 64,
@@ -134,15 +195,19 @@
     "project": "Tiled_Map1.tiled-project",
     "recentFiles": [
         "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/level2.tmx",
-        "level2.tmx",
-        "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/level2.tmx",
-        "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/redcar1.tsx",
-        "level2_mobs.tmx",
-        "level1.tmx",
-        "C:/Users/robfa/Downloads/PyGame/v2_playground/v2/CleanFork_P10/Tiled/level2BACKUP.tmx",
-        "tiled1.tmx",
-        "Kenney Topdown Pack.tsx"
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_Corner_Seg_Dull_1.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_Seg_Dull_1.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Tiling_1_Dull.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Lino_1_Dull.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_2_Dull_Improved.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_2_Dull.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_2_Dull.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Grass_2_Dull.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wall_2.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Wood_1.tsx",
+        "C:/Users/robfa/Downloads/PgPlayground/v2/CleanFork_P10/Tiled/LegoTile_Grass_1.tsx"
     ],
+    "tileset.lastUsedFilter": "Tiled tileset files (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,
     "tileset.tileSize": {
